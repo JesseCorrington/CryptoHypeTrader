@@ -1,6 +1,6 @@
 from coinmarketcap import *
 from reddit import *
-
+from database import *
 
 if __name__ == '__main__':
     coins = get_coin_list()
@@ -14,5 +14,5 @@ if __name__ == '__main__':
     #stats = get_current_stats("bitcoin")
     #print(stats)
 
-    stats = get_historical_stats("loopring")
-    print(stats)
+    #stats = get_historical_stats("loopring")
+    #print(stats)

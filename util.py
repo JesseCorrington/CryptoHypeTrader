@@ -11,17 +11,6 @@ ctx.verify_mode = ssl.CERT_NONE
 
 CONFIG = json.loads(open("config.json").read())
 
-
-def load_config():
-    global CONFIG
-    CONFIG = json.loads(open("config.json").read())
-
-
-def get_config():
-    global CONFIG
-    return CONFIG
-
-
 def geturl_json(url):
     ret = urllib.request.urlopen(url, context=ctx)
     return json.loads(ret.read())
