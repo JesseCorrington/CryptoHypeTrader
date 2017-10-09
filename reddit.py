@@ -2,6 +2,7 @@ import praw
 from util import *
 import re
 import datetime
+from database import *
 
 
 def get_current_stats(subreddit):
@@ -41,3 +42,17 @@ def get_historical_stats(subreddit):
         })
 
     return stats
+
+def save_historic_stats(subreddit, symbol):
+    daily_stats = get_historical_stats(subreddit)
+
+    collection = MONGO_DB.social_stats
+
+    # TODO: batch these, and they need
+
+    for day in daily_stats:
+        print(day)
+        day["symbol"] = symbol
+        collection.insert_one(day)
+
+        # TODO: only insert if date is not there

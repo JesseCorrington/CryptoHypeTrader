@@ -2,6 +2,7 @@ import re
 from bs4 import BeautifulSoup
 import datetime
 from util import *
+from database import *
 
 def get_coin_list():
     all_coins = geturl_json("https://api.coinmarketcap.com/v1/ticker/")
@@ -68,3 +69,18 @@ def get_historical_prices(id):
         historicData.append(dailyTicker)
 
     return historicData
+
+
+def save_historic_data(id, symbol):
+    daily_ticker = get_historical_prices(id)
+
+    collection = MONGO_DB.prices
+
+    # TODO: batch these, and they need
+
+    for day in daily_ticker:
+        print(day)
+        day["symbol"] = symbol
+        collection.insert_one(day)
+
+        # TODO: only insert if date is not there
