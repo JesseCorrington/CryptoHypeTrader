@@ -5,14 +5,16 @@ from database import *
 if __name__ == '__main__':
     coins = get_coin_list()
 
-    subreddit = get_subreddit(coins["link"]["id"])
+    linkId = coins["link"]["id"]
+
+    subreddit = get_subreddit(linkId)
     print(subreddit)
 
-    prices = get_historical_prices(coins["link"]["id"])
+    prices = get_historical_prices(linkId)
     print(prices)
 
-    stats = get_current_stats("bitcoin")
+    stats = get_current_stats(subreddit)
     print(stats)
 
-    stats = get_historical_stats("loopring")
+    stats = get_historical_stats(subreddit)
     print(stats)
