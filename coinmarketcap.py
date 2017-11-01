@@ -1,7 +1,6 @@
 import re
 from bs4 import BeautifulSoup
 import datetime
-from util import *
 from database import *
 
 def get_coin_list():
@@ -24,17 +23,20 @@ def get_subreddit(id):
     if match is not None:
         subreddit = match.group(1)
     else:
-        print("ERROR: Failed to parse reddit url for ", id)
+        raise Exception("ERROR: Failed to parse reddit url for ", id)
 
     return subreddit
 
 
 def get_historical_prices(id):
-    # TODO: dynamic url
-    url = "https://coinmarketcap.com/currencies/chainlink/historical-data/?start=20130428&end=20171009"
+    # TODO: always want all data, just make it go current day + 1
+    s = "20110000"
+    e = "20181000"
+
+    url = "https://coinmarketcap.com/currencies/" + id + "/historical-data/?start=" + s + "&end=" + e
 
     html = geturl_text(url)
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, "lxml")
 
     div = soup.find("div", attrs={"class": "table-responsive"})
     table = div.find('table', attrs={'class': 'table'})
