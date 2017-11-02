@@ -71,6 +71,11 @@ def update_coin_list():
 def save_historic_prices():
     coins = db.get_coins()
 
+    # TODO: start by making a list of the missing data similar to when we get the coin list
+    # then we can report progress and time remaining properly
+
+
+
     for coin in coins:
         symbol = coin["symbol"]
 
@@ -89,14 +94,21 @@ def save_historic_prices():
 
             start_time = most_recent + datetime.timedelta(days=1)
 
+        # TODO: this is slightly broken, because it will continue to think we have missing data for coins
+        # that are dead (https://coinmarketcap.com/currencies/paypeer/)
+        # or maybe they don't always get updated on cmc
+
         all_prices = get_historical_prices(coin["cmc_id"], start=start_time)
 
-        for day in all_prices:
-            day["symbol"] = coin["symbol"]
+        if all_prices:
+            for day in all_prices:
+                day["symbol"] = coin["symbol"]
 
-        db.insert_prices(all_prices)
+            db.insert_prices(all_prices)
 
-        print("added all prices for", coin["symbol"])
+            print("added all prices for", coin["symbol"])
+        else:
+            print("Error: no price data found", symbol, start_time)
 
 
 def save_historic_social_stats():

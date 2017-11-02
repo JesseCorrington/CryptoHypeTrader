@@ -63,6 +63,9 @@ def get_historical_prices(id, start=datetime.date(2011, 1, 1), end=datetime.date
     for row in rows:
         cols = row.find_all('td')
 
+        if len(cols) < 7:
+            return None
+
         date = cols[0].text.strip()
         date = datetime.datetime.strptime(date, "%b %d, %Y")
 
