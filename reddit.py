@@ -1,5 +1,4 @@
 import praw
-from util import *
 import re
 import datetime
 from database import *
@@ -33,26 +32,19 @@ def get_historical_stats(subreddit):
     matches = re.findall(pattern, html)
 
     stats = []
-    for date, growth in matches:
-        date = datetime.datetime.strptime(date, "%Y-%m-%d")
-
+    for date, total_subs in matches:
         stats.append({
-            "date": date,
-            "subscribers": growth
+            "date": datetime.datetime.strptime(date, "%Y-%m-%d"),
+            "subscribers": int(total_subs)
         })
 
     return stats
 
 def save_historic_stats(subreddit, symbol):
     daily_stats = get_historical_stats(subreddit)
-
     collection = MONGO_DB.social_stats
 
-    # TODO: batch these, and they need
-
+    # TODO: only insert if date is not there
     for day in daily_stats:
-        print(day)
         day["symbol"] = symbol
         collection.insert_one(day)
-
-        # TODO: only insert if date is not there

@@ -27,11 +27,22 @@ def get_subreddit(id):
 
     return subreddit
 
+def text_to_float(text):
+    text = text.strip()
+    text = text.replace(",", "")
+
+    if text == "-":
+
+        # TODO:
+        print("ERROR: missing volume data")
+        return 0
+
+    return float(text)
 
 def get_historical_prices(id):
     # TODO: always want all data, just make it go current day + 1
-    s = "20110000"
-    e = "20181000"
+    s = "20110101"
+    e = "20180101"
 
     url = "https://coinmarketcap.com/currencies/" + id + "/historical-data/?start=" + s + "&end=" + e
 
@@ -49,14 +60,14 @@ def get_historical_prices(id):
         cols = row.find_all('td')
 
         date = cols[0].text.strip()
-        open = cols[1].text.strip()
-        high = cols[2].text.strip()
-        low = cols[3].text.strip()
-        close = cols[4].text.strip()
-        volume = cols[5].text.strip()
-        marketCap = cols[6].text.strip()
-
         date = datetime.datetime.strptime(date, "%b %d, %Y")
+
+        open = text_to_float(cols[1].text)
+        high = text_to_float(cols[2].text)
+        low = text_to_float(cols[3].text)
+        close = text_to_float(cols[4].text)
+        volume = text_to_float(cols[5].text)
+        marketCap = text_to_float(cols[6].text)
 
         dailyTicker = {
             "date": date,
@@ -81,7 +92,6 @@ def save_historic_data(id, symbol):
     # TODO: batch these, and they need
 
     for day in daily_ticker:
-        print(day)
         day["symbol"] = symbol
         collection.insert_one(day)
 

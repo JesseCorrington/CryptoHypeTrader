@@ -5,12 +5,13 @@ from reddit import *
 if __name__ == '__main__':
     coins = get_coin_list()
 
-    linkId = coins["btc"]["id"]
+    cmcId = coins["btc"]["id"]
+    coinSymbol = coins["btc"]["symbol"]
 
-    subreddit = get_subreddit(linkId)
+    subreddit = get_subreddit(cmcId)
     print("reddit.com/r/" + subreddit)
 
-    prices = get_historical_prices(linkId)
+    prices = get_historical_prices(cmcId)
     print("Historical Prices:\n", prices)
 
     stats = get_current_stats(subreddit)
@@ -20,6 +21,5 @@ if __name__ == '__main__':
     print("Current Stats:\n", stats)
 
 
-    #save_historic_data(linkId, coins["link"]["symbol"])
-
-    #save_historic_stats(subreddit, coins["link"]["symbol"])
+    save_historic_data(cmcId, coinSymbol)
+    save_historic_stats(subreddit, coinSymbol)

@@ -41,3 +41,5 @@ tmtagsHistory
 .bundle
 
 mongodb_data
+
+client/node_modules
