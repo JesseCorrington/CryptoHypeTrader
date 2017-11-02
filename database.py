@@ -14,5 +14,7 @@ def get_coins():
 
 
 def insert_coin(coin):
+    coin["_id"] = coin["symbol"]
+
     collection = MONGO_DB.coins
     collection.insert(coin)
