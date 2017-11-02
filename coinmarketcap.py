@@ -8,7 +8,11 @@ def get_coin_list():
 
     symbolMapped = {}
     for coin in all_coins:
-        symbolMapped[coin["symbol"].lower()] = coin
+        symbolMapped[coin["symbol"]] = {
+            "symbol": coin["symbol"],
+            "cmc_id": coin["id"],
+            "name": coin["name"]
+        }
 
     return symbolMapped
 

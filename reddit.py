@@ -1,27 +1,30 @@
 import praw
 import re
 import datetime
-from database import *
-
+import database as db
+import util
 
 def get_current_stats(subreddit):
     reddit = praw.Reddit(client_id=CONFIG["reddit_client_id"],
                          client_secret=CONFIG["reddit_client_secret"],
                          user_agent=CONFIG["reddit_user_agent"])
 
-    subreddit = reddit.subreddit(subreddit)
+    try:
+        subreddit = reddit.subreddit(subreddit)
 
-    stats = {
-        "subscribers": subreddit.subscribers,
-        "active:": subreddit.accounts_active
-    }
+        stats = {
+            "subscribers": subreddit.subscribers,
+            "active:": subreddit.accounts_active
+        }
 
-    return stats
+        return stats
+    except Exception as err:
+        return None
 
 
-def get_historical_stats(subreddit):
+def get_historical_stats(subreddit, symbol):
     url = "http://redditmetrics.com/r/" + subreddit
-    html = geturl_text(url)
+    html = util.geturl_text(url)
 
     dataStart = html.find("element: 'total-subscribers',")
     html = html[dataStart:]
@@ -34,6 +37,7 @@ def get_historical_stats(subreddit):
     stats = []
     for date, total_subs in matches:
         stats.append({
+            "symbol": symbol,
             "date": datetime.datetime.strptime(date, "%Y-%m-%d"),
             "subscribers": int(total_subs)
         })
@@ -41,11 +45,7 @@ def get_historical_stats(subreddit):
     stats.sort(key=lambda x: x["date"])
     return stats
 
-def save_historic_stats(subreddit, symbol):
-    daily_stats = get_historical_stats(subreddit)
-    collection = MONGO_DB.social_stats
 
-    # TODO: only insert if date is not there
-    for day in daily_stats:
-        day["symbol"] = symbol
-        collection.insert_one(day)
+def save_historic_stats(subreddit, symbol):
+    daily_stats = get_historical_stats(subreddit, symbol)
+    db.insert_historic_social_stats(daily_stats)

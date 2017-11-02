@@ -1,6 +1,7 @@
 import urllib.parse
 import urllib.request
 import json
+import time
 
 
 CONFIG = json.loads(open("config.json").read())
@@ -16,6 +17,8 @@ def geturl_text(url):
     return ret.read().decode()
 
 
+def timestamp():
+    return int(round(time.time() * 1000))
 
 
 def get_etherdelta_json(url):

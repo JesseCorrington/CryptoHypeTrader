@@ -58,7 +58,9 @@ function buildCompareChart() {
 
 
 function get_stats() {
-    $.getJSON("/api/social_stats", function (data) {
+    var url = "/api/social_stats" + '?where={"symbol": "eth"}'
+
+    $.getJSON(url, function (data) {
         var symbol = data._items[0].symbol
 
         series = []
@@ -84,7 +86,9 @@ function get_stats() {
 
 
 function get_prices() {
-    $.getJSON("/api/prices", function (data) {
+    var url = "/api/prices" + '?where={"symbol": "eth"}'
+
+    $.getJSON(url, function (data) {
         var symbol = data._items[0].symbol
 
         series = []
