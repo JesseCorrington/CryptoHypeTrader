@@ -8,7 +8,7 @@ from datetime import date
 # TODO: periodically we need to make sure the reddit's haven't changed
 # add a param that will just force a full update of all and run every few days
 def update_coin_list():
-    print("Updating coins list")
+    print("Updating coin list")
 
     start_time = timestamp()
 
@@ -48,7 +48,6 @@ def update_coin_list():
         print("Added coin", symbol)
 
         processed += 1
-
         print("Progress", processed, "/", len(new_symbols))
 
     end_time = timestamp()
@@ -69,14 +68,18 @@ def update_coin_list():
 
 
 def save_historic_prices():
+    print("Updating historic prices")
+
     # TODO: we may not even need this
     coins = db.get_coins()
     latest_prices = db.get_latest_prices()
     coins_to_update = {}
 
+    print("Coins with no price data", len(coins) - len(latest_prices))
+
+    # Make a list of coins that don't have up to date historic prices stored
     for symbol in coins:
-        coin = coins[symbol]
-        start_time = datetime.date(2011, 1, 1)
+        update_start = datetime.date(2011, 1, 1)
 
         if symbol in latest_prices:
             most_recent = latest_prices[symbol]["date"]
@@ -85,10 +88,12 @@ def save_historic_prices():
             if most_recent.year == today.year and most_recent.month == today.month and most_recent.day == today.day - 1:
                 continue
 
-            start_time = most_recent + datetime.timedelta(days=1)
+            update_start = most_recent + datetime.timedelta(days=1)
 
-        coins_to_update[symbol] = start_time
+        coins_to_update[symbol] = update_start
 
+    print("Coins with out of date data:", len(coins_to_update))
+    processed = 0
 
     # TODO: this is slightly broken, because it will continue to think we have missing data for coins
     # that are dead (https://coinmarketcap.com/currencies/paypeer/)
@@ -109,6 +114,9 @@ def save_historic_prices():
         else:
             print("Error: no price data found", symbol, start_time)
 
+        processed += 1
+        print("Progress", processed, "/", len(coins_to_update))
+
 
 def save_historic_reddit_stats():
     #daily_stats = get_historical_stats(subreddit, symbol)
@@ -123,7 +131,7 @@ def save_historic_reddit_stats():
         get_historical_stats(coin["subreddit"], coin["symbol"])
 
 
-if __name__ == '__main__':
+def run_all():
     start_time = timestamp()
 
     # TODO: where does this belong, is it okay to run it every time?
@@ -139,3 +147,7 @@ if __name__ == '__main__':
     # TODO: write a row to injestion table (start time, end time, elapsed time, errors, processed, list of import fns run)
 
     print("Injestion complete, elapsed time (ms):", elapsed_time)
+
+
+if __name__ == '__main__':
+    run_all()
