@@ -44,8 +44,3 @@ def get_historical_stats(subreddit, symbol):
 
     stats.sort(key=lambda x: x["date"])
     return stats
-
-
-def save_historic_stats(subreddit, symbol):
-    daily_stats = get_historical_stats(subreddit, symbol)
-    db.insert_historic_social_stats(daily_stats)

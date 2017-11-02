@@ -11,11 +11,35 @@ def insert_historic_social_stats(stats):
 
 
 def get_coins():
-    return list(MONGO_DB.coins.find())
+    coins = MONGO_DB.coins.find()
+
+    # convert to a mapping from symbol to dates
+    coins = list(coins)
+    output = {}
+    for coin in coins:
+        output[coin["_id"]] = coin
+
+    return output
 
 
 def get_prices(symbol):
     return list(MONGO_DB.prices.find({"symbol": symbol}))
+
+
+def get_latest_prices():
+    coins = MONGO_DB.prices.aggregate([
+        # TODO: test by reversing the index to make sure we are getting sorted items
+        #{"$sort": { "date": 1}},
+        {"$group": {"_id" : "$symbol", "date": {'$last': '$date'}}}
+    ])
+
+    # convert to a mapping from symbol to dates
+    coins = list(coins)
+    output = {}
+    for coin in coins:
+        output[coin["_id"]] = coin
+
+    return output
 
 
 def insert_coin(coin):
