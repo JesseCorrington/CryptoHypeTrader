@@ -1,10 +1,11 @@
 import re
 from bs4 import BeautifulSoup
+import util
 import datetime
-from database import *
+
 
 def get_coin_list():
-    all_coins = geturl_json("https://api.coinmarketcap.com/v1/ticker/")
+    all_coins = util.geturl_json("https://api.coinmarketcap.com/v1/ticker/")
 
     symbolMapped = {}
     for coin in all_coins:
@@ -18,7 +19,7 @@ def get_coin_list():
 
 
 def get_subreddit(id):
-    html = geturl_text("https://coinmarketcap.com/currencies/" + id)
+    html = util.geturl_text("https://coinmarketcap.com/currencies/" + id)
 
     pattern = "reddit\\.com\\/r\\/([^/.]*)\\."
     match = re.search(pattern, html)
@@ -36,20 +37,20 @@ def text_to_float(text):
     text = text.replace(",", "")
 
     if text == "-":
-
-        # TODO:
+        # Some of the old volume data is missing on coin market cap
         return None
 
     return float(text)
 
-def get_historical_prices(id):
-    # TODO: always want all data, just make it go current day + 1
-    s = "20110101"
-    e = "20180101"
+
+def get_historical_prices(id, start=datetime.date(2011, 1, 1), end=datetime.date.today()):
+    date_format = "%Y%m%d"
+    s = start.strftime(date_format)
+    e = end.strftime(date_format)
 
     url = "https://coinmarketcap.com/currencies/" + id + "/historical-data/?start=" + s + "&end=" + e
 
-    html = geturl_text(url)
+    html = util.geturl_text(url)
     soup = BeautifulSoup(html, "lxml")
 
     div = soup.find("div", attrs={"class": "table-responsive"})
@@ -86,14 +87,3 @@ def get_historical_prices(id):
 
     historicData.sort(key=lambda x: x["date"])
     return historicData
-
-
-def save_historic_data(id, symbol):
-    daily_ticker = get_historical_prices(id)
-
-    collection = MONGO_DB.prices
-
-    # TODO: only insert if date is not there
-    for day in daily_ticker:
-        day["symbol"] = symbol
-        collection.insert_one(day)

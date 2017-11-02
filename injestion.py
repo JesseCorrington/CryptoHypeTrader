@@ -2,6 +2,7 @@ from coinmarketcap import *
 from reddit import *
 import database as db
 from util import timestamp
+from datetime import date
 
 
 # TODO: periodically we need to make sure the reddit's haven't changed
@@ -54,14 +55,52 @@ def update_coin_list():
     elapsed_time = (end_time - start_time) / 1000
 
     print("Updating coin list completed in", elapsed_time, "seconds")
-    print("Total coins", len(current_coins))
-    print("Added", len(added_symbols), "new coins")
-    print("Missing subreddits", len(missing_subreddits), missing_subreddits)
+
+    if len(new_symbols) > 0:
+        print("Total coins", len(current_coins))
+        print("Added", len(added_symbols), "new coins")
+        print("Missing subreddits", len(missing_subreddits))
+    else:
+        print("No new coins to add")
 
     # TODO: errors
 
-    return coins
+    return current_coins
 
+
+def save_historic_prices():
+    coins = db.get_coins()
+
+    for coin in coins:
+        symbol = coin["symbol"]
+
+        saved_prices = db.get_prices(symbol)
+
+        start_time = datetime.date(2011, 1, 1)
+
+        if len(saved_prices) > 0:
+            most_recent = saved_prices[0]["date"]
+
+            today = date.today()
+
+            if most_recent.year == today.year and most_recent.month == today.month and most_recent.day == today.day - 1:
+                print("Historic price data up to date for", symbol)
+                continue
+
+            start_time = most_recent + datetime.timedelta(days=1)
+
+        all_prices = get_historical_prices(coin["cmc_id"], start=start_time)
+
+        for day in all_prices:
+            day["symbol"] = coin["symbol"]
+
+        db.insert_prices(all_prices)
+
+        print("added all prices for", coin["symbol"])
+
+
+def save_historic_social_stats():
+    return None
 
 if __name__ == '__main__':
     start_time = timestamp()
@@ -70,7 +109,12 @@ if __name__ == '__main__':
     errors = 0
     warnings = 0
 
+    # TODO: where does this belong, is it okay to run it every time?
+    db.create_indexes()
+
     coins = update_coin_list()
+
+    save_historic_prices()
 
     for symbol in coins:
         print("Processing", symbol)
