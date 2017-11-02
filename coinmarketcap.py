@@ -32,6 +32,7 @@ def get_subreddit(id):
 
     return subreddit
 
+
 def text_to_float(text):
     text = text.strip()
     text = text.replace(",", "")

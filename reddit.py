@@ -13,7 +13,7 @@ def get_current_stats(subreddit):
         subreddit = reddit.subreddit(subreddit)
 
         stats = {
-            "subscribers": subreddit.subscribers,
+            "reddit_subscribers": subreddit.subscribers,
             "active:": subreddit.accounts_active
         }
 
@@ -39,8 +39,17 @@ def get_historical_stats(subreddit, symbol):
         stats.append({
             "symbol": symbol,
             "date": datetime.datetime.strptime(date, "%Y-%m-%d"),
-            "subscribers": int(total_subs)
+            "reddit_subscribers": int(total_subs)
         })
 
-    stats.sort(key=lambda x: x["date"])
+    prev = None
+    for item in stats:
+        if prev and prev["date"] == item["date"]:
+            # TODO: it might be better to average these
+            prev["reddit_subscribers"] = int((prev["reddit_subscribers"] + item["reddit_subscribers"]) / 2.0)
+            stats.remove(item)
+        else:
+            prev = item
+
     return stats
+

@@ -67,22 +67,14 @@ def update_coin_list():
     return current_coins
 
 
-def save_historic_prices():
-    print("Updating historic prices")
-
-    # TODO: we may not even need this
-    coins = db.get_coins()
-    latest_prices = db.get_latest_prices()
+def _outdated_historic(coins, latest_updates):
     coins_to_update = {}
-
-    print("Coins with no price data", len(coins) - len(latest_prices))
-
     # Make a list of coins that don't have up to date historic prices stored
     for symbol in coins:
         update_start = datetime.date(2011, 1, 1)
 
-        if symbol in latest_prices:
-            most_recent = latest_prices[symbol]["date"]
+        if symbol in latest_updates:
+            most_recent = latest_updates[symbol]["date"]
             today = date.today()
 
             if most_recent.year == today.year and most_recent.month == today.month and most_recent.day == today.day - 1:
@@ -92,7 +84,18 @@ def save_historic_prices():
 
         coins_to_update[symbol] = update_start
 
-    print("Coins with out of date data:", len(coins_to_update))
+    return coins_to_update
+
+
+def save_historic_prices():
+    print("Updating historic prices")
+
+    coins = db.get_coins()
+    latest_prices = db.get_latest_prices()
+    print("Coins with no price data", len(coins) - len(latest_prices))
+
+    coins_to_update = _outdated_historic(coins, latest_prices)
+    print("Coins with out of date price data:", len(coins_to_update))
     processed = 0
 
     # TODO: this is slightly broken, because it will continue to think we have missing data for coins
@@ -119,16 +122,34 @@ def save_historic_prices():
 
 
 def save_historic_reddit_stats():
-    #daily_stats = get_historical_stats(subreddit, symbol)
-    #db.insert_historic_social_stats(daily_stats)
+    print("Updating historic reddit stats")
 
-    coins = db.get_coins()
-    coins = [x for x in coins if "subreddit" in x]
+    coins = db.get_coins_with_subreddits()
+    print(len(coins), "Coins with subreddits")
 
-    # TODO: start by making a list of the missing data similar to when we get the coin list
-    # then we can report progress and time remaining properly
-    for coin in coins:
-        get_historical_stats(coin["subreddit"], coin["symbol"])
+    latest_stats = db.get_latest_social_stats()
+    print("Coins with no social stats saved", len(coins) - len(latest_stats))
+
+    coins_to_update = _outdated_historic(coins, latest_stats)
+    print("Coins with out of date social stats:", len(coins_to_update))
+    processed = 0
+
+    for symbol in coins_to_update:
+        coin = coins[symbol]
+        start_time = coins_to_update[symbol]
+
+        # TODO: need to be able to pass in start time here
+        all_stats = get_historical_stats(coin["subreddit"], coin["symbol"])
+
+        if all_stats:
+            db.insert_social_stats(all_stats)
+            print("Added all historic reddit stats for", coin["symbol"])
+        else:
+            print("Error: no reddit stats for", symbol)
+
+        processed += 1
+        print("Progress", processed, "/", len(coins_to_update))
+
 
 
 def run_all():
@@ -137,8 +158,9 @@ def run_all():
     # TODO: where does this belong, is it okay to run it every time?
     db.create_indexes()
 
+    # TODO: do the timing here
     update_coin_list()
-    save_historic_prices()
+    #save_historic_prices()
     save_historic_reddit_stats()
 
     end_time = timestamp()
