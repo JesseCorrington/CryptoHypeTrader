@@ -34,8 +34,7 @@ def text_to_float(text):
     if text == "-":
 
         # TODO:
-        print("ERROR: missing volume data")
-        return 0
+        return None
 
     return float(text)
 
@@ -81,6 +80,7 @@ def get_historical_prices(id):
 
         historicData.append(dailyTicker)
 
+    historicData.sort(key=lambda x: x["date"])
     return historicData
 
 
@@ -89,10 +89,7 @@ def save_historic_data(id, symbol):
 
     collection = MONGO_DB.prices
 
-    # TODO: batch these, and they need
-
+    # TODO: only insert if date is not there
     for day in daily_ticker:
         day["symbol"] = symbol
         collection.insert_one(day)
-
-        # TODO: only insert if date is not there

@@ -3,7 +3,7 @@ console.log("starting client app");
 var pending = 2
 var chartData = []
 
-function buildcharts() {
+function buildSingleChart() {
     Highcharts.stockChart('container', {
 
         rangeSelector: {
@@ -17,6 +17,45 @@ function buildcharts() {
         series: chartData
     });
 }
+
+function buildCompareChart() {
+    Highcharts.stockChart('container', {
+
+        rangeSelector: {
+            selected: 4
+        },
+
+        yAxis: {
+            labels: {
+                formatter: function () {
+                    return (this.value > 0 ? ' + ' : '') + this.value + '%';
+                }
+            },
+            plotLines: [{
+                value: 0,
+                width: 2,
+                color: 'silver'
+            }]
+        },
+
+        plotOptions: {
+            series: {
+                compare: 'percent',
+                showInNavigator: true
+            }
+        },
+
+        tooltip: {
+            pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> ({point.change}%)<br/>',
+            valueDecimals: 2,
+            split: true
+        },
+
+
+        series: chartData
+    });
+}
+
 
 function get_stats() {
     $.getJSON("/api/social_stats", function (data) {
@@ -38,7 +77,7 @@ function get_stats() {
 
         pending--;
         if (pending == 0) {
-            buildcharts()
+            buildCompareChart()
         }
     });
 }
@@ -57,14 +96,14 @@ function get_prices() {
             series.push([date, price])
         }
 
-        // chartData.push({
-        //     name: symbol + " price",
-        //     data: series
-        // });
+        chartData.push({
+            name: symbol + " price",
+            data: series
+        });
 
         pending--;
         if (pending == 0) {
-            buildcharts()
+            buildCompareChart()
         }
     });
 }

@@ -38,6 +38,7 @@ def get_historical_stats(subreddit):
             "subscribers": int(total_subs)
         })
 
+    stats.sort(key=lambda x: x["date"])
     return stats
 
 def save_historic_stats(subreddit, symbol):
