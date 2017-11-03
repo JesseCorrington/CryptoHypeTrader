@@ -33,9 +33,8 @@ def get_prices(symbol):
 
 def get_latest_prices():
     coins = MONGO_DB.prices.aggregate([
-        # TODO: test by reversing the index to make sure we are getting sorted items
-        #{"$sort": { "date": 1}},
-        {"$group": {"_id" : "$symbol", "date": {'$last': '$date'}}}
+        {"$sort": { "date": pymongo.DESCENDING}},
+        {"$group": {"_id" : "$symbol", "date": {'$first': '$date'}}}
     ])
 
     return cursor_to_dict(coins)
@@ -43,8 +42,7 @@ def get_latest_prices():
 
 def get_latest_social_stats():
     coins = MONGO_DB.social_stats.aggregate([
-        # TODO: test by reversing the index to make sure we are getting sorted items
-        #{"$sort": { "date": 1}},
+        {"$sort": { "date": pymongo.DESCENDING}},
         {"$group": {"_id" : "$symbol", "date": {'$last': '$date'}}}
     ])
 
@@ -68,5 +66,4 @@ def create_indexes():
     # TODO: is there any way to used HASHED on symbol, is it faster
 
     MONGO_DB.prices.create_index([("symbol", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
-
     MONGO_DB.social_stats.create_index([("symbol", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)

@@ -87,12 +87,25 @@ def _outdated_historic(coins, latest_updates):
     return coins_to_update
 
 
+def _ingest_historic(symbol, get_data):
+    # does: timing, progress, what needs updating, writting to ingestion_runs table, error tracking, loggin
+
+    return None
+
+def _ingest_current(symbol, get_data):
+    # Should we able to handle doing all symbols at once too, ie: cmc price ticker
+
+    return None
+
+
 def save_historic_prices():
     print("Updating historic prices")
 
     coins = db.get_coins()
     latest_prices = db.get_latest_prices()
     print("Coins with no price data", len(coins) - len(latest_prices))
+
+    test = latest_prices["BTC"]
 
     coins_to_update = _outdated_historic(coins, latest_prices)
     print("Coins with out of date price data:", len(coins_to_update))
@@ -160,15 +173,15 @@ def run_all():
 
     # TODO: do the timing here
     update_coin_list()
-    #save_historic_prices()
+    save_historic_prices()
     save_historic_reddit_stats()
 
     end_time = timestamp()
     elapsed_time = end_time - start_time
 
-    # TODO: write a row to injestion table (start time, end time, elapsed time, errors, processed, list of import fns run)
+    # TODO: write a row to ingestion table (start time, end time, elapsed time, errors, processed, list of import fns run)
 
-    print("Injestion complete, elapsed time (ms):", elapsed_time)
+    print("Ingestion complete, elapsed time (ms):", elapsed_time)
 
 
 if __name__ == '__main__':
