@@ -141,10 +141,14 @@ class ImportCoinListTask(IngestionTask):
             cmc_id = coin["cmc_id"]
 
             try:
-                coin["subreddit"] = get_subreddit(cmc_id)
+                subreddit = get_subreddit(cmc_id)
+                if subreddit:
+                    coin["subreddit"] = get_subreddit(cmc_id)
+                else:
+                    self._warn("missing subreddit for symbol " + symbol)
             except Exception as err:
                 # TODO: try looking it up on cryptocompare too, maybe that should be our first source of data
-                self._error("failed to find subreddit link on cmc: " + str(err))
+                self._error("failed to lookup subreddit on cmc: " + str(err))
                 missing_subreddits.add(symbol)
 
             coin["_id"] = coin["symbol"]

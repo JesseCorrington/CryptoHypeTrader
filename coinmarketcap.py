@@ -24,13 +24,10 @@ def get_subreddit(id):
     pattern = "reddit\\.com\\/r\\/([^/.]*)\\."
     match = re.search(pattern, html)
 
-    subreddit = ""
     if match is not None:
-        subreddit = match.group(1)
+        return match.group(1)
     else:
-        raise Exception("ERROR: Failed to parse reddit url for ", id)
-
-    return subreddit
+        return None
 
 
 def text_to_float(text):
