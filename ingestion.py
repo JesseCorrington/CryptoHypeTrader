@@ -12,39 +12,42 @@ class IngestionTask:
     # TODO: can ones only seen in base chase be __
     def __init__(self):
         self._name = "Unknown Task"
-        self._errors = []
-        self._warnings = []
-        self._start_time = None
-        self._end_time = None
-        self._running = False
-        self._percent_done = 0
-        self._failed = False
-        self._db_inserts = 0
+        self.__errors = []
+        self.__warnings = []
+        self.__start_time = None
+        self.__end_time = None
+        self.__running = False
+        self.__percent_done = 0.0
+        self.__failed = False
+        self.__db_inserts = 0
+        self.__id = None
 
     def __str__(self):
         return "{0} - running={1}, errors={2}, warnings={3}".\
-            format(self._name, self._running, self._errors, self._warnings)
+            format(self._name, self.__running, self.__errors, self.__warnings)
 
     def _error(self, msg):
-        self._errors.append(msg)
+        self.__errors.append(msg)
 
     def _fatal(self, msg):
         self._error("FATAL - " + msg)
-        self._failed = True
+        self.__failed = True
 
     def _warn(self, msg):
-        self._warnings.append(msg)
+        self.__warnings.append(msg)
 
     # TODO: we should be able to get avg time per item
     # and then do est. time remaining (so we need to set sub items afterall)
     def _progress(self, completed, total):
-        self._percent_done = completed / total
+        self.__percent_done = completed / total
 
-        elapsed = timestamp() - self._start_time
+        elapsed = timestamp() - self.__start_time
         avg_time_per = elapsed / completed
         est_time_left = (avg_time_per * (total - completed)) / 1000
 
         print("Progress {0}/{1} - est. time remaining {2} seconds".format(completed, total, est_time_left))
+
+        self.__update_db_status()
 
 
     def _run(self):
@@ -54,34 +57,61 @@ class IngestionTask:
         db.insert(collection, items)
 
         # TODO: error handling
-        self._db_inserts += 1
+        self.__db_inserts += 1
+
+    def __update_db_status(self):
+        # TODO: at start and end, also log start/end memory usage for the db
+
+        status = {
+            "name": self._name,
+            "start_time": self.__start_time,
+            "running": self.__running,
+            "errors": len(self.__errors),
+            "warnings": len(self.__warnings),
+            "percent_done": self.__percent_done,
+            "failed": self.__failed,
+            "db_inserts": self.__db_inserts
+
+        }
+
+        try:
+            if self.__id is None:
+                self.__id = db.MONGO_DB.ingestion_tasks.insert(status)
+            else:
+                # TODO: is it better to just replace what is updated in the doc
+                db.MONGO_DB.ingestion_tasks.replace_one({'_id': self.__id}, status)
+        except Exception as e:
+            print("Failed to update db status for ingestion tasks", e)
+
 
     def run(self):
-        self._running = True
-        self._start_time = timestamp()
+        self.__running = True
+        self.__start_time = timestamp()
 
         print("Running ingestion task:", self._name)
+        self.__update_db_status()
+
         self._run()
 
-        self._end_time = timestamp()
-        self._running = False
+        self.__end_time = timestamp()
+        self.__running = False
 
-        elapsed_time = self._end_time - self._start_time
+        elapsed_time = self.__end_time - self.__start_time
 
-        sf = "Failure" if self._failed else "Success"
+        sf = "Failure" if self.__failed else "Success"
         print("Ingestion task {0} ({1})".format(self._name, sf))
         print("Elapsed time (seconds):", elapsed_time / 1000)
-        print("Database inserts:", self._db_inserts)
+        print("Database inserts:", self.__db_inserts)
 
-        ec = len(self._errors)
-        wc = len(self._warnings)
+        ec = len(self.__errors)
+        wc = len(self.__warnings)
         if ec > 0:
             print("errors ({0}):".format(ec))
-            for e in self._errors:
+            for e in self.__errors:
                 print("  *", e)
         if wc > 0:
             print("warnings ({0}):".format(wc))
-            for w in self._warnings:
+            for w in self.__warnings:
                 print("  *", w)
 
         # TODO:
@@ -131,7 +161,7 @@ class ImportCoinListTask(IngestionTask):
             except Exception as err:
                 # TODO: try looking it up on cryptocompare too, maybe that should be our first source of data
                 print("Error getting subreddit: ", err)
-                self._error("Error getting subreddit: " + str(err))
+                self._error("failed to find subreddit link on cmc: " + str(err))
                 missing_subreddits.add(symbol)
 
             coin["_id"] = coin["symbol"]
