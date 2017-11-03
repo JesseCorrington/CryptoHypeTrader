@@ -4,6 +4,9 @@ import database as db
 from util import timestamp
 
 
+
+# TODO: move the get url into here, and then we can track how many requests are made too
+
 class IngestionTask:
     def __init__(self):
         self._name = "Unknown Task"
@@ -11,7 +14,6 @@ class IngestionTask:
         self._warnings = []
         self._start_time = None
         self._end_time = None
-        self._database_inserts = 0
         self._running = False
         self._percent_done = 0
         self._failed = False
@@ -30,6 +32,8 @@ class IngestionTask:
     def _warn(self, msg):
         self._warnings.append(msg)
 
+    # TODO: we should be able to get avg time per item
+    # and then do est. time remaining (so we need to set sub items afterall)
     def _progress(self, percent_done):
         self._percent_done = percent_done
 
@@ -48,8 +52,9 @@ class IngestionTask:
 
         elapsed_time = self._end_time - self._start_time
 
-        sf = "(Failure)" if self._failed else "(Success)"
-        print("Ingestion task", self._name, "completed in", elapsed_time / 1000, "seconds", sf)
+        sf = "Failure" if self._failed else "Success"
+        print("Ingestion task {0} ({1})".format(self._name, sf))
+        print("Elapsed time (seconds):", elapsed_time / 1000)
 
         ec = len(self._errors)
         wc = len(self._warnings)
@@ -109,15 +114,17 @@ class ImportCoinListTask(IngestionTask):
             except Exception as err:
                 # TODO: try looking it up on cryptocompare too, maybe that should be our first source of data
                 print("Error getting subreddit: ", err)
-                self._error("Error getting subreddit: " + err)
+                self._error("Error getting subreddit: " + str(err))
                 missing_subreddits.add(symbol)
 
             db.insert_coin(coin)
+
             added_symbols.add(symbol)
             print("Added coin", symbol)
 
+            # TODO: need to do progress in a different way so we get time estimate
             processed += 1
-            self._update_progress(processed / len(new_symbols))
+            self._progress(processed / len(new_symbols))
 
             print("Progress", processed, "/", len(new_symbols))
 
@@ -130,10 +137,8 @@ class ImportCoinListTask(IngestionTask):
 
 
 class ImportHistoricPricesTask(IngestionTask):
-    def __run(self):
-        print("Running")
-
-
+    def _run(self):
+        return
 
 
 
