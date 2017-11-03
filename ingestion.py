@@ -51,6 +51,7 @@ class IngestionTask:
     def _db_insert(self, collection, items):
         try:
             db.insert(collection, items)
+            self.__db_inserts +=1
         except Exception as e:
             self._error("Database insert failed: " + str(e))
 
@@ -233,10 +234,9 @@ def save_historic_reddit_stats():
 def run_all():
     start_time = timestamp()
 
-    # TODO: where does this belong, is it okay to run it every time?
+    # TODO: where does this belong
     db.create_indexes()
 
-    # TODO: do the timing here
     tasks = [
         ImportCoinListTask(),
         #"Update historic prices": save_historic_prices,
