@@ -48,18 +48,16 @@ def get_latest_social_stats():
 
     return cursor_to_dict(coins)
 
-
-def insert_coin(coin):
-    coin["_id"] = coin["symbol"]
-    MONGO_DB.coins.insert(coin)
-
-
 def insert_prices(prices):
     MONGO_DB.prices.insert(prices)
 
 
 def insert_social_stats(stats):
     MONGO_DB.social_stats.insert(stats)
+
+
+def insert(collection, items):
+    MONGO_DB[collection].insert(items)
 
 
 def create_indexes():

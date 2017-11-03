@@ -8,6 +8,8 @@ from util import timestamp
 # TODO: move the get url into here, and then we can track how many requests are made too
 
 class IngestionTask:
+
+    # TODO: can ones only seen in base chase be __
     def __init__(self):
         self._name = "Unknown Task"
         self._errors = []
@@ -17,6 +19,7 @@ class IngestionTask:
         self._running = False
         self._percent_done = 0
         self._failed = False
+        self._db_inserts = 0
 
     def __str__(self):
         return "{0} - running={1}, errors={2}, warnings={3}".\
@@ -34,11 +37,24 @@ class IngestionTask:
 
     # TODO: we should be able to get avg time per item
     # and then do est. time remaining (so we need to set sub items afterall)
-    def _progress(self, percent_done):
-        self._percent_done = percent_done
+    def _progress(self, completed, total):
+        self._percent_done = completed / total
+
+        elapsed = timestamp() - self._start_time
+        avg_time_per = elapsed / completed
+        est_time_left = (avg_time_per * (total - completed)) / 1000
+
+        print("Progress {0}/{1} - est. time remaining {2} seconds".format(completed, total, est_time_left))
+
 
     def _run(self):
         raise NotImplementedError("Subclass must implement _run method")
+
+    def _dbinsert(self, collection, items):
+        db.insert(collection, items)
+
+        # TODO: error handling
+        self._db_inserts += 1
 
     def run(self):
         self._running = True
@@ -55,6 +71,7 @@ class IngestionTask:
         sf = "Failure" if self._failed else "Success"
         print("Ingestion task {0} ({1})".format(self._name, sf))
         print("Elapsed time (seconds):", elapsed_time / 1000)
+        print("Database inserts:", self._db_inserts)
 
         ec = len(self._errors)
         wc = len(self._warnings)
@@ -117,16 +134,13 @@ class ImportCoinListTask(IngestionTask):
                 self._error("Error getting subreddit: " + str(err))
                 missing_subreddits.add(symbol)
 
-            db.insert_coin(coin)
+            coin["_id"] = coin["symbol"]
+            self._dbinsert("coins", coin)
 
             added_symbols.add(symbol)
-            print("Added coin", symbol)
 
-            # TODO: need to do progress in a different way so we get time estimate
             processed += 1
-            self._progress(processed / len(new_symbols))
-
-            print("Progress", processed, "/", len(new_symbols))
+            self._progress(processed, len(new_symbols))
 
         if len(new_symbols) > 0:
             print("Total coins", len(current_coins))
