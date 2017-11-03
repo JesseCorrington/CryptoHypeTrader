@@ -44,12 +44,12 @@ def text_to_float(text):
     return float(text)
 
 
-def get_historical_prices(id, start=datetime.date(2011, 1, 1), end=datetime.date.today()):
+def get_historical_prices(coin, start=datetime.date(2011, 1, 1), end=datetime.date.today()):
     date_format = "%Y%m%d"
     s = start.strftime(date_format)
     e = end.strftime(date_format)
 
-    url = "https://coinmarketcap.com/currencies/" + id + "/historical-data/?start=" + s + "&end=" + e
+    url = "https://coinmarketcap.com/currencies/" + coin["cmc_id"] + "/historical-data/?start=" + s + "&end=" + e
 
     html = util.geturl_text(url)
     soup = BeautifulSoup(html, "lxml")

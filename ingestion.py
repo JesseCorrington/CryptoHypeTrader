@@ -66,9 +66,9 @@ def _outdated_historic(coins, latest_updates):
 
         if symbol in latest_updates:
             most_recent = latest_updates[symbol]["date"]
-            today = date.today()
+            today = datetime.datetime.today()
 
-            if most_recent.year == today.year and most_recent.month == today.month and most_recent.day == today.day - 1:
+            if today - most_recent < datetime.timedelta(days=1):
                 continue
 
             update_start = most_recent + datetime.timedelta(days=1)
@@ -80,7 +80,7 @@ def _outdated_historic(coins, latest_updates):
 
 def _ingest_historic(name, get_latest_saved, get_new_data, insert_data):
     # TODO: how to do timing in clean generic way
-    # TODO: write a record to the injestion collection
+    # TODO: write a record to the ingestion collection
 
     coins = db.get_coins()
     latest_data = get_latest_saved()
@@ -94,7 +94,7 @@ def _ingest_historic(name, get_latest_saved, get_new_data, insert_data):
         coin = coins[symbol]
         update_start = coins_to_update[symbol]
 
-        new_data = get_new_data(coin["cmc_id"], start=update_start)
+        new_data = get_new_data(coin, start=update_start)
         if new_data:
             for day in new_data:
                 day["symbol"] = coin["symbol"]

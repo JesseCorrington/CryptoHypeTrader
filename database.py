@@ -34,8 +34,8 @@ def get_prices(symbol):
 def get_latest_prices():
     coins = MONGO_DB.prices.aggregate([
         {"$sort": { "date": pymongo.DESCENDING}},
-        {"$group": {"_id" : "$symbol", "date": {'$first': '$date'}}}
-    ])
+        {"$group": {"_id": "$symbol", "date": {'$first': '$date'}}}
+    ], allowDiskUse=True)
 
     return cursor_to_dict(coins)
 
@@ -43,8 +43,8 @@ def get_latest_prices():
 def get_latest_social_stats():
     coins = MONGO_DB.social_stats.aggregate([
         {"$sort": { "date": pymongo.DESCENDING}},
-        {"$group": {"_id" : "$symbol", "date": {'$last': '$date'}}}
-    ])
+        {"$group": {"_id": "$symbol", "date": {'$last': '$date'}}}
+    ], allowDiskUse=True)
 
     return cursor_to_dict(coins)
 
