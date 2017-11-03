@@ -2,86 +2,140 @@ from coinmarketcap import *
 from reddit import *
 import database as db
 from util import timestamp
-from datetime import date
 
 
 class IngestionTask:
     def __init__(self):
-        self.__name = "Unknown Task"
-        self.__errors = []
-        self.__warnings = []
-        self.__start_time = None
-        self.__end_time = None
-        self.__database_inserts = 0
-        self.__running = False
+        self._name = "Unknown Task"
+        self._errors = []
+        self._warnings = []
+        self._start_time = None
+        self._end_time = None
+        self._database_inserts = 0
+        self._running = False
+        self._percent_done = 0
+        self._failed = False
 
     def __str__(self):
-        return "{0} {1} {2} {3}".format(self.__name, self.__running, self.__errors, self.__warnings)
+        return "{0} - running={1}, errors={2}, warnings={3}".\
+            format(self._name, self._running, self._errors, self._warnings)
+
+    def _error(self, msg):
+        self._errors.append(msg)
+
+    def _fatal(self, msg):
+        self._error("FATAL - " + msg)
+        self._failed = True
+
+    def _warn(self, msg):
+        self._warnings.append(msg)
+
+    def _progress(self, percent_done):
+        self._percent_done = percent_done
+
+    def _run(self):
+        raise NotImplementedError("Subclass must implement _run method")
 
     def run(self):
-        self.__running = True
-        self.__start_time = timestamp()
+        self._running = True
+        self._start_time = timestamp()
 
-        self.__end_time = timestamp()
-        self.__running = False
+        print("Running ingestion task:", self._name)
+        self._run()
+
+        self._end_time = timestamp()
+        self._running = False
+
+        elapsed_time = self._end_time - self._start_time
+
+        sf = "(Failure)" if self._failed else "(Success)"
+        print("Ingestion task", self._name, "completed in", elapsed_time / 1000, "seconds", sf)
+
+        ec = len(self._errors)
+        wc = len(self._warnings)
+        if ec > 0:
+            print("errors ({0}):".format(ec))
+            for e in self._errors:
+                print("  *", e)
+        if wc > 0:
+            print("warnings ({0}):".format(wc))
+            for w in self._warnings:
+                print("  *", w)
+
+        # TODO:
+        # write a row to ingestion table (start time, end time,
+        # elapsed time, errors, processed, list of import fns run)
 
 
-#class ImportHistoricPricesTask:
+class ImportCoinListTask(IngestionTask):
+    def __init__(self):
+        super().__init__()
+        self._name = "Import-Coins"
 
-
-
-
-# TODO: periodically we need to make sure the reddit's haven't changed
-# add a param that will just force a full update of all and run every few days
-def update_coin_list():
-    current_coins = get_coin_list()
-
-    stored_coins = db.get_coins()
-    stored_symbols = set()
-    added_symbols = set()
-    missing_subreddits = set()
-    new_symbols = set()
-
-    for symbol in stored_coins:
-        stored_symbols.add(symbol)
-
-    for symbol in current_coins:
-        if symbol not in stored_symbols:
-            new_symbols.add(symbol)
-
-    print("Total current coins (coinmarketcap.com):", len(current_coins))
-    print("Locally stored coins:", len(stored_symbols))
-    print("New coins to process:", len(new_symbols))
-
-    processed = 0
-    for symbol in new_symbols:
-        coin = current_coins[symbol]
-        cmc_id = coin["cmc_id"]
+    def _run(self):
+        # TODO: periodically we need to make sure the reddit's haven't changed
+        # add a param that will just force a full update of all and run every few days
 
         try:
-            coin["subreddit"] = get_subreddit(cmc_id)
-        except Exception as err:
-            # TODO: try looking it up on cryptocompare too, maybe that should be our first source of data
-            print("Error getting subreddit: ", err)
-            missing_subreddits.add(symbol)
+            current_coins = get_coin_list()
+        except Exception as e:
+            self._fatal("get_coin_list failed" + str(e))
+            return
 
-        db.insert_coin(coin)
-        added_symbols.add(symbol)
-        print("Added coin", symbol)
+        stored_coins = db.get_coins()
+        stored_symbols = set()
+        added_symbols = set()
+        missing_subreddits = set()
+        new_symbols = set()
 
-        processed += 1
-        print("Progress", processed, "/", len(new_symbols))
+        for symbol in stored_coins:
+            stored_symbols.add(symbol)
 
-    if len(new_symbols) > 0:
-        print("Total coins", len(current_coins))
-        print("Added", len(added_symbols), "new coins")
-        print("Missing subreddits", len(missing_subreddits))
-    else:
-        print("No new coins to add")
+        for symbol in current_coins:
+            if symbol not in stored_symbols:
+                new_symbols.add(symbol)
 
-    # TODO: errors
+        print("Total current coins (coinmarketcap.com):", len(current_coins))
+        print("Locally stored coins:", len(stored_symbols))
+        print("New coins to process:", len(new_symbols))
 
-    return current_coins
+        processed = 0
+        for symbol in new_symbols:
+            coin = current_coins[symbol]
+            cmc_id = coin["cmc_id"]
+
+            try:
+                coin["subreddit"] = get_subreddit(cmc_id)
+            except Exception as err:
+                # TODO: try looking it up on cryptocompare too, maybe that should be our first source of data
+                print("Error getting subreddit: ", err)
+                self._error("Error getting subreddit: " + err)
+                missing_subreddits.add(symbol)
+
+            db.insert_coin(coin)
+            added_symbols.add(symbol)
+            print("Added coin", symbol)
+
+            processed += 1
+            self._update_progress(processed / len(new_symbols))
+
+            print("Progress", processed, "/", len(new_symbols))
+
+        if len(new_symbols) > 0:
+            print("Total coins", len(current_coins))
+            print("Added", len(added_symbols), "new coins")
+            print("Missing subreddits", len(missing_subreddits))
+        else:
+            print("No new coins to add")
+
+
+class ImportHistoricPricesTask(IngestionTask):
+    def __run(self):
+        print("Running")
+
+
+
+
 
 
 def _outdated_historic(coins, latest_updates):
@@ -150,22 +204,14 @@ def run_all():
     db.create_indexes()
 
     # TODO: do the timing here
-    tasks = {
-        "Update coin list": update_coin_list,
-        "Update historic prices": save_historic_prices,
-        "Update historic reddit stats": save_historic_reddit_stats
-    }
+    tasks = [
+        ImportCoinListTask(),
+        #"Update historic prices": save_historic_prices,
+        #"Update historic reddit stats": save_historic_reddit_stats
+    ]
 
-    for name, task in tasks.items():
-        task_start = timestamp()
-        print("Running ingestion task:", name)
-
-        # TODO: write error and warning count to db
-        errors = task()
-        task_elapsed = timestamp() - task_start
-
-        print("Ingestion task", name, "completed in", task_elapsed / 1000, "seconds")
-        # TODO: write a row to ingestion table (start time, end time, elapsed time, errors, processed, list of import fns run)
+    for task in tasks:
+        task.run()
 
     elapsed_time = timestamp() - start_time
 
