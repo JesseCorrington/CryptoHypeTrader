@@ -31,29 +31,13 @@ def get_prices(symbol):
     return list(MONGO_DB.prices.find({"symbol": symbol}))
 
 
-def get_latest_prices():
-    coins = MONGO_DB.prices.aggregate([
-        {"$sort": { "date": pymongo.DESCENDING}},
-        {"$group": {"_id": "$symbol", "date": {'$first': '$date'}}}
-    ], allowDiskUse=True)
-
-    return cursor_to_dict(coins)
-
-
-def get_latest_social_stats():
-    coins = MONGO_DB.social_stats.aggregate([
+def get_latest(collection):
+    docs = MONGO_DB[collection].aggregate([
         {"$sort": { "date": pymongo.DESCENDING}},
         {"$group": {"_id": "$symbol", "date": {'$last': '$date'}}}
     ], allowDiskUse=True)
 
-    return cursor_to_dict(coins)
-
-def insert_prices(prices):
-    MONGO_DB.prices.insert(prices)
-
-
-def insert_social_stats(stats):
-    MONGO_DB.social_stats.insert(stats)
+    return cursor_to_dict(docs)
 
 
 def insert(collection, items):

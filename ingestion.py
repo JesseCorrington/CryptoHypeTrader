@@ -168,67 +168,60 @@ class ImportCoinListTask(IngestionTask):
             print("No new coins to add")
 
 
-class ImportHistoricPricesTask(IngestionTask):
+class ImportHistoricData(IngestionTask):
+    def __init__(self, collection, get_data):
+        self.__collection = collection
+        self.__get_data = get_data
+
     def _run(self):
         return
 
+    def _outdated(self, coins, latest_updates):
+        coins_to_update = {}
+        # Make a list of coins that don't have up to date historic data
+        for symbol in coins:
+            update_start = datetime.date(2011, 1, 1)
+
+            if symbol in latest_updates:
+                most_recent = latest_updates[symbol]["date"]
+                today = datetime.datetime.today()
+
+                if today - most_recent < datetime.timedelta(days=1):
+                    continue
+
+                update_start = most_recent + datetime.timedelta(days=1)
+
+            coins_to_update[symbol] = update_start
+
+        return coins_to_update
 
 
+    def _run(self):
+        coins = db.get_coins()
+        latest_data = db.get_latest(self.__collection)
+        print("Coins with no", self.__collection, "data", len(coins) - len(latest_data))
 
-def _outdated_historic(coins, latest_updates):
-    coins_to_update = {}
-    # Make a list of coins that don't have up to date historic data
-    for symbol in coins:
-        update_start = datetime.date(2011, 1, 1)
+        coins_to_update = self._outdated(coins, latest_data)
+        print("Coins with out of date", self.__collection, "data:", len(coins_to_update))
+        processed = 0
 
-        if symbol in latest_updates:
-            most_recent = latest_updates[symbol]["date"]
-            today = datetime.datetime.today()
+        for symbol in coins_to_update:
+            coin = coins[symbol]
+            update_start = coins_to_update[symbol]
 
-            if today - most_recent < datetime.timedelta(days=1):
-                continue
+            new_data = self.__get_data(coin, start=update_start)
+            if new_data:
+                for day in new_data:
+                    day["symbol"] = coin["symbol"]
 
-            update_start = most_recent + datetime.timedelta(days=1)
+                self._db_insert(self.__collection, new_data)
 
-        coins_to_update[symbol] = update_start
+                print("Added all historic", self.__collection, "data for", coin["symbol"])
+            else:
+                self._error("no historic data found for {0}, starting on {0}".format(symbol, update_start))
 
-    return coins_to_update
-
-
-def _ingest_historic(name, get_latest_saved, get_new_data, insert_data):
-    coins = db.get_coins()
-    latest_data = get_latest_saved()
-    print("Coins with no", name, "data", len(coins) - len(latest_data))
-
-    coins_to_update = _outdated_historic(coins, latest_data)
-    print("Coins with out of date", name, "data:", len(coins_to_update))
-    processed = 0
-
-    for symbol in coins_to_update:
-        coin = coins[symbol]
-        update_start = coins_to_update[symbol]
-
-        new_data = get_new_data(coin, start=update_start)
-        if new_data:
-            for day in new_data:
-                day["symbol"] = coin["symbol"]
-
-            insert_data(new_data)
-
-            print("Added all historic", name, "data for", coin["symbol"])
-        else:
-            print("Error: no historic data found for", symbol, "starting on", update_start)
-
-        processed += 1
-        print("Progress", processed, "/", len(coins_to_update))
-
-
-def save_historic_prices():
-    _ingest_historic("Prices", db.get_latest_prices, get_historical_prices, db.insert_prices)
-
-
-def save_historic_reddit_stats():
-    _ingest_historic("Reddit stats", db.get_latest_social_stats, get_historical_stats, db.insert_social_stats)
+            processed += 1
+            self._progress(processed, len(coins_to_update))
 
 
 def run_all():
@@ -239,8 +232,8 @@ def run_all():
 
     tasks = [
         ImportCoinListTask(),
-        #"Update historic prices": save_historic_prices,
-        #"Update historic reddit stats": save_historic_reddit_stats
+        ImportHistoricData("prices", get_historical_prices),
+        ImportHistoricData("social_stats", get_historical_stats)
     ]
 
     for task in tasks:
@@ -248,7 +241,7 @@ def run_all():
 
     elapsed_time = timestamp() - start_time
 
-    print("Ingestion complete, elapsed time (ms):", elapsed_time)
+    print("Ingestion complete, elapsed time (seconds):", elapsed_time / 1000)
 
 
 if __name__ == '__main__':
