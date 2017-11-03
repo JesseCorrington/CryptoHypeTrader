@@ -4,14 +4,9 @@ import database as db
 from util import timestamp
 
 
-
-# TODO: move the get url into here, and then we can track how many requests are made too
-
 class IngestionTask:
-
-    # TODO: can ones only seen in base chase be __
     def __init__(self):
-        self._name = "Unknown Task"
+        self.__name = type(self).__name__
         self.__errors = []
         self.__warnings = []
         self.__start_time = None
@@ -24,20 +19,21 @@ class IngestionTask:
 
     def __str__(self):
         return "{0} - running={1}, errors={2}, warnings={3}".\
-            format(self._name, self.__running, self.__errors, self.__warnings)
+            format(self.__name, self.__running, len(self.__errors), len(self.__warnings))
 
     def _error(self, msg):
+        print("Ingestion error:", msg)
         self.__errors.append(msg)
 
     def _fatal(self, msg):
+        print("Ingestion FATAL error:", msg)
         self._error("FATAL - " + msg)
         self.__failed = True
 
     def _warn(self, msg):
+        print("Ingestion warning:", msg)
         self.__warnings.append(msg)
 
-    # TODO: we should be able to get avg time per item
-    # and then do est. time remaining (so we need to set sub items afterall)
     def _progress(self, completed, total):
         self.__percent_done = completed / total
 
@@ -49,21 +45,20 @@ class IngestionTask:
 
         self.__update_db_status()
 
-
     def _run(self):
         raise NotImplementedError("Subclass must implement _run method")
 
-    def _dbinsert(self, collection, items):
-        db.insert(collection, items)
-
-        # TODO: error handling
-        self.__db_inserts += 1
+    def _db_insert(self, collection, items):
+        try:
+            db.insert(collection, items)
+        except Exception as e:
+            self._error("Database insert failed: " + str(e))
 
     def __update_db_status(self):
         # TODO: at start and end, also log start/end memory usage for the db
 
         status = {
-            "name": self._name,
+            "name": self.__name,
             "start_time": self.__start_time,
             "running": self.__running,
             "errors": len(self.__errors),
@@ -71,7 +66,6 @@ class IngestionTask:
             "percent_done": self.__percent_done,
             "failed": self.__failed,
             "db_inserts": self.__db_inserts
-
         }
 
         try:
@@ -81,14 +75,13 @@ class IngestionTask:
                 # TODO: is it better to just replace what is updated in the doc
                 db.MONGO_DB.ingestion_tasks.replace_one({'_id': self.__id}, status)
         except Exception as e:
-            print("Failed to update db status for ingestion tasks", e)
-
+            self._error("Failed to update db status for ingestion tasks: " + str(e))
 
     def run(self):
         self.__running = True
         self.__start_time = timestamp()
 
-        print("Running ingestion task:", self._name)
+        print("Running ingestion task:", self.__name)
         self.__update_db_status()
 
         self._run()
@@ -99,7 +92,7 @@ class IngestionTask:
         elapsed_time = self.__end_time - self.__start_time
 
         sf = "Failure" if self.__failed else "Success"
-        print("Ingestion task {0} ({1})".format(self._name, sf))
+        print("Ingestion task {0} ({1})".format(self.__name, sf))
         print("Elapsed time (seconds):", elapsed_time / 1000)
         print("Database inserts:", self.__db_inserts)
 
@@ -114,20 +107,11 @@ class IngestionTask:
             for w in self.__warnings:
                 print("  *", w)
 
-        # TODO:
-        # write a row to ingestion table (start time, end time,
-        # elapsed time, errors, processed, list of import fns run)
 
-
+# TODO: periodically we need to make sure the reddit's haven't changed
+# add a param that will just force a full update of all and run every few days
 class ImportCoinListTask(IngestionTask):
-    def __init__(self):
-        super().__init__()
-        self._name = "Import-Coins"
-
     def _run(self):
-        # TODO: periodically we need to make sure the reddit's haven't changed
-        # add a param that will just force a full update of all and run every few days
-
         try:
             current_coins = get_coin_list()
         except Exception as e:
@@ -160,12 +144,11 @@ class ImportCoinListTask(IngestionTask):
                 coin["subreddit"] = get_subreddit(cmc_id)
             except Exception as err:
                 # TODO: try looking it up on cryptocompare too, maybe that should be our first source of data
-                print("Error getting subreddit: ", err)
                 self._error("failed to find subreddit link on cmc: " + str(err))
                 missing_subreddits.add(symbol)
 
             coin["_id"] = coin["symbol"]
-            self._dbinsert("coins", coin)
+            self._db_insert("coins", coin)
 
             added_symbols.add(symbol)
 
@@ -208,9 +191,6 @@ def _outdated_historic(coins, latest_updates):
 
 
 def _ingest_historic(name, get_latest_saved, get_new_data, insert_data):
-    # TODO: how to do timing in clean generic way
-    # TODO: write a record to the ingestion collection
-
     coins = db.get_coins()
     latest_data = get_latest_saved()
     print("Coins with no", name, "data", len(coins) - len(latest_data))
