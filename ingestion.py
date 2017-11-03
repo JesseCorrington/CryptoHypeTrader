@@ -5,6 +5,32 @@ from util import timestamp
 from datetime import date
 
 
+class IngestionTask:
+    def __init__(self):
+        self.__name = "Unknown Task"
+        self.__errors = []
+        self.__warnings = []
+        self.__start_time = None
+        self.__end_time = None
+        self.__database_inserts = 0
+        self.__running = False
+
+    def __str__(self):
+        return "{0} {1} {2} {3}".format(self.__name, self.__running, self.__errors, self.__warnings)
+
+    def run(self):
+        self.__running = True
+        self.__start_time = timestamp()
+
+        self.__end_time = timestamp()
+        self.__running = False
+
+
+#class ImportHistoricPricesTask:
+
+
+
+
 # TODO: periodically we need to make sure the reddit's haven't changed
 # add a param that will just force a full update of all and run every few days
 def update_coin_list():
