@@ -2,6 +2,7 @@ from coinmarketcap import *
 from reddit import *
 import database as db
 from util import timestamp
+import sys
 
 
 class IngestionTask:
@@ -16,6 +17,7 @@ class IngestionTask:
         self.__failed = False
         self.__db_inserts = 0
         self.__id = None
+        self.__canceled = False
 
     def __str__(self):
         return "{0} - running={1}, errors={2}, warnings={3}".\
@@ -68,7 +70,8 @@ class IngestionTask:
             "warnings": len(self.__warnings),
             "percent_done": self.__percent_done,
             "failed": self.__failed,
-            "db_inserts": self.__db_inserts
+            "db_inserts": self.__db_inserts,
+            "canceled": self.__canceled
         }
 
         try:
@@ -79,6 +82,13 @@ class IngestionTask:
                 db.MONGO_DB.ingestion_tasks.replace_one({'_id': self.__id}, status)
         except Exception as e:
             self._error("Failed to update db status for ingestion tasks: " + str(e))
+
+    def cancel(self):
+        self.__running = False
+        self.__canceled = True
+        self.__end_time = timestamp()
+
+        self.__update_db_status()
 
     def run(self):
         self.__running = True
@@ -240,7 +250,14 @@ def run_all():
     ]
 
     for task in tasks:
-        task.run()
+        try:
+            task.run()
+        except (KeyboardInterrupt, SystemExit):
+            # TODO: this cleanup is good, but won't work if we crash or are terminated forcefully
+            # prob can just kill any running tasks on startup, assuming we only use one process
+            # but that won't scale to having multiple nodes doing processing
+            task.cancel()
+            sys.exit()
 
     elapsed_time = timestamp() - start_time
 

@@ -20,6 +20,7 @@ class CoinStatsTable extends Table {
             {header: "Start Time", key: "start_time"},
             {header: "End Time", key: "end_time"},
             {header: "Running", key: "running"},
+            {header: "Canceled", key: "canceled"},
             {header: "Errors", key: "errors"},
             {header: "Warnings", key: "warnings"},
             {header: "% Complete", key: "percent_done"},
@@ -32,12 +33,22 @@ class CoinStatsTable extends Table {
     }
 }
 
+// TODO: only set true if one task is running
+taskRunning = true
+var table = undefined
+
 $(document).ready(function () {
     table = new CoinStatsTable("taskTable")
 
-    console.log("fetching ingestion tasks")
+    // TODO: remove this hack to force refresh of data
+    updateTasks()
+    //setInterval(updateTasks, 1000)
+});
+
+// TODO: it's really inefficient to get the whole task list, just to track the running one
+// but good enough for now
+function updateTasks() {
     $.getJSON(url, function (data) {
-        console.log(data)
         table.setData(data._items)
     });
-});
+}

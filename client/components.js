@@ -61,6 +61,10 @@ class Table extends Component {
             for (var c = 0; c < this._cols.length; c++) {
                 var cell = this._dataView[r][this._cols[c].key];
 
+                if(typeof(cell) === "boolean"){
+                    cell = cell.toString()
+                }
+
                 if (this._dataFormats) {
                     var cellFormat = this._dataFormats[this._cols[c].key]
 
