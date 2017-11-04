@@ -1,7 +1,0 @@
-{
-  "reddit_client_id": "Q3-VA-30mpglBg",
-  "reddit_client_secret": "I1-skd0buJ3BHhYjEiF4KtmowKk",
-  "reddit_user_agent": "python-praw",
-  "database_host": "localhost",
-  "database_port": 27017
-}

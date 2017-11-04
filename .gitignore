@@ -41,3 +41,5 @@ tmtagsHistory
 .bundle
 
 mongodb_data
+*config.py
+ingestion/config.py

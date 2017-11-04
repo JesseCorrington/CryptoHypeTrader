@@ -1,13 +1,12 @@
-import praw
-import re
 import datetime
-import database as db
-import util
+import re
+import praw
+from ingestion import util, config
 
 def get_current_stats(subreddit):
-    reddit = praw.Reddit(client_id=CONFIG["reddit_client_id"],
-                         client_secret=CONFIG["reddit_client_secret"],
-                         user_agent=CONFIG["reddit_user_agent"])
+    reddit = praw.Reddit(client_id=config.reddit["client_id"],
+                         client_secret=config.reddit["client_secret"],
+                         user_agent=config.reddit["user_agent"])
 
     try:
         subreddit = reddit.subreddit(subreddit)

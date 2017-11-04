@@ -1,8 +1,10 @@
-from coinmarketcap import *
-from reddit import *
-import database as db
-from util import timestamp
 import sys
+import datetime
+
+from ingestion import database as db
+from ingestion import util
+from ingestion import coinmarketcap as cmc
+from ingestion import reddit
 
 
 class IngestionTask:
@@ -39,7 +41,7 @@ class IngestionTask:
     def _progress(self, completed, total):
         self.__percent_done = completed / total
 
-        elapsed = timestamp() - self.__start_time
+        elapsed = util.timestamp() - self.__start_time
         avg_time_per = elapsed / completed
         est_time_left = (avg_time_per * (total - completed)) / 1000
 
@@ -86,20 +88,20 @@ class IngestionTask:
     def cancel(self):
         self.__running = False
         self.__canceled = True
-        self.__end_time = timestamp()
+        self.__end_time = util.timestamp()
 
         self.__update_db_status()
 
     def run(self):
         self.__running = True
-        self.__start_time = timestamp()
+        self.__start_time = util.timestamp()
 
         print("Running ingestion task:", self._name)
         self.__update_db_status()
 
         self._run()
 
-        self.__end_time = timestamp()
+        self.__end_time = util.timestamp()
         self.__running = False
         self.__percent_done = 1.0
         self.__update_db_status()
@@ -128,7 +130,7 @@ class IngestionTask:
 class ImportCoinList(IngestionTask):
     def _run(self):
         try:
-            current_coins = get_coin_list()
+            current_coins = cmc.get_coin_list()
         except Exception as e:
             self._fatal("get_coin_list failed" + str(e))
             return
@@ -156,9 +158,9 @@ class ImportCoinList(IngestionTask):
             cmc_id = coin["cmc_id"]
 
             try:
-                subreddit = get_subreddit(cmc_id)
+                subreddit = cmc.get_subreddit(cmc_id)
                 if subreddit:
-                    coin["subreddit"] = get_subreddit(cmc_id)
+                    coin["subreddit"] = subreddit
                 else:
                     self._warn("missing subreddit for symbol " + symbol)
             except Exception as err:
@@ -244,15 +246,15 @@ class ImportHistoricData(IngestionTask):
 
 
 def run_all():
-    start_time = timestamp()
+    start_time = util.timestamp()
 
     # TODO: where does this belong
     db.create_indexes()
 
     tasks = [
         ImportCoinList(),
-        ImportHistoricData("prices", get_historical_prices),
-        ImportHistoricData("social_stats", get_historical_stats, {"subreddit": {"$exists": True}})
+        ImportHistoricData("prices", cmc.get_historical_prices),
+        ImportHistoricData("social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
     ]
 
     for task in tasks:
@@ -265,7 +267,7 @@ def run_all():
             task.cancel()
             sys.exit()
 
-    elapsed_time = timestamp() - start_time
+    elapsed_time = util.timestamp() - start_time
 
     print("Ingestion complete, elapsed time (seconds):", elapsed_time / 1000)
 

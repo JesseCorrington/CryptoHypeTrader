@@ -1,26 +1,3 @@
-import urllib.parse
-import urllib.request
-import json
-import time
-
-
-CONFIG = json.loads(open("config.json").read())
-
-
-def geturl_json(url):
-    ret = urllib.request.urlopen(url)
-    return json.loads(ret.read())
-
-
-def geturl_text(url):
-    ret = urllib.request.urlopen(url)
-    return ret.read().decode()
-
-
-def timestamp():
-    return int(round(time.time() * 1000))
-
-
 def get_etherdelta_json(url):
     hdrs = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',

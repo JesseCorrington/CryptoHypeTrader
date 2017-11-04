@@ -1,7 +1,7 @@
+import datetime
 import re
 from bs4 import BeautifulSoup
-import util
-import datetime
+from ingestion import util
 
 
 def get_coin_list():

@@ -1,9 +1,10 @@
-from pymongo import MongoClient
 import pymongo
-from util import *
+from pymongo import MongoClient
 
-MONGO_CLIENT = MongoClient(CONFIG["database_host"], CONFIG["database_port"])
-MONGO_DB = MONGO_CLIENT["hype-db"]
+from ingestion import config
+
+MONGO_CLIENT = MongoClient(config.database["host"], config.database["port"])
+MONGO_DB = MONGO_CLIENT[config.database["name"]]
 
 
 # TODO: need error handling on db stuff
