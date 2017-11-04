@@ -7,8 +7,10 @@ import os
 cwd = os.path.dirname(os.path.realpath(__file__))
 
 domain = {
+    'coins': {},
     'prices': {},
-    'social_stats': {}
+    'ingestion_tasks': {},
+    'social_stats': {},
 }
 
 settings = {

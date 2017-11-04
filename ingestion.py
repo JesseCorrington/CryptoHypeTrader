@@ -57,10 +57,12 @@ class IngestionTask:
 
     def __update_db_status(self):
         # TODO: at start and end, also log start/end memory usage for the db
+        # TODO: should prob have a last update time field too
 
         status = {
             "name": self.__name,
             "start_time": self.__start_time,
+            "end_time": self.__end_time,
             "running": self.__running,
             "errors": len(self.__errors),
             "warnings": len(self.__warnings),
@@ -172,6 +174,7 @@ class ImportHistoricData(IngestionTask):
     def __init__(self, collection, get_data):
         self.__collection = collection
         self.__get_data = get_data
+        super().__init__()
 
     def _run(self):
         return
