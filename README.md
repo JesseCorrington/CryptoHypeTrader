@@ -1,15 +1,31 @@
-# README #
+# Crypto Hype Trader
 
-This README would normally document whatever steps are necessary to get your application up and running.
+Crypto Hype Trader is a project that aims to use social network data to
+predict future cryptocurrency price movements. The cryptocurrency markets are extremely volatile,
+and many coins have low enough volume that prices can swing wildly based on hype, news, or rumours.
+The goal is to collect social network statistics from a variety of sources, (ie: reddit, twitter, bitcointak, 4chan/biz)
+daily and store it in a database. This data can then be used in the development of algorithmic trading strategies
+by either using traditional technical analysis and trading signals or machine learning techniques. Once trading strategies are developed
+they can be backtested to check for profitability.
+ 
 
-### Developer Setup ###
+
+## Developer Setup
 
 
-## Dependencies
+### Dependencies
 * Install [Python](https://www.python.org/downloads/) 3.6 or newer
-* [mongoDB](https://www.mongodb.com/download-center?jmp=nav#community)
+* Install [mongoDB community edition](https://www.mongodb.com/download-center?jmp=nav#community)
 
-## configuration
+* Clone repo and install Python requirements
+```bash
+git clone git@bitbucket.org:jcorrington/cryptohypetrader.git
+cd CryptoHypeTrader
+./scripts/install_requirements.sh
+
+```
+
+### configuration
 Create a file <repo>/ingestion/config.py with the following info
 
 ```python
@@ -26,12 +42,12 @@ database = {
 }
 ```
 
-## Local Database setup
 
+## Usage
 
-# How to run ingestion
+### How to run data ingestion
 
-```
+```bash
 cd <repo>
 ./scripts/rundb.sh
 python_ 
@@ -50,3 +66,7 @@ coinmarketcap.com (API and web scraping)
 Twitter (API)
 bitcointalk
 4chan/biz
+
+
+## References
+[Algorithmic Trading of Cryptocurrency Based on Twitter Sentiment Analysis](http://cs229.stanford.edu/proj2015/029_report.pdf) 
