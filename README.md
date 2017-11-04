@@ -58,13 +58,13 @@ run `python ./ingestion/tasks.py`
 
 ### Data sources
 * [reddit API](https://www.reddit.com/dev/api/)
-* [redditmetrics](redditmetrics.com) (web scraping)
-* [coinmarketcap](coinmarketcap.com) (API and web scraping)
+* [redditmetrics](https://www.redditmetrics.com) (web scraping)
+* [coinmarketcap](https://www.coinmarketcap.com) (API and web scraping)
 
 #### Future data sources
-* [twitter](twitter.com)
-* [bitcointalk.org](bitcointalk.org)
-* [4chan/biz](4chan.org/biz)
+* [twitter](https://www.twitter.com)
+* [bitcointalk.org](https://www.bitcointalk.org)
+* [4chan/biz](https://www.4chan.org/biz)
 
 
 ## References
