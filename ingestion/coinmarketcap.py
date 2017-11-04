@@ -4,23 +4,29 @@ from bs4 import BeautifulSoup
 from ingestion import util
 
 
+# Provides access to coinmarketcap.com data, using the API when available,
+# or web scraping when there is no public API
+
+
 def get_coin_list():
     all_coins = util.geturl_json("https://api.coinmarketcap.com/v1/ticker/")
 
-    symbolMapped = {}
+    symbol_mapped = {}
     for coin in all_coins:
-        symbolMapped[coin["symbol"]] = {
+        symbol_mapped[coin["symbol"]] = {
             "symbol": coin["symbol"],
             "cmc_id": coin["id"],
             "name": coin["name"]
         }
 
-    return symbolMapped
+    return symbol_mapped
 
 
 def get_subreddit(id):
-    html = util.geturl_text("https://coinmarketcap.com/currencies/" + id)
+    # We have to scrape for the reddit url, because there is no api to get it
+    # a simple regex does the trick
 
+    html = util.geturl_text("https://coinmarketcap.com/currencies/" + id)
     pattern = "reddit\\.com\\/r\\/([^/.]*)\\."
     match = re.search(pattern, html)
 
@@ -30,7 +36,7 @@ def get_subreddit(id):
         return None
 
 
-def text_to_float(text):
+def __text_to_float(text):
     text = text.strip()
     text = text.replace(",", "")
 
@@ -42,6 +48,9 @@ def text_to_float(text):
 
 
 def get_historical_prices(coin, start=datetime.date(2011, 1, 1), end=datetime.date.today()):
+    # There's no API to get historic price data, but we can scrape it from a table
+    # on the /historical-data page
+
     date_format = "%Y%m%d"
     s = start.strftime(date_format)
     e = end.strftime(date_format)
@@ -56,7 +65,7 @@ def get_historical_prices(coin, start=datetime.date(2011, 1, 1), end=datetime.da
     table_body = table.find('tbody')
     rows = table_body.find_all('tr')
 
-    historicData = []
+    historic_data = []
 
     for row in rows:
         cols = row.find_all('td')
@@ -66,25 +75,23 @@ def get_historical_prices(coin, start=datetime.date(2011, 1, 1), end=datetime.da
 
         date = cols[0].text.strip()
         date = datetime.datetime.strptime(date, "%b %d, %Y")
+        open = __text_to_float(cols[1].text)
+        high = __text_to_float(cols[2].text)
+        low = __text_to_float(cols[3].text)
+        close = __text_to_float(cols[4].text)
+        volume = __text_to_float(cols[5].text)
+        market_cap = __text_to_float(cols[6].text)
 
-        open = text_to_float(cols[1].text)
-        high = text_to_float(cols[2].text)
-        low = text_to_float(cols[3].text)
-        close = text_to_float(cols[4].text)
-        volume = text_to_float(cols[5].text)
-        marketCap = text_to_float(cols[6].text)
-
-        dailyTicker = {
+        daily_ticker = {
             "date": date,
             "open": open,
             "high": high,
             "low": low,
             "close": close,
             "volume": volume,
-            "marketCap": marketCap
+            "marketCap": market_cap
         }
 
-        historicData.append(dailyTicker)
+        historic_data.append(daily_ticker)
 
-    historicData.sort(key=lambda x: x["date"])
-    return historicData
+    return historic_data

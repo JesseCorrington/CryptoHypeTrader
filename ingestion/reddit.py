@@ -3,6 +3,9 @@ import re
 import praw
 from ingestion import util, config
 
+
+# Provides access to reddit subscriber count numbers
+
 def get_current_stats(subreddit):
     reddit = praw.Reddit(client_id=config.reddit["client_id"],
                          client_secret=config.reddit["client_secret"],
@@ -13,7 +16,7 @@ def get_current_stats(subreddit):
 
         stats = {
             "reddit_subscribers": subreddit.subscribers,
-            "active:": subreddit.accounts_active
+            "reddit_active:": subreddit.accounts_active
         }
 
         return stats
@@ -22,6 +25,9 @@ def get_current_stats(subreddit):
 
 
 def get_historical_stats(coin, start=datetime.date(2011, 1, 1)):
+    # There is no API to get historic subscriber counts, so scrape the data from redditmetrics.com
+    # Once we're collecting data daily, we can just get the live stats from reddit and not use this
+
     url = "http://redditmetrics.com/r/" + coin["subreddit"]
     html = util.geturl_text(url)
 
