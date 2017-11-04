@@ -1,6 +1,3 @@
-var url = "/api/ingestion_tasks"
-
-
 var DISPLAY_FORMATS = {
     start_time: 'DateTime',
     end_time: 'DateTime',
@@ -36,6 +33,9 @@ class CoinStatsTable extends Table {
 // TODO: only set true if one task is running
 taskRunning = true
 var table = undefined
+
+//var running = '/api/ingestion_tasks?where={"running": true}'
+var url = '/api/ingestion_tasks'
 
 $(document).ready(function () {
     table = new CoinStatsTable("taskTable")

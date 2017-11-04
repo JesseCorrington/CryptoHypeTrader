@@ -101,6 +101,8 @@ class IngestionTask:
 
         self.__end_time = timestamp()
         self.__running = False
+        self.__percent_done = 1.0
+        self.__update_db_status()
 
         elapsed_time = self.__end_time - self.__start_time
 
