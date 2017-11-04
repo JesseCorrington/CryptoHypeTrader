@@ -44,28 +44,27 @@ database = {
 
 
 ## Usage
+### Startup the local database
+run `./scripts/rundb.sh`
 
-### How to run data ingestion
 
-```bash
-cd <repo>
-./scripts/rundb.sh
-python_ 
-```
+### Run data ingestion
+run `python ./ingestion/tasks.py`
 
-# Monitoring ingestion tasks
-localhost:5000/admin.txt
+### Monitor ingestion tasks
+* run `python ./webapp/server/dev_server`
+* Point your browser to [localhost:5000/admin.txt](localhost:5000/admin.txt)
 
 
 ### Data sources
-reddit.com (API)
-redditmetrics.com (web scraping)
-coinmarketcap.com (API and web scraping)
+* [reddit API](https://www.reddit.com/dev/api/)
+* [redditmetrics](redditmetrics.com) (web scraping)
+* [coinmarketcap](coinmarketcap.com) (API and web scraping)
 
-# Future data sources
-Twitter (API)
-bitcointalk
-4chan/biz
+#### Future data sources
+* [twitter](twitter.com)
+* [bitcointalk.org](bitcointalk.org)
+* [4chan/biz](4chan.org/biz)
 
 
 ## References
