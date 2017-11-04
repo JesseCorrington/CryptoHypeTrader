@@ -3,7 +3,7 @@
 Crypto Hype Trader is a project that aims to use social network data to
 predict future cryptocurrency price movements. The cryptocurrency markets are extremely volatile,
 and many coins have low enough volume that prices can swing wildly based on hype, news, or rumours.
-The goal is to collect social network statistics from a variety of sources, (ie: reddit, twitter, bitcointak, 4chan/biz)
+The goal is to collect social network statistics from a variety of sources (ie: reddit, twitter, bitcointak, 4chan/biz)
 daily and store it in a database. This data can then be used in the development of algorithmic trading strategies
 by either using traditional technical analysis and trading signals or machine learning techniques. Once trading strategies are developed
 they can be backtested to check for profitability.
@@ -17,7 +17,7 @@ they can be backtested to check for profitability.
 * Install [Python](https://www.python.org/downloads/) 3.6 or newer
 * Install [mongoDB community edition](https://www.mongodb.com/download-center?jmp=nav#community)
 
-* Clone repo and install Python requirements
+* Clone this repo and install Python requirements
 ```bash
 git clone git@bitbucket.org:jcorrington/cryptohypetrader.git
 cd CryptoHypeTrader
@@ -25,8 +25,9 @@ cd CryptoHypeTrader
 
 ```
 
-### configuration
-Create a file <repo>/ingestion/config.py with the following info
+### Configuration
+If you don't already have a reddit api key, you'll need to go to https://www.reddit.com/prefs/apps
+and select "create another app..." to create the keys. Then create a file <repo>/ingestion/config.py with the following info:
 
 ```python
 reddit = {
