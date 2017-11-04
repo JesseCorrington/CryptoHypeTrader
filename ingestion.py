@@ -7,7 +7,7 @@ import sys
 
 class IngestionTask:
     def __init__(self):
-        self.__name = type(self).__name__
+        self._name = type(self).__name__
         self.__errors = []
         self.__warnings = []
         self.__start_time = None
@@ -21,7 +21,7 @@ class IngestionTask:
 
     def __str__(self):
         return "{0} - running={1}, errors={2}, warnings={3}".\
-            format(self.__name, self.__running, len(self.__errors), len(self.__warnings))
+            format(self._name, self.__running, len(self.__errors), len(self.__warnings))
 
     def _error(self, msg):
         print("Ingestion error:", msg)
@@ -62,7 +62,7 @@ class IngestionTask:
         # TODO: should prob have a last update time field too
 
         status = {
-            "name": self.__name,
+            "name": self._name,
             "start_time": self.__start_time,
             "end_time": self.__end_time,
             "running": self.__running,
@@ -94,7 +94,7 @@ class IngestionTask:
         self.__running = True
         self.__start_time = timestamp()
 
-        print("Running ingestion task:", self.__name)
+        print("Running ingestion task:", self._name)
         self.__update_db_status()
 
         self._run()
@@ -107,7 +107,7 @@ class IngestionTask:
         elapsed_time = self.__end_time - self.__start_time
 
         sf = "Failure" if self.__failed else "Success"
-        print("Ingestion task {0} ({1})".format(self.__name, sf))
+        print("Ingestion task {0} ({1})".format(self._name, sf))
         print("Elapsed time (seconds):", elapsed_time / 1000)
         print("Database inserts:", self.__db_inserts)
 
@@ -184,11 +184,13 @@ class ImportCoinList(IngestionTask):
 
 class ImportHistoricData(IngestionTask):
     def __init__(self, collection, get_data, coin_filter=None):
+        super().__init__()
+
         self.__collection = collection
         self.__get_data = get_data
         self.__coin_filter = coin_filter
+        self._name += "-" + collection
 
-        super().__init__()
 
     def _run(self):
         return
@@ -248,8 +250,8 @@ def run_all():
     db.create_indexes()
 
     tasks = [
-        #ImportCoinList(),
-        #ImportHistoricData("prices", get_historical_prices),
+        ImportCoinList(),
+        ImportHistoricData("prices", get_historical_prices),
         ImportHistoricData("social_stats", get_historical_stats, {"subreddit": {"$exists": True}})
     ]
 
