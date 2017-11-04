@@ -17,13 +17,8 @@ def cursor_to_dict(cursor, key="_id"):
     return output
 
 
-def get_coins():
-    coins = MONGO_DB.coins.find()
-    return cursor_to_dict(coins)
-
-
-def get_coins_with_subreddits():
-    coins = MONGO_DB.coins.find({"subreddit": {"$exists": True}})
+def get_coins(filter=None):
+    coins = MONGO_DB.coins.find(filter)
     return cursor_to_dict(coins)
 
 

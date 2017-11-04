@@ -125,7 +125,7 @@ class IngestionTask:
 
 # TODO: periodically we need to make sure the reddit's haven't changed
 # add a param that will just force a full update of all and run every few days
-class ImportCoinListTask(IngestionTask):
+class ImportCoinList(IngestionTask):
     def _run(self):
         try:
             current_coins = get_coin_list()
@@ -183,9 +183,11 @@ class ImportCoinListTask(IngestionTask):
 
 
 class ImportHistoricData(IngestionTask):
-    def __init__(self, collection, get_data):
+    def __init__(self, collection, get_data, coin_filter=None):
         self.__collection = collection
         self.__get_data = get_data
+        self.__coin_filter = coin_filter
+
         super().__init__()
 
     def _run(self):
@@ -212,7 +214,7 @@ class ImportHistoricData(IngestionTask):
 
 
     def _run(self):
-        coins = db.get_coins()
+        coins = db.get_coins(self.__coin_filter)
         latest_data = db.get_latest(self.__collection)
         print("Coins with no", self.__collection, "data", len(coins) - len(latest_data))
 
@@ -246,9 +248,9 @@ def run_all():
     db.create_indexes()
 
     tasks = [
-        ImportCoinListTask(),
-        ImportHistoricData("prices", get_historical_prices),
-        ImportHistoricData("social_stats", get_historical_stats)
+        #ImportCoinList(),
+        #ImportHistoricData("prices", get_historical_prices),
+        ImportHistoricData("social_stats", get_historical_stats, {"subreddit": {"$exists": True}})
     ]
 
     for task in tasks:
