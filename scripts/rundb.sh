@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
-mongod --dbpath ~/dev/CryptoHypeTrader/mongodb_data
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DATADIR=$BASEDIR/../mongodb_data
+mongod --dbpath $DATADIR
