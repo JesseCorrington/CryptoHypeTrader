@@ -54,7 +54,7 @@ run `python ./ingestion/tasks.py`
 
 ### Monitor ingestion tasks
 * run `python ./webapp/server/dev_server`
-* Point your browser to [localhost:5000/admin.txt](localhost:5000/admin.txt)
+* Point your browser to [localhost:5000/admin.txt](http://localhost:5000/admin.html)
 
 
 ### Data sources
