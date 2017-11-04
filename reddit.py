@@ -23,8 +23,6 @@ def get_current_stats(subreddit):
 
 
 def get_historical_stats(coin, start=datetime.date(2011, 1, 1)):
-    # TODO: make use of start date
-
     url = "http://redditmetrics.com/r/" + coin["subreddit"]
     html = util.geturl_text(url)
 
@@ -38,11 +36,13 @@ def get_historical_stats(coin, start=datetime.date(2011, 1, 1)):
 
     stats = []
     for date, total_subs in matches:
-        stats.append({
-            "symbol": coin["symbol"],
-            "date": datetime.datetime.strptime(date, "%Y-%m-%d"),
-            "reddit_subscribers": int(total_subs)
-        })
+        date = datetime.datetime.strptime(date, "%Y-%m-%d")
+        if date >= start:
+            stats.append({
+                "symbol": coin["symbol"],
+                "date": date,
+                "reddit_subscribers": int(total_subs)
+            })
 
     # There are a few duplicate days on reddit metrics, so just average them to fix our data
     # this only seems to have happened once a year, so no big deal

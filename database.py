@@ -29,7 +29,7 @@ def get_prices(symbol):
 def get_latest(collection):
     docs = MONGO_DB[collection].aggregate([
         {"$sort": { "date": pymongo.DESCENDING}},
-        {"$group": {"_id": "$symbol", "date": {'$last': '$date'}}}
+        {"$group": {"_id": "$symbol", "date": {'$first': '$date'}}}
     ], allowDiskUse=True)
 
     return cursor_to_dict(docs)

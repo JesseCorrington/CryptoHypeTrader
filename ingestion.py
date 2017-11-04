@@ -203,7 +203,7 @@ class ImportHistoricData(IngestionTask):
                 most_recent = latest_updates[symbol]["date"]
                 today = datetime.datetime.today()
 
-                if today - most_recent < datetime.timedelta(days=1):
+                if today - most_recent < datetime.timedelta(days=1, hours=12):
                     continue
 
                 update_start = most_recent + datetime.timedelta(days=1)
