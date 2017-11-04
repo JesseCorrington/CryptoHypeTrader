@@ -2,28 +2,51 @@
 
 This README would normally document whatever steps are necessary to get your application up and running.
 
-### What is this repository for? ###
+### Developer Setup ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
-### How do I get set up? ###
+## Dependencies
+* Install [Python](https://www.python.org/downloads/) 3.6 or newer
+* [mongoDB](https://www.mongodb.com/download-center?jmp=nav#community)
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+## configuration
+Create a file <repo>/ingestion/config.py with the following info
 
-### Contribution guidelines ###
+```python
+reddit = {
+    "client_id": "your_id",
+    "client_secret": "your_secret",
+    "user_agent": "python-praw"
+}
 
-* Writing tests
-* Code review
-* Other guidelines
+database = {
+    "host": "localhost",
+    "port": 27017,
+    "name": "hype-db"
+}
+```
 
-### Who do I talk to? ###
+## Local Database setup
 
-* Repo owner or admin
-* Other community or team contact
+
+# How to run ingestion
+
+```
+cd <repo>
+./scripts/rundb.sh
+python_ 
+```
+
+# Monitoring ingestion tasks
+localhost:5000/admin.txt
+
+
+### Data sources
+reddit.com (API)
+redditmetrics.com (web scraping)
+coinmarketcap.com (API and web scraping)
+
+# Future data sources
+Twitter (API)
+bitcointalk
+4chan/biz
