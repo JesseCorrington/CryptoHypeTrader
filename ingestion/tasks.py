@@ -270,7 +270,3 @@ def run_all():
     elapsed_time = util.timestamp() - start_time
 
     print("Ingestion complete, elapsed time (seconds):", elapsed_time / 1000)
-
-
-if __name__ == '__main__':
-    run_all()
