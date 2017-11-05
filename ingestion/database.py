@@ -3,7 +3,11 @@ from pymongo import MongoClient
 
 from ingestion import config
 
-MONGO_CLIENT = MongoClient(config.database["host"], config.database["port"])
+MONGO_CLIENT = MongoClient(
+    config.database["host"],
+    config.database["port"],
+    serverSelectionTimeoutMS=3)
+
 MONGO_DB = MONGO_CLIENT[config.database["name"]]
 
 
