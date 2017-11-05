@@ -246,6 +246,10 @@ class ImportHistoricData(IngestionTask):
 
 
 def run_all():
+    if not db.connected():
+        print("Database not connected, exiting")
+        return
+
     start_time = util.timestamp()
 
     # TODO: where does this belong

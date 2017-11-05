@@ -11,6 +11,15 @@ MONGO_CLIENT = MongoClient(
 MONGO_DB = MONGO_CLIENT[config.database["name"]]
 
 
+def connected():
+    try:
+        MONGO_CLIENT.server_info()
+    except pymongo.errors.ServerSelectionTimeoutError:
+        return False
+    
+    return True
+
+
 # TODO: need error handling on db stuff
 
 def cursor_to_dict(cursor, key="_id"):
