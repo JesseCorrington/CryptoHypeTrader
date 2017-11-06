@@ -6,6 +6,8 @@ from ingestion import config
 MONGO_CLIENT = MongoClient(
     config.database["host"],
     config.database["port"],
+    username=config.database["username"],
+    password=config.database["password"],
     serverSelectionTimeoutMS=3)
 
 MONGO_DB = MONGO_CLIENT[config.database["name"]]
