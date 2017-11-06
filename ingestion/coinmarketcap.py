@@ -2,6 +2,7 @@ import datetime
 import re
 from bs4 import BeautifulSoup
 from ingestion import util
+import datetime
 
 
 # Provides access to coinmarketcap.com data, using the API when available,
@@ -11,6 +12,8 @@ from ingestion import util
 def get_coin_list():
     all_coins = util.geturl_json("https://api.coinmarketcap.com/v1/ticker/")
 
+    # TODO: check for duplicate symbols, a few coins may have them
+    # so we may need our own internal coin id, like cmc uses
     symbol_mapped = {}
     for coin in all_coins:
         symbol_mapped[coin["symbol"]] = {
@@ -20,6 +23,30 @@ def get_coin_list():
         }
 
     return symbol_mapped
+
+
+def get_ticker():
+    all_coins = util.geturl_json("https://api.coinmarketcap.com/v1/ticker/")
+
+    ret = []
+    for coin in all_coins:
+        # This might not be the exact time cmc updated the ticker, but it's close enough
+        # and prevents any potential issues with time zone issues screwing up our dates in the db
+        now = datetime.datetime.today()
+
+        ret.append({
+            "symbol": coin["symbol"],
+            "date": now,
+            "price": __text_to_float(coin["price_usd"]),
+            "price_btc": __text_to_float(coin["price_btc"]),
+            "volume": __text_to_float(coin["24h_volume_usd"]),
+            "market_cap": __text_to_float(coin["market_cap_usd"]),
+            "supply_avail": __text_to_float(coin["available_supply"]),
+            "supply_total": __text_to_float(coin["total_supply"]),
+            "supply_max": __text_to_float(coin["max_supply"]),
+        })
+
+    return ret
 
 
 def get_subreddit(id):
@@ -37,6 +64,9 @@ def get_subreddit(id):
 
 
 def __text_to_float(text):
+    if text is None:
+        return None
+
     text = text.strip()
     text = text.replace(",", "")
 
@@ -47,6 +77,7 @@ def __text_to_float(text):
     return float(text)
 
 
+# TODO: there may be an API on cryptocompare.com to get this data
 def get_historical_prices(coin, start=datetime.datetime(2011, 1, 1), end=datetime.date.today()):
     # There's no API to get historic price data, but we can scrape it from a table
     # on the /historical-data page

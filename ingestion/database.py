@@ -62,7 +62,7 @@ def insert(collection, items):
 
 
 def create_indexes():
-    # TODO: is there any way to used HASHED on symbol, is it faster
+    # TODO: is there any way to use HASHED on symbol, is it faster
 
     MONGO_DB.prices.create_index([("symbol", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
     MONGO_DB.social_stats.create_index([("symbol", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)

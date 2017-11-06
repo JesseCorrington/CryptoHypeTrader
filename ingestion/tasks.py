@@ -55,7 +55,7 @@ class IngestionTask:
     def _db_insert(self, collection, items):
         try:
             db.insert(collection, items)
-            self.__db_inserts +=1
+            self.__db_inserts += len(items)
         except Exception as e:
             self._error("Database insert failed: " + str(e))
 
@@ -245,6 +245,19 @@ class ImportHistoricData(IngestionTask):
             self._progress(processed, len(coins_to_update))
 
 
+class ImportCurrentData(IngestionTask):
+    def __init__(self, collection, get_data):
+        super().__init__()
+
+        self.__collection = collection
+        self.__get_data = get_data
+        self._name += "-" + collection
+
+    def _run(self):
+        data = self.__get_data()
+        self._db_insert(self.__collection, data)
+
+
 def run_all():
     if not db.connected():
         print("Database not connected, exiting")
@@ -259,6 +272,7 @@ def run_all():
         ImportCoinList(),
         ImportHistoricData("prices", cmc.get_historical_prices),
         ImportHistoricData("social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
+        ImportCurrentData("ticker", cmc.get_ticker)
     ]
 
     for task in tasks:
