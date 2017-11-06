@@ -41,7 +41,7 @@ def cursor_to_dict(cursor, key="_id"):
 
 def get_coins(filter=None):
     coins = MONGO_DB.coins.find(filter)
-    return cursor_to_dict(coins)
+    return list(coins)
 
 
 def get_prices(symbol):
@@ -64,5 +64,6 @@ def insert(collection, items):
 def create_indexes():
     # TODO: is there any way to use HASHED on symbol, is it faster
 
-    MONGO_DB.prices.create_index([("symbol", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
-    MONGO_DB.social_stats.create_index([("symbol", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
+    MONGO_DB.coins.create_index([("cmc_id", pymongo.ASCENDING)], unique=True)
+    MONGO_DB.prices.create_index([("cmc_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
+    MONGO_DB.social_stats.create_index([("cmc_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)

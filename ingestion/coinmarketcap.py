@@ -12,17 +12,18 @@ import datetime
 def get_coin_list():
     all_coins = util.geturl_json("https://api.coinmarketcap.com/v1/ticker/")
 
-    # TODO: check for duplicate symbols, a few coins may have them
-    # so we may need our own internal coin id, like cmc uses
-    symbol_mapped = {}
-    for coin in all_coins:
-        symbol_mapped[coin["symbol"]] = {
-            "symbol": coin["symbol"],
-            "cmc_id": coin["id"],
-            "name": coin["name"]
-        }
+    # Note that cryptocurrency symbols are not guaranteed to be unique so, we
+    # use the unique id as the index, rather than the symbol
 
-    return symbol_mapped
+    ret = []
+    for coin in all_coins:
+        ret.append({
+            "cmc_id": coin["id"],
+            "symbol": coin["symbol"],
+            "name": coin["name"]
+        })
+
+    return ret
 
 
 def get_ticker():

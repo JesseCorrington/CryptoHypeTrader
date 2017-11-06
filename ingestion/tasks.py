@@ -135,51 +135,50 @@ class ImportCoinList(IngestionTask):
             self._fatal("get_coin_list failed" + str(e))
             return
 
+        # make a set of the cmc ids we know about in our db
         stored_coins = db.get_coins()
-        stored_symbols = set()
-        added_symbols = set()
-        missing_subreddits = set()
-        new_symbols = set()
+        stored_ids = set()
+        for coin in stored_coins:
+            stored_ids.add(coin["cmc_id"])
 
-        for symbol in stored_coins:
-            stored_symbols.add(symbol)
+        # and a set of the current coin ids on cmc
+        current_ids = set()
+        for coin in current_coins:
+            current_ids.add(coin["cmc_id"])
 
-        for symbol in current_coins:
-            if symbol not in stored_symbols:
-                new_symbols.add(symbol)
+        # make a set of the cmc ids which are not stored and are new to us
+        new_ids = current_ids - stored_ids
 
-        print("Total current coins (coinmarketcap.com):", len(current_coins))
-        print("Locally stored coins:", len(stored_symbols))
-        print("New coins to process:", len(new_symbols))
+        print("Total current coins (coinmarketcap.com):", len(current_ids))
+        print("Locally stored coins:", len(stored_ids))
+        print("New coins to process:", len(new_ids))
 
         processed = 0
-        for symbol in new_symbols:
-            coin = current_coins[symbol]
-            cmc_id = coin["cmc_id"]
+        missing_subreddits = 0
+        new_coins = [x for x in current_coins if x["cmc_id"] in new_ids]
 
+        for coin in new_coins:
             try:
-                subreddit = cmc.get_subreddit(cmc_id)
+                subreddit = cmc.get_subreddit(coin["cmc_id"])
                 if subreddit:
                     coin["subreddit"] = subreddit
                 else:
-                    self._warn("missing subreddit for symbol " + symbol)
+                    self._warn("missing subreddit for symbol " + coin["symbol"])
             except Exception as err:
                 # TODO: try looking it up on cryptocompare too, maybe that should be our first source of data
                 self._error("failed to lookup subreddit on cmc: " + str(err))
-                missing_subreddits.add(symbol)
+                missing_subreddits += 1
 
-            coin["_id"] = coin["symbol"]
             self._db_insert("coins", coin)
 
-            added_symbols.add(symbol)
-
             processed += 1
-            self._progress(processed, len(new_symbols))
+            self._progress(processed, len(new_ids))
 
-        if len(new_symbols) > 0:
+
+        if len(new_ids) > 0:
             print("Total coins", len(current_coins))
-            print("Added", len(added_symbols), "new coins")
-            print("Missing subreddits", len(missing_subreddits))
+            print("Added", len(new_ids), "new coins")
+            print("Missing subreddits", missing_subreddits)
         else:
             print("No new coins to add")
 
@@ -270,9 +269,9 @@ def run_all():
 
     tasks = [
         ImportCoinList(),
-        ImportHistoricData("prices", cmc.get_historical_prices),
-        ImportHistoricData("social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
-        ImportCurrentData("ticker", cmc.get_ticker)
+        #ImportHistoricData("prices", cmc.get_historical_prices),
+        #ImportHistoricData("social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
+        #ImportCurrentData("ticker", cmc.get_ticker)
     ]
 
     for task in tasks:
