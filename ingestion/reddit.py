@@ -24,7 +24,7 @@ def get_current_stats(subreddit):
         return None
 
 
-def get_historical_stats(coin, start=datetime.date(2011, 1, 1)):
+def get_historical_stats(coin, start=datetime.datetime(2011, 1, 1)):
     # There is no API to get historic subscriber counts, so scrape the data from redditmetrics.com
     # Once we're collecting data daily, we can just get the live stats from reddit and not use this
 

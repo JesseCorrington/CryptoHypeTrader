@@ -47,7 +47,7 @@ def __text_to_float(text):
     return float(text)
 
 
-def get_historical_prices(coin, start=datetime.date(2011, 1, 1), end=datetime.date.today()):
+def get_historical_prices(coin, start=datetime.datetime(2011, 1, 1), end=datetime.date.today()):
     # There's no API to get historic price data, but we can scrape it from a table
     # on the /historical-data page
 

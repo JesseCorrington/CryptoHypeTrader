@@ -201,7 +201,7 @@ class ImportHistoricData(IngestionTask):
         coins_to_update = {}
         # Make a list of coins that don't have up to date historic data
         for symbol in coins:
-            update_start = datetime.date(2011, 1, 1)
+            update_start = datetime.datetime(2011, 1, 1)
 
             if symbol in latest_updates:
                 most_recent = latest_updates[symbol]["date"]
