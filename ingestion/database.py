@@ -3,11 +3,17 @@ from pymongo import MongoClient
 
 from ingestion import config
 
+username = None
+password = None
+if "username" in config.database and "password" in config.database:
+    username = config.database["username"]
+    password = config.database["password"]
+
 MONGO_CLIENT = MongoClient(
     config.database["host"],
     config.database["port"],
-    username=config.database["username"],
-    password=config.database["password"],
+    username=username,
+    password=password,
     serverSelectionTimeoutMS=3)
 
 MONGO_DB = MONGO_CLIENT[config.database["name"]]
