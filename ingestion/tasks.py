@@ -280,8 +280,7 @@ class ImportCurrentData(IngestionTask):
         data = self.__get_data()
         self._db_insert(self.__collection, data)
 
-
-def run_all():
+def __run_tasks(tasks):
     if not db.connected():
         print("Database not connected, exiting")
         return
@@ -291,12 +290,6 @@ def run_all():
     # TODO: where does this belong
     db.create_indexes()
 
-    tasks = [
-        ImportCoinList(),
-        ImportHistoricData("historic_prices", cmc.get_historical_prices),
-        ImportHistoricData("historic_social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
-        #ImportCurrentData("ticker", cmc.get_ticker)
-    ]
 
     for task in tasks:
         try:
@@ -311,3 +304,20 @@ def run_all():
     elapsed_time = util.timestamp() - start_time
 
     print("Ingestion complete, elapsed time (seconds):", elapsed_time / 1000)
+
+
+def import_historic_data():
+    tasks = [
+        ImportCoinList(),
+        ImportHistoricData("historic_prices", cmc.get_historical_prices),
+        ImportHistoricData("historic_social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
+    ]
+    __run_tasks(tasks)
+
+
+def import_current_data():
+    tasks = [
+        ImportCoinList(),
+        ImportCurrentData("ticker", cmc.get_ticker)
+    ]
+    __run_tasks(tasks)
