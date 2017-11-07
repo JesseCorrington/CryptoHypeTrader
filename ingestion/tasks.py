@@ -1,10 +1,11 @@
 import sys
 import datetime
+from urllib.parse import urlparse
 
 from ingestion import database as db
 from ingestion import util
 from ingestion import coinmarketcap as cmc
-from ingestion import reddit
+from ingestion import cryptocompare as cc
 
 
 class IngestionTask:
@@ -60,8 +61,7 @@ class IngestionTask:
             self._error("Database insert failed: " + str(e))
 
     def __update_db_status(self):
-        # TODO: at start and end, also log start/end memory usage for the db
-        # TODO: should prob have a last update time field too
+        now = datetime.datetime.today()
 
         status = {
             "name": self._name,
@@ -73,7 +73,8 @@ class IngestionTask:
             "percent_done": self.__percent_done,
             "failed": self.__failed,
             "db_inserts": self.__db_inserts,
-            "canceled": self.__canceled
+            "canceled": self.__canceled,
+            "last_update": now
         }
 
         try:
@@ -126,7 +127,8 @@ class IngestionTask:
 
 
 # TODO: periodically we need to make sure the reddit's haven't changed
-# add a param that will just force a full update of all and run every few days
+# or check if a reddit link that was missing has been added
+# add a param that will just force a full update of all and run once per day
 class ImportCoinList(IngestionTask):
     def _run(self):
         try:
@@ -135,45 +137,66 @@ class ImportCoinList(IngestionTask):
             self._fatal("get_coin_list failed" + str(e))
             return
 
-        # make a set of the cmc ids we know about in our db
         stored_coins = db.get_coins()
-        stored_ids = set()
-        for coin in stored_coins:
-            stored_ids.add(coin["cmc_id"])
 
-        # and a set of the current coin ids on cmc
-        current_ids = set()
-        for coin in current_coins:
-            current_ids.add(coin["cmc_id"])
-
-        # make a set of the cmc ids which are not stored and are new to us
+        # Find the set of ids that we don't have in the database yet
+        current_ids = util.list_to_set(current_coins, "cmc_id")
+        stored_ids = util.list_to_set(stored_coins, "cmc_id")
         new_ids = current_ids - stored_ids
+
+        # Find the coins with missing subreddits, so we can look again for them
+        missing_subreddit_ids = set()
+        for coin in stored_coins:
+            if "subreddit" not in coin:
+                missing_subreddit_ids.add(coin["cmc_id"])
 
         print("Total current coins (coinmarketcap.com):", len(current_ids))
         print("Locally stored coins:", len(stored_ids))
         print("New coins to process:", len(new_ids))
+        print("Coins without subreddit links:", len(missing_subreddit_ids))
 
         processed = 0
         missing_subreddits = 0
         new_coins = [x for x in current_coins if x["cmc_id"] in new_ids]
 
+        cc_coins = cc.get_coin_list()
+        cc_by_symbol = {}
+        for coin in cc_coins:
+            cc_by_symbol[coin["symbol"]] = coin
+
         for coin in new_coins:
+            symbol = coin["symbol"]
+
             try:
                 subreddit = cmc.get_subreddit(coin["cmc_id"])
                 if subreddit:
                     coin["subreddit"] = subreddit
                 else:
-                    self._warn("missing subreddit for symbol " + coin["symbol"])
+                    # Reddit link isn't on coinmarketcap, so check cryptocompare
+
+                    # Note that technically there is a very minor issue here in that
+                    # symbols aren't truly unique and cryptocompare treats them as unique,
+                    # whereas coinmarketcap doesn't. This means there is the tiniest potential
+                    # this line looks up the wrong coin. In practice though, this likely will
+                    # never happen as only a couple coins share symbols
+
+                    stats = cc.get_social_stats(cc_by_symbol[symbol]["cc_id"])
+                    if "Reddit" in stats and "link" in stats["Reddit"] and stats["Reddit"]["link"]:
+                        subreddit = stats["Reddit"]["link"]
+                        subreddit = urlparse(subreddit).path.replace("/r/", "").replace("/", "")
+                        coin["subreddit"] = subreddit
+                    else:
+                        self._warn("missing subreddit for symbol " + symbol)
+
             except Exception as err:
-                # TODO: try looking it up on cryptocompare too, maybe that should be our first source of data
                 self._error("failed to lookup subreddit on cmc: " + str(err))
                 missing_subreddits += 1
 
+            coin["_id"] = db.next_sequence_id("coins")
             self._db_insert("coins", coin)
 
             processed += 1
             self._progress(processed, len(new_ids))
-
 
         if len(new_ids) > 0:
             print("Total coins", len(current_coins))
@@ -191,10 +214,6 @@ class ImportHistoricData(IngestionTask):
         self.__get_data = get_data
         self.__coin_filter = coin_filter
         self._name += "-" + collection
-
-
-    def _run(self):
-        return
 
     def _outdated(self, coins, latest_updates):
         coins_to_update = {}
@@ -215,16 +234,15 @@ class ImportHistoricData(IngestionTask):
 
         return coins_to_update
 
-
     def _run(self):
         coins = db.get_coins(self.__coin_filter)
         latest_data = db.get_latest(self.__collection)
-        print("Coins with no", self.__collection, "data", len(coins) - len(latest_data))
-
         coins_to_update = self._outdated(coins, latest_data)
-        print("Coins with out of date", self.__collection, "data:", len(coins_to_update))
-        processed = 0
 
+        print("Coins with no {0} data: {1}".format(self.__collection, len(coins) - len(latest_data)))
+        print("Coins with out of date {0} data: {1}".format(self.__collection, len(coins_to_update)))
+
+        processed = 0
         for symbol in coins_to_update:
             coin = coins[symbol]
             update_start = coins_to_update[symbol]
@@ -232,6 +250,7 @@ class ImportHistoricData(IngestionTask):
             new_data = self.__get_data(coin, start=update_start)
             if new_data:
                 for day in new_data:
+                    day["coin_id"] = coin["_id"]
                     day["symbol"] = coin["symbol"]
 
                 self._db_insert(self.__collection, new_data)

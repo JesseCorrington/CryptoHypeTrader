@@ -2,6 +2,7 @@ import pymongo
 from pymongo import MongoClient
 
 from ingestion import config
+from ingestion import util
 
 username = None
 password = None
@@ -61,9 +62,19 @@ def insert(collection, items):
     MONGO_DB[collection].insert(items)
 
 
+def next_sequence_id(name):
+    ret = MONGO_DB["seq_counters"].find_one_and_update(
+        {'_id': name},
+        {'$inc': {'seq': 1}},
+        upsert=True,
+        return_document=pymongo.ReturnDocument.AFTER)
+
+    return ret["seq"]
+
+
 def create_indexes():
     # TODO: is there any way to use HASHED on symbol, is it faster
 
     MONGO_DB.coins.create_index([("cmc_id", pymongo.ASCENDING)], unique=True)
-    MONGO_DB.prices.create_index([("cmc_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
-    MONGO_DB.social_stats.create_index([("cmc_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
+    MONGO_DB.prices.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
+    MONGO_DB.social_stats.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
