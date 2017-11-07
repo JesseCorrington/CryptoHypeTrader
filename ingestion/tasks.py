@@ -159,6 +159,10 @@ class ImportCoinList(IngestionTask):
         missing_subreddits = 0
         new_coins = [x for x in current_coins if x["cmc_id"] in new_ids]
 
+        if len(new_coins) == 0:
+            print("No new coins to add")
+            return
+
         cc_coins = cc.get_coin_list()
         cc_by_symbol = {}
         for coin in cc_coins:
@@ -198,12 +202,10 @@ class ImportCoinList(IngestionTask):
             processed += 1
             self._progress(processed, len(new_ids))
 
-        if len(new_ids) > 0:
-            print("Total coins", len(current_coins))
-            print("Added", len(new_ids), "new coins")
-            print("Missing subreddits", missing_subreddits)
-        else:
-            print("No new coins to add")
+        print("Total coins", len(current_coins))
+        print("Added", len(new_ids), "new coins")
+        print("Missing subreddits", missing_subreddits)
+
 
 
 class ImportHistoricData(IngestionTask):
