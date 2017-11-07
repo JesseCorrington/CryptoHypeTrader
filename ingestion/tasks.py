@@ -293,8 +293,8 @@ def run_all():
 
     tasks = [
         ImportCoinList(),
-        ImportHistoricData("prices", cmc.get_historical_prices),
-        ImportHistoricData("social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
+        ImportHistoricData("historic_prices", cmc.get_historical_prices),
+        ImportHistoricData("historic_social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
         #ImportCurrentData("ticker", cmc.get_ticker)
     ]
 
