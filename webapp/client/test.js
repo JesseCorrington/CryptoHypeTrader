@@ -18,6 +18,23 @@ function buildSingleChart() {
     });
 }
 
+function normalize(arr) {
+    // y = (x - min) / (max - min)
+    min = 100000000
+    max = -1000000000
+    for (var i = 0; i < arr.length; i++) {
+        var x = arr[i][1]
+        if (x < min) min = x;
+        if (x > max) max = x;
+    }
+
+    for (var i = 0; i < arr.length; i++) {
+        var x = arr[i][1]
+        arr[i][1] = (x - min) / (max - min)
+    }
+}
+
+
 function buildCompareChart() {
     Highcharts.stockChart('container', {
 
@@ -57,25 +74,32 @@ function buildCompareChart() {
 }
 
 
-function get_stats() {
-    var url = "/api/social_stats" + '?where={"symbol": "eth"}'
+var symbol = "NEO"
+
+function get_stats(coinId, symbol) {
+    var url = '/api/social_stats?where={"coin_id": ' + coinId + '}&sort=date'
 
     $.getJSON(url, function (data) {
-        var symbol = data._items[0].symbol
-
         series = []
 
-        for (var i in data._items) {
+        for (var i = 1; i < data._items.length; i++) {
             var date = new Date(data._items[i].date).getTime()
-            var price = parseFloat(data._items[i].subscribers)
+            var subs = parseFloat(data._items[i].reddit_subscribers)
+            var prevSubs = parseFloat(data._items[i - 1].reddit_subscribers)
 
-            series.push([date, price])
+            //growth = subs - prevSubs;
+            //growth /= 1000
+
+            series.push([date, subs])
         }
 
+        normalize(series);
         chartData.push({
             name: symbol + " reddit subs",
             data: series
         });
+
+        //buildSingleChart()
 
         pending--;
         if (pending == 0) {
@@ -85,12 +109,10 @@ function get_stats() {
 }
 
 
-function get_prices() {
-    var url = "/api/prices" + '?where={"symbol": "eth"}'
+function get_prices(coinId, symbol) {
+    var url = '/api/prices?where={"coin_id": '+ coinId +'}&sort=date'
 
     $.getJSON(url, function (data) {
-        var symbol = data._items[0].symbol
-
         series = []
 
         for (var i in data._items) {
@@ -100,11 +122,14 @@ function get_prices() {
             series.push([date, price])
         }
 
+        normalize(series);
         chartData.push({
             name: symbol + " price",
             data: series
         });
 
+        buildSingleChart();
+        
         pending--;
         if (pending == 0) {
             buildCompareChart()
@@ -112,5 +137,20 @@ function get_prices() {
     });
 }
 
-get_stats()
-get_prices()
+
+function get_coins() {
+    var url = '/api/coins';
+    $.getJSON(url, function (coins) {
+        console.log(coins);
+
+        coins = coins._items;
+
+        btc = coins[0];
+
+        get_stats(btc._id);
+        get_prices(btc._id);
+    });
+}
+
+
+get_coins();
