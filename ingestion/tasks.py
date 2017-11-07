@@ -135,7 +135,7 @@ class ImportCoinList(IngestionTask):
         try:
             current_coins = cmc.get_coin_list()
         except Exception as e:
-            self._fatal("get_coin_list failed" + str(e))
+            self._fatal("get_coin_list failed " + str(e))
             return
 
         stored_coins = db.get_coins()

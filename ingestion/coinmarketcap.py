@@ -10,7 +10,13 @@ import datetime
 
 
 def get_coin_list():
-    all_coins = util.geturl_json("https://api.coinmarketcap.com/v1/ticker/")
+    # limit defaults to 100, but coinmarketcap doesn't have a max for the limit,
+    # so just set it super high to make sure we get all the coins
+    # this may eventually fail if they put a max for limit, so we'll check for that
+    # error after the request
+
+    limit = 10000
+    all_coins = util.geturl_json("https://api.coinmarketcap.com/v1/ticker/?limit=" + str(limit))
 
     # Note that cryptocurrency symbols are not guaranteed to be unique so, we
     # use the unique id as the index, rather than the symbol
@@ -22,6 +28,11 @@ def get_coin_list():
             "symbol": coin["symbol"],
             "name": coin["name"]
         })
+
+    # make sure limit is working as expected
+    # 1200 is a sanity check, roughly the number of coins as of 10/2017
+    if len(ret) < 1200 or len(ret) == limit:
+        raise Exception("cmc limit not working as expected, this likely means they changed the API to have a limit max")
 
     return ret
 
