@@ -1,8 +1,6 @@
 import urllib.parse
 import urllib.request
 import json
-import time
-
 
 
 # TODO: allow these to take query params, and replace usage of ? in code
@@ -14,11 +12,6 @@ def geturl_json(url):
 def geturl_text(url):
     ret = urllib.request.urlopen(url)
     return ret.read().decode("utf-8")
-
-
-# TODO: get rid of this and use datatime objects everything for consistency
-def timestamp():
-    return int(round(time.time() * 1000))
 
 
 def list_to_set(l, key):

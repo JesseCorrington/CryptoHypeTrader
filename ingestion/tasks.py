@@ -43,11 +43,12 @@ class IngestionTask:
     def _progress(self, completed, total):
         self.__percent_done = completed / total
 
-        elapsed = util.timestamp() - self.__start_time
+        now = datetime.datetime.today()
+        elapsed = now - self.__start_time
         avg_time_per = elapsed / completed
-        est_time_left = (avg_time_per * (total - completed)) / 1000
+        est_time_left = (avg_time_per * (total - completed))
 
-        print("Progress {0}/{1} - est. time remaining {2} seconds".format(completed, total, est_time_left))
+        print("Progress {0}/{1} - est. time remaining {2}".format(completed, total, est_time_left))
 
         self.__update_db_status()
 
@@ -90,13 +91,13 @@ class IngestionTask:
     def cancel(self):
         self.__running = False
         self.__canceled = True
-        self.__end_time = util.timestamp()
+        self.__end_time = datetime.datetime.now()
 
         self.__update_db_status()
 
     def run(self):
         self.__running = True
-        self.__start_time = util.timestamp()
+        self.__start_time = datetime.datetime.now()
 
         print("Running ingestion task:", self._name)
         self.__update_db_status()
@@ -112,7 +113,7 @@ class IngestionTask:
 
         sf = "Failure" if self.__failed else "Success"
         print("Ingestion task {0} ({1})".format(self._name, sf))
-        print("Elapsed time (seconds):", elapsed_time / 1000)
+        print("Elapsed time:", elapsed_time)
         print("Database inserts:", self.__db_inserts)
 
         ec = len(self.__errors)
@@ -153,8 +154,8 @@ class ImportCoinList(IngestionTask):
 
         print("Total current coins (coinmarketcap.com):", len(current_ids))
         print("Locally stored coins:", len(stored_ids))
+        print("Locally stored coins without subreddit links:", len(missing_subreddit_ids))
         print("New coins to process:", len(new_ids))
-        print("Coins without subreddit links:", len(missing_subreddit_ids))
 
         processed = 0
         missing_subreddits = 0
@@ -285,11 +286,10 @@ def __run_tasks(tasks):
         print("Database not connected, exiting")
         return
 
-    start_time = util.timestamp()
+    start_time = datetime.datetime.now()
 
     # TODO: where does this belong
     db.create_indexes()
-
 
     for task in tasks:
         try:
@@ -303,7 +303,7 @@ def __run_tasks(tasks):
 
     elapsed_time = util.timestamp() - start_time
 
-    print("Ingestion complete, elapsed time (seconds):", elapsed_time / 1000)
+    print("Ingestion complete, elapsed time:", elapsed_time)
 
 
 def import_historic_data():
