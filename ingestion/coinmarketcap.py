@@ -121,7 +121,7 @@ def get_historical_prices(coin, start=datetime.datetime(2011, 1, 1), end=datetim
             "low": low,
             "close": close,
             "volume": volume,
-            "marketCap": market_cap
+            "market_cap": market_cap
         }
 
         historic_data.append(daily_ticker)
