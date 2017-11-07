@@ -44,7 +44,6 @@ def get_historical_stats(coin, start=datetime.datetime(2011, 1, 1)):
         date = datetime.datetime.strptime(date, "%Y-%m-%d")
         if date >= start:
             stats.append({
-                "symbol": coin["symbol"],
                 "date": date,
                 "reddit_subscribers": int(total_subs)
             })

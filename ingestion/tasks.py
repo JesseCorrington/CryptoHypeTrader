@@ -6,6 +6,7 @@ from ingestion import database as db
 from ingestion import util
 from ingestion import coinmarketcap as cmc
 from ingestion import cryptocompare as cc
+from ingestion import reddit
 
 
 class IngestionTask:
@@ -261,7 +262,7 @@ class ImportHistoricData(IngestionTask):
 
                 print("Added all historic", self.__collection, "data for", coin["symbol"])
             else:
-                self._error("no historic data found for {0}, starting on {0}".format(symbol, update_start))
+                self._error("no historic data found for {0}, starting on {1}".format(coin["symbol"], update_start))
 
             processed += 1
             self._progress(processed, len(coins_to_update))
@@ -293,7 +294,7 @@ def run_all():
     tasks = [
         ImportCoinList(),
         ImportHistoricData("prices", cmc.get_historical_prices),
-        #ImportHistoricData("social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
+        ImportHistoricData("social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
         #ImportCurrentData("ticker", cmc.get_ticker)
     ]
 
