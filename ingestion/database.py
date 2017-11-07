@@ -45,14 +45,10 @@ def get_coins(filter=None):
     return list(coins)
 
 
-def get_prices(symbol):
-    return list(MONGO_DB.prices.find({"symbol": symbol}))
-
-
 def get_latest(collection):
     docs = MONGO_DB[collection].aggregate([
         {"$sort": { "date": pymongo.DESCENDING}},
-        {"$group": {"_id": "$symbol", "date": {'$first': '$date'}}}
+        {"$group": {"_id": "$coin_id", "date": {'$first': '$date'}}}
     ], allowDiskUse=True)
 
     return cursor_to_dict(docs)

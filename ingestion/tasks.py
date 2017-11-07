@@ -220,11 +220,12 @@ class ImportHistoricData(IngestionTask):
     def _outdated(self, coins, latest_updates):
         coins_to_update = {}
         # Make a list of coins that don't have up to date historic data
-        for symbol in coins:
+        for coin in coins:
+            coin_id = coin["_id"]
             update_start = datetime.datetime(2011, 1, 1)
 
-            if symbol in latest_updates:
-                most_recent = latest_updates[symbol]["date"]
+            if coin_id in latest_updates:
+                most_recent = latest_updates[coin_id]["date"]
                 today = datetime.datetime.today()
 
                 if today.day - most_recent.day <= 1:
@@ -232,7 +233,7 @@ class ImportHistoricData(IngestionTask):
 
                 update_start = most_recent + datetime.timedelta(days=1)
 
-            coins_to_update[symbol] = update_start
+            coins_to_update[coin_id] = update_start
 
         return coins_to_update
 
@@ -245,15 +246,16 @@ class ImportHistoricData(IngestionTask):
         print("Coins with out of date {0} data: {1}".format(self.__collection, len(coins_to_update)))
 
         processed = 0
-        for symbol in coins_to_update:
-            coin = coins[symbol]
-            update_start = coins_to_update[symbol]
+        coins = util.list_to_dict(coins, "_id")
+
+        for coin_id in coins_to_update:
+            coin = coins[coin_id]
+            update_start = coins_to_update[coin_id]
 
             new_data = self.__get_data(coin, start=update_start)
             if new_data:
                 for day in new_data:
                     day["coin_id"] = coin["_id"]
-                    day["symbol"] = coin["symbol"]
 
                 self._db_insert(self.__collection, new_data)
 
@@ -290,7 +292,7 @@ def run_all():
 
     tasks = [
         ImportCoinList(),
-        #ImportHistoricData("prices", cmc.get_historical_prices),
+        ImportHistoricData("prices", cmc.get_historical_prices),
         #ImportHistoricData("social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
         #ImportCurrentData("ticker", cmc.get_ticker)
     ]
