@@ -69,4 +69,8 @@ run `python ./ingestion/tasks.py`
 
 
 ## References
-[Algorithmic Trading of Cryptocurrency Based on Twitter Sentiment Analysis](http://cs229.stanford.edu/proj2015/029_report.pdf) 
+* [Algorithmic Trading of Cryptocurrency Based on Twitter Sentiment Analysis](http://cs229.stanford.edu/proj2015/029_report.pdf) 
+* [Sentiment Analysis of Twitter Data for Predicting Stock Market Movements](https://arxiv.org/pdf/1610.09225.pdf)
+* [Twitter mood predicts the stock market](https://arxiv.org/pdf/1010.3003.pdf)
+* [Automated Bitcoin Trading via Machine Learning Algorithms](http://ai2-s2-pdfs.s3.amazonaws.com/e065/3631b4a476abf5276a264f6bbff40b132061.pdf)
+* [Bayesian regression and Bitcoin](https://arxiv.org/pdf/1410.1231v1.pdf)
