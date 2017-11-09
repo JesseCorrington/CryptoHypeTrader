@@ -1,27 +1,36 @@
 import sys
 import datetime
 from urllib.parse import urlparse
-
 from ingestion import database as db
 from ingestion import util
 from ingestion import coinmarketcap as cmc
 from ingestion import cryptocompare as cc
-from ingestion import reddit
 
 
 class IngestionTask:
     def __init__(self):
         self._name = type(self).__name__
-        self.__errors = []
-        self.__warnings = []
+        self.__id = None
+
+        # Status
+        self.__running = False
         self.__start_time = None
         self.__end_time = None
-        self.__running = False
         self.__percent_done = 0.0
         self.__failed = False
-        self.__db_inserts = 0
-        self.__id = None
         self.__canceled = False
+
+        # Error tracking
+        self.__errors = []
+        self.__errors_http = []
+        self.__warnings = []
+
+        # Profiling
+        self.__db_inserts = 0
+        self.__http_requests = 0
+
+        # TODO: print http errors and request count at the end
+        # and also update them when we insert our task into the db
 
     def __str__(self):
         return "{0} - running={1}, errors={2}, warnings={3}".\
@@ -62,6 +71,17 @@ class IngestionTask:
         except Exception as e:
             self._error("Database insert failed: " + str(e))
 
+    def _get_data(self, datasource):
+        self.__http_requests += 1
+
+        try:
+            data = datasource.get()
+            return data
+        except Exception as err:
+            # TODO: it would be nice to distinguish between http and parse/format errors
+            self.__errors_http.append(str(err))
+            return None
+
     def __update_db_status(self):
         now = datetime.datetime.today()
 
@@ -71,10 +91,12 @@ class IngestionTask:
             "end_time": self.__end_time,
             "running": self.__running,
             "errors": len(self.__errors),
+            "errors_http": len(self.__errors_http),
             "warnings": len(self.__warnings),
             "percent_done": self.__percent_done,
             "failed": self.__failed,
             "db_inserts": self.__db_inserts,
+            "http_requests": self.__http_requests,
             "canceled": self.__canceled,
             "last_update": now
         }
@@ -91,20 +113,20 @@ class IngestionTask:
     def cancel(self):
         self.__running = False
         self.__canceled = True
-        self.__end_time = datetime.datetime.now()
+        self.__end_time = datetime.datetime.today()
 
         self.__update_db_status()
 
     def run(self):
         self.__running = True
-        self.__start_time = datetime.datetime.now()
+        self.__start_time = datetime.datetime.today()
 
         print("Running ingestion task:", self._name)
         self.__update_db_status()
 
         self._run()
 
-        self.__end_time = util.timestamp()
+        self.__end_time = datetime.datetime.today()
         self.__running = False
         self.__percent_done = 1.0
         self.__update_db_status()
@@ -134,7 +156,7 @@ class IngestionTask:
 class ImportCoinList(IngestionTask):
     def _run(self):
         try:
-            current_coins = cmc.get_coin_list()
+            current_coins = self._get_data(cmc.CoinList())
         except Exception as e:
             self._fatal("get_coin_list failed " + str(e))
             return
@@ -165,20 +187,20 @@ class ImportCoinList(IngestionTask):
             print("No new coins to add")
             return
 
-        cc_coins = cc.get_coin_list()
+        cc_coins = self._get_data(cc.CoinList())
         cc_by_symbol = {}
         for coin in cc_coins:
             cc_by_symbol[coin["symbol"]] = coin
 
         for coin in new_coins:
-            symbol = coin["symbol"]
-
             try:
-                subreddit = cmc.get_subreddit(coin["cmc_id"])
+                subreddit = self._get_data(cmc.SubredditName(coin["cmc_id"]))
                 if subreddit:
                     coin["subreddit"] = subreddit
                 else:
                     # Reddit link isn't on coinmarketcap, so check cryptocompare
+
+                    # TODO: we could at least log an error if the names don't match after looking up by symbol
 
                     # Note that technically there is a very minor issue here in that
                     # symbols aren't truly unique and cryptocompare treats them as unique,
@@ -186,7 +208,10 @@ class ImportCoinList(IngestionTask):
                     # this line looks up the wrong coin. In practice though, this likely will
                     # never happen as only a couple coins share symbols
 
-                    stats = cc.get_social_stats(cc_by_symbol[symbol]["cc_id"])
+                    symbol = coin["symbol"]
+                    cc_id = cc_by_symbol[symbol]["cc_id"]
+                    stats = self._get_data(cc.SocialStats(cc_id))
+
                     if "Reddit" in stats and "link" in stats["Reddit"] and stats["Reddit"]["link"]:
                         subreddit = stats["Reddit"]["link"]
                         subreddit = urlparse(subreddit).path.replace("/r/", "").replace("/", "")
@@ -286,7 +311,7 @@ def __run_tasks(tasks):
         print("Database not connected, exiting")
         return
 
-    start_time = datetime.datetime.now()
+    start_time = datetime.datetime.today()
 
     # TODO: where does this belong
     db.create_indexes()
@@ -301,7 +326,8 @@ def __run_tasks(tasks):
             task.cancel()
             sys.exit()
 
-    elapsed_time = util.timestamp() - start_time
+    end_time = datetime.datetime.today()
+    elapsed_time = end_time - start_time
 
     print("Ingestion complete, elapsed time:", elapsed_time)
 
@@ -309,8 +335,8 @@ def __run_tasks(tasks):
 def import_historic_data():
     tasks = [
         ImportCoinList(),
-        ImportHistoricData("historic_prices", cmc.get_historical_prices),
-        ImportHistoricData("historic_social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
+        #ImportHistoricData("historic_prices", cmc.get_historical_prices),
+        #ImportHistoricData("historic_social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
     ]
     __run_tasks(tasks)
 

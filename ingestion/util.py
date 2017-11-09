@@ -1,17 +1,33 @@
-import urllib.parse
-import urllib.request
-import json
+class Singleton(object):
+    _shared_state = {}
+
+    def __new__(cls, *args, **kwargs):
+        obj = super(Singleton, cls).__new__(cls, *args, **kwargs)
+        obj.__dict__ = cls._shared_state
+        return obj
 
 
-# TODO: allow these to take query params, and replace usage of ? in code
-def geturl_json(url):
-    ret = urllib.request.urlopen(url)
-    return json.loads(ret.read().decode("utf-8"))
+class Event(object):
+    pass
 
 
-def geturl_text(url):
-    ret = urllib.request.urlopen(url)
-    return ret.read().decode("utf-8")
+class Observable(object):
+    def __init__(self):
+        self.__callbacks = []
+
+    def subscribe(self, callback):
+        self.__callbacks.append(callback)
+
+    def unsubscribe(self, callback):
+        self.__callbacks.remove(callback)
+
+    def _fire(self, **attrs):
+        e = Event()
+        e.source = self
+        for k, v in attrs.items():
+            setattr(e, k, v)
+        for fn in self.__callbacks:
+            fn(e)
 
 
 def list_to_set(l, key):

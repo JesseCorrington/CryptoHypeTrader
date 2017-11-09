@@ -1,36 +1,41 @@
-from ingestion import util
-
-COIN_LIST_URL = "https://min-api.cryptocompare.com/data/all/coinlist"
-SOCIAL_STATS_URL = "https://www.cryptocompare.com/api/data/socialstats/"
+from ingestion import datasource as ds
 
 
-def __api_request(url):
-    data = util.geturl_json(url)
-    if "Response" not in data:
-        raise Exception("ERROR: invalid response format")
+class CryptoCompareDataSource(ds.DataSource):
+    def validate(self, data):
+        if "Response" not in data:
+            raise Exception("ERROR: invalid response format")
 
-    if "Data"not in data:
-        raise Exception("ERROR: no response data")
+        if "Data" not in data:
+            raise Exception("ERROR: no response data")
 
-    if data["Response"] != "Success":
-        raise Exception("ERROR: invalid response data", data["Response"])
+        if data["Response"] != "Success":
+            raise Exception("ERROR: response not success {0}".format(data["Response"]))
 
-    return data["Data"]
-
-
-def get_coin_list():
-    all_coins = __api_request(COIN_LIST_URL)
-
-    ret = []
-    for symbol, coin in all_coins.items():
-        ret.append({
-            "cc_id": coin["Id"],
-            "symbol": coin["Symbol"],
-            "name": coin["Name"]
-        })
-
-    return ret
+    def pre_parse(self, data):
+        return data["Data"]
 
 
-def get_social_stats(cc_id):
-    return __api_request(SOCIAL_STATS_URL + "?id=" + cc_id)
+# TODO: there should be some slick way to make this a backup source for cmc.CoinList
+class CoinList(CryptoCompareDataSource):
+    def __init__(self):
+        super().__init__("https://min-api.cryptocompare.com/data/all/coinlist")
+
+    def parse(self, all_coins):
+        ret = []
+        for symbol, coin in all_coins.items():
+            ret.append({
+                "cc_id": coin["Id"],
+                "symbol": coin["Symbol"],
+                "name": coin["Name"]
+            })
+
+        return ret
+
+
+class SocialStats(CryptoCompareDataSource):
+    def __init__(self, cc_id):
+        super().__init__("https://www.cryptocompare.com/api/data/socialstats/", {"id": cc_id})
+
+    def parse(self, social_stats):
+        return social_stats
