@@ -15,4 +15,3 @@ class TestCryptoCompare(TestCase):
 
         for expected in ["General", "Twitter", "Reddit", "Facebook", "CodeRepository"]:
             assert(expected in data)
-

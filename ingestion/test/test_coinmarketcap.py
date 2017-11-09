@@ -34,3 +34,7 @@ class TestCoinMarketCap(TestCase):
 
         self.assertTrue(end == prices[0]["date"])
         self.assertTrue(start == prices[-1]["date"])
+
+    def test_ticker(self):
+        current_prices = cmc.Ticker().get()
+        self.assertTrue(len(current_prices) > 1200)
