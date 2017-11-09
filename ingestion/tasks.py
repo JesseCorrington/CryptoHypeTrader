@@ -136,18 +136,17 @@ class IngestionTask:
         sf = "Failure" if self.__failed else "Success"
         print("Ingestion task {0} ({1})".format(self._name, sf))
         print("Elapsed time:", elapsed_time)
+        print("HTTP requests:", self.__http_requests)
         print("Database inserts:", self.__db_inserts)
 
-        ec = len(self.__errors)
-        wc = len(self.__warnings)
-        if ec > 0:
-            print("errors ({0}):".format(ec))
-            for e in self.__errors:
-                print("  *", e)
-        if wc > 0:
-            print("warnings ({0}):".format(wc))
-            for w in self.__warnings:
-                print("  *", w)
+        def print_errors(name, error_list):
+            print("{0} ({1}):".format(error_list, len(error_list)))
+            for msg in error_list:
+                print("  *", msg)
+
+        print_errors("Errors", self.__errors)
+        print_errors("HTTP Errors", self.__errors_http)
+        print_errors("Warnings", self.__warnings)
 
 
 # TODO: periodically we need to make sure the reddit's haven't changed
