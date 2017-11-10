@@ -1,6 +1,9 @@
 <head>
     <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/series-label.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
 
     <script src = "util.js"></script>
     <script src = "components.js"></script>
@@ -22,9 +25,20 @@
     <table id="runningTasksTable" class="tableclass"}></table>
 </div>
 
+
+
 <div>
     Completed Tasks
     <table id="completedTasksTable" class="tableclass"}></table>
+</div>
+
+
+<div>
+    Select Tasks
+<select id="taskSelect">
+</select>
+
+<div id="chart"></div>
 </div>
 
 
