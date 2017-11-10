@@ -279,7 +279,7 @@ class ImportHistoricData(IngestionTask):
             coin = coins[coin_id]
             update_start = coins_to_update[coin_id]
 
-            new_data = self.__data_source(coin, start=update_start).get()
+            new_data = self._get_data(self.__data_source(coin, start=update_start))
             if new_data:
                 for day in new_data:
                     day["coin_id"] = coin["_id"]
