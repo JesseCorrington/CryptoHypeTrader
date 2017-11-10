@@ -23,8 +23,8 @@ def get_current_stats(subreddit):
 
 
 class HistoricalStats(ds.DataSource):
-    def __init__(self, subreddit, start=datetime.datetime(2011, 1, 1)):
-        url = "http://redditmetrics.com/r/" + subreddit
+    def __init__(self, coin, start=datetime.datetime(2011, 1, 1)):
+        url = "http://redditmetrics.com/r/" + coin["subreddit"]
         super().__init__(url, format="text")
         self._start = start
 

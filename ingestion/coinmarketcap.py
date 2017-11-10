@@ -82,13 +82,13 @@ class SubredditName(ds.DataSource):
 
 
 class HistoricalPrices(ds.DataSource):
-    def __init__(self, cmc_id, start=datetime.datetime(2011, 1, 1), end=datetime.datetime.today()):
+    def __init__(self, coin, start=datetime.datetime(2011, 1, 1), end=datetime.datetime.today()):
         date_format = "%Y%m%d"
         params = {
             "start": start.strftime(date_format),
             "end": end.strftime(date_format)
         }
-        url = "https://coinmarketcap.com/currencies/" + cmc_id + "/historical-data"
+        url = "https://coinmarketcap.com/currencies/" + coin["cmc_id"] + "/historical-data"
 
         super().__init__(url, params, "soup")
 

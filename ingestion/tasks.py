@@ -141,7 +141,7 @@ class IngestionTask:
         print("Database inserts:", self.__db_inserts)
 
         def print_errors(name, error_list):
-            print("{0} ({1}):".format(error_list, len(error_list)))
+            print("{0} ({1}):".format(name, len(error_list)))
             for msg in error_list:
                 print("  *", msg)
 
@@ -236,11 +236,11 @@ class ImportCoinList(IngestionTask):
 
 
 class ImportHistoricData(IngestionTask):
-    def __init__(self, collection, get_data, coin_filter=None):
+    def __init__(self, collection, data_source, coin_filter=None):
         super().__init__()
 
         self.__collection = collection
-        self.__get_data = get_data
+        self.__data_source = data_source
         self.__coin_filter = coin_filter
         self._name += "-" + collection
 
@@ -279,7 +279,7 @@ class ImportHistoricData(IngestionTask):
             coin = coins[coin_id]
             update_start = coins_to_update[coin_id]
 
-            new_data = self.__get_data(coin, start=update_start)
+            new_data = self.__data_source(coin, start=update_start).get()
             if new_data:
                 for day in new_data:
                     day["coin_id"] = coin["_id"]
@@ -335,7 +335,7 @@ def __run_tasks(tasks):
 def import_historic_data():
     tasks = [
         ImportCoinList(),
-        #ImportHistoricData("historic_prices", cmc.get_historical_prices),
+        ImportHistoricData("historic_prices", cmc.HistoricalPrices),
         ImportHistoricData("historic_social_stats", reddit.HistoricalStats, {"subreddit": {"$exists": True}})
     ]
 
