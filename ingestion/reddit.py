@@ -59,4 +59,3 @@ class HistoricalStats(ds.DataSource):
                 prev = item
 
         return stats
-
