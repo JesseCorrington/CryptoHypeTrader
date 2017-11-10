@@ -5,6 +5,7 @@ from ingestion import database as db
 from ingestion import util
 from ingestion import coinmarketcap as cmc
 from ingestion import cryptocompare as cc
+from ingestion import reddit
 
 
 class IngestionTask:
@@ -335,8 +336,9 @@ def import_historic_data():
     tasks = [
         ImportCoinList(),
         #ImportHistoricData("historic_prices", cmc.get_historical_prices),
-        #ImportHistoricData("historic_social_stats", reddit.get_historical_stats, {"subreddit": {"$exists": True}})
+        ImportHistoricData("historic_social_stats", reddit.HistoricalStats, {"subreddit": {"$exists": True}})
     ]
+
     __run_tasks(tasks)
 
 

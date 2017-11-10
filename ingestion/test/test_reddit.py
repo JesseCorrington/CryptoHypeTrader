@@ -2,7 +2,7 @@ from unittest import TestCase
 from ingestion import reddit
 from datetime import datetime, timedelta
 
-class TestCoinMarketCap(TestCase):
+class TestReddit(TestCase):
     def test_get_historical_stats(self):
         stats = reddit.HistoricalStats("bitcoin").get()
 
@@ -22,3 +22,9 @@ class TestCoinMarketCap(TestCase):
         prices.sort(key=lambda x: x["date"], reverse=True)
 
         self.assertTrue(start == prices[-1]["date"])
+
+    def test_get_current_stats(self):
+        stats = reddit.get_current_stats("bitcoin")
+        print(stats)
+        self.assertTrue(stats["reddit_subscribers"] > 1)
+        self.assertTrue(stats["reddit_active"] > 1)

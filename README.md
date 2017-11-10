@@ -69,6 +69,7 @@ run `python ./ingestion/tasks.py`
 
 
 ## References
+* [pytrader](https://github.com/owocki/pytrader)
 * [Algorithmic Trading of Cryptocurrency Based on Twitter Sentiment Analysis](http://cs229.stanford.edu/proj2015/029_report.pdf) 
 * [Sentiment Analysis of Twitter Data for Predicting Stock Market Movements](https://arxiv.org/pdf/1610.09225.pdf)
 * [Twitter mood predicts the stock market](https://arxiv.org/pdf/1010.3003.pdf)

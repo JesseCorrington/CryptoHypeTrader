@@ -12,17 +12,14 @@ def get_current_stats(subreddit):
                          client_secret=config.reddit["client_secret"],
                          user_agent=config.reddit["user_agent"])
 
-    try:
-        subreddit = reddit.subreddit(subreddit)
+    subreddit = reddit.subreddit(subreddit)
 
-        stats = {
-            "reddit_subscribers": subreddit.subscribers,
-            "reddit_active:": subreddit.accounts_active
-        }
+    stats = {
+        "subscribers": subreddit.subscribers,
+        "active:": subreddit.accounts_active
+    }
 
-        return stats
-    except Exception as err:
-        return None
+    return stats
 
 
 class HistoricalStats(ds.DataSource):
