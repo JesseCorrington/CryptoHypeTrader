@@ -1,6 +1,7 @@
 import sys
 import datetime
-from urllib.parse import urlparse
+import urllib
+
 from ingestion import database as db
 from ingestion import util
 from ingestion import coinmarketcap as cmc
@@ -41,6 +42,10 @@ class IngestionTask:
         print("Ingestion error:", msg)
         self.__errors.append(msg)
 
+    def _error_http(self, msg):
+        print("Ingestion HTTP error:", msg)
+        self.__errors_http.append(msg)
+
     def _fatal(self, msg):
         print("Ingestion FATAL error:", msg)
         self._error("FATAL - " + msg)
@@ -68,23 +73,33 @@ class IngestionTask:
     def _db_insert(self, collection, items):
         try:
             db.insert(collection, items)
-            self.__db_inserts += len(items)
+            count = len(items) if isinstance(items, list) else 1
+            self.__db_inserts += count
+        # TODO: catch correct exception type
         except Exception as e:
+            # TODO: we should keep a seperate count of db errors
             self._error("Database insert failed: " + str(e))
 
-    def _get_data(self, datasource):
+    def _get_data(self, datasource, arg=None):
         self.__http_requests += 1
 
+        data = None
         try:
-            data = datasource.get()
+            data = datasource(arg) if callable(datasource) else datasource.get()
             return data
-        except Exception as err:
-            # TODO: it would be nice to distinguish between http and parse/format errors
-            self.__errors_http.append(str(err))
+        except (urllib.error.URLError, urllib.error.HTTPError) as err:
+            self._error_http(str(err))
             return None
+        except Exception as err:
+            self._error(str(err))
+
+        return data
+
 
     def __update_db_status(self):
         now = datetime.datetime.today()
+
+        # TODO: consider saving all the error messages too
 
         status = {
             "name": self._name,
@@ -125,6 +140,7 @@ class IngestionTask:
         print("Running ingestion task:", self._name)
         self.__update_db_status()
 
+        # TODO: should prob wrap in a try catch block
         self._run()
 
         self.__end_time = datetime.datetime.today()
@@ -214,7 +230,7 @@ class ImportCoinList(IngestionTask):
 
                     if "Reddit" in stats and "link" in stats["Reddit"] and stats["Reddit"]["link"]:
                         subreddit = stats["Reddit"]["link"]
-                        subreddit = urlparse(subreddit).path.replace("/r/", "").replace("/", "")
+                        subreddit = urllib.urlparse(subreddit).path.replace("/r/", "").replace("/", "")
                         coin["subreddit"] = subreddit
                     else:
                         self._warn("missing subreddit for symbol " + symbol)
@@ -294,17 +310,45 @@ class ImportHistoricData(IngestionTask):
             self._progress(processed, len(coins_to_update))
 
 
-class ImportCurrentData(IngestionTask):
-    def __init__(self, collection, get_data):
-        super().__init__()
-
-        self.__collection = collection
-        self.__get_data = get_data
-        self._name += "-" + collection
-
+class ImportPrices(IngestionTask):
     def _run(self):
-        data = self.__get_data()
-        self._db_insert(self.__collection, data)
+        data = self._get_data(cmc.Ticker())
+
+        # Need to map our ids to coin market cap ids
+        coins = db.get_coins()
+        id_map = {}
+        for coin in coins:
+            id_map[coin["cmc_id"]] = coin["_id"]
+
+        for coin in data:
+            coin["coin_id"] = id_map[coin["cmc_id"]]
+            del coin["cmc_id"]
+
+        self._db_insert("prices", data)
+
+
+class ImportRedditStats(IngestionTask):
+    def _run(self):
+        coins = db.get_coins({"subreddit": {"$exists": True}})
+
+        processed = 0
+        for coin in coins:
+            subreddit = coin["subreddit"]
+            stats = self._get_data(reddit.get_current_stats, subreddit)
+
+            if stats:
+                today = datetime.datetime.today()
+
+                stats["date"] = today
+                stats["coin_id"] = coin["_id"]
+
+                self._db_insert("reddit_stats", stats)
+            else:
+                print("Failed to get reddit stats for r/{0}".format(subreddit))
+
+            processed += 1
+            self._progress(processed, len(coins))
+
 
 def __run_tasks(tasks):
     if not db.connected():
@@ -345,6 +389,7 @@ def import_historic_data():
 def import_current_data():
     tasks = [
         ImportCoinList(),
-        ImportCurrentData("ticker", cmc.get_ticker)
+        ImportPrices(),
+        ImportRedditStats(),
     ]
     __run_tasks(tasks)
