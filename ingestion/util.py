@@ -11,25 +11,6 @@ class Event(object):
     pass
 
 
-class Observable(object):
-    def __init__(self):
-        self.__callbacks = []
-
-    def subscribe(self, callback):
-        self.__callbacks.append(callback)
-
-    def unsubscribe(self, callback):
-        self.__callbacks.remove(callback)
-
-    def _fire(self, **attrs):
-        e = Event()
-        e.source = self
-        for k, v in attrs.items():
-            setattr(e, k, v)
-        for fn in self.__callbacks:
-            fn(e)
-
-
 def list_to_set(l, key):
     ret = set()
     for i in l:

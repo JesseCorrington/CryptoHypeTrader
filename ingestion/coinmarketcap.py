@@ -50,7 +50,7 @@ class Ticker(CoinList):
                 return float(s) if s else None
 
             ret.append({
-                "symbol": coin["symbol"],
+                "cmc_id": coin["id"],
                 "date": today,
                 "price": to_float(coin["price_usd"]),
                 "price_btc": to_float(coin["price_btc"]),

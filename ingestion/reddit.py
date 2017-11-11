@@ -13,10 +13,9 @@ def get_current_stats(subreddit):
                          user_agent=config.reddit["user_agent"])
 
     subreddit = reddit.subreddit(subreddit)
-
     stats = {
         "subscribers": subreddit.subscribers,
-        "active:": subreddit.accounts_active
+        "active": subreddit.accounts_active
     }
 
     return stats
