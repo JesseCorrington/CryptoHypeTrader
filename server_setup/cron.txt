@@ -1,2 +1,2 @@
-0 0 * * * /usr/bin/python3 ~/cryptohypetrader/main.py -m historic >> ~/cryptohypetrader/ingestion_historic.log
+0 */6 * * *  /usr/bin/python3 ~/cryptohypetrader/main.py -m historic >> ~/cryptohypetrader/ingestion_historic.log
 0 * * * * /usr/bin/python3 ~/cryptohypetrader/main.py -m current >> ~/cryptohypetrader/ingestion_current.log
