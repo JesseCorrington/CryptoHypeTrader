@@ -49,6 +49,17 @@ def json_response(items, key_filter=None, filter_out=False):
     return JSONEncoder().encode(filtered)
 
 
+def time_series(items, key):
+    if not isinstance(items, list):
+        items = list(items)
+
+    series = []
+    for item in items:
+        series.append([item["date"], item[key]])
+
+    return series
+
+
 app = flask.Flask(__name__)
 
 username = None
@@ -96,6 +107,7 @@ def get_coins():
     return json_response(coins, {"cmc_id"}, True)
 
 
+
 @app.route('/api/historic_prices')
 def get_historic_prices():
     coin_id = int(flask.request.args.get("coin_id"))
@@ -104,13 +116,8 @@ def get_historic_prices():
 
     # TODO: need ways to get candle data too
 
-    prices = list(prices)
-
-    ret = []
-    for price in prices:
-        ret.append([price["date"], price["close"]])
-
-    return json_response(ret)
+    series = time_series(prices, "close")
+    return json_response(series)
 
 
 @app.route('/api/historic_social_stats')
@@ -119,13 +126,9 @@ def get_historic_social_stats():
 
     stats = MONGO_DB.historic_social_stats.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
 
-    stats = list(stats)
+    series = time_series(stats, "reddit_subscribers")
+    return json_response(series)
 
-    ret = []
-    for s in stats:
-        ret.append([s["date"], s["reddit_subscribers"]])
-
-    return json_response(ret)
 
 @app.route('/api/prices')
 def get_prices():
@@ -133,7 +136,18 @@ def get_prices():
 
     prices = MONGO_DB.prices.find({"coin_id": coin_id})
 
-    return json_response(prices, {"_id", "coin_id"}, True)
+    series = time_series(prices, "price")
+    return json_response(series)
+
+
+@app.route('/api/reddit_stats')
+def get_reddit_stats():
+    coin_id = int(flask.request.args.get("coin_id"))
+
+    prices = MONGO_DB.reddit_stats.find({"coin_id": coin_id})
+
+    series = time_series(prices, "subscribers")
+    return json_response(series)
 
 
 app.run()
