@@ -107,6 +107,13 @@ def get_coins():
     return json_response(coins, {"cmc_id"}, True)
 
 
+@app.route('/api/coin_summaries')
+def get_coin_summaries():
+    # coin list joined with latest price and stats table
+    # as well as 1, 3, and 7 day stats for growth of price and other stats
+    return None
+
+
 
 @app.route('/api/historic_prices')
 def get_historic_prices():
