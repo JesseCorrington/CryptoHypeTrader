@@ -3,20 +3,6 @@ console.log("starting client app");
 var pending = 2
 var chartData = []
 
-function buildSingleChart() {
-    Highcharts.stockChart('container', {
-
-        rangeSelector: {
-            selected: 1
-        },
-
-        title: {
-            text: 'subscribers'
-        },
-
-        series: chartData
-    });
-}
 
 function normalize(arr) {
     // y = (x - min) / (max - min)
@@ -42,22 +28,8 @@ function buildCompareChart() {
             selected: 4
         },
 
-        yAxis: {
-            labels: {
-                formatter: function () {
-                    return (this.value > 0 ? ' + ' : '') + this.value + '%';
-                }
-            },
-            plotLines: [{
-                value: 0,
-                width: 2,
-                color: 'silver'
-            }]
-        },
-
         plotOptions: {
             series: {
-                compare: 'percent',
                 showInNavigator: true
             }
         },
@@ -74,32 +46,17 @@ function buildCompareChart() {
 }
 
 
-var symbol = "NEO"
-
 function get_stats(coinId, symbol) {
-    var url = '/api/social_stats?where={"coin_id": ' + coinId + '}&sort=date'
+    var url = '/api/historic_social_stats?coin_id=' + coinId;
 
     $.getJSON(url, function (data) {
-        series = []
-
-        for (var i = 1; i < data._items.length; i++) {
-            var date = new Date(data._items[i].date).getTime()
-            var subs = parseFloat(data._items[i].reddit_subscribers)
-            var prevSubs = parseFloat(data._items[i - 1].reddit_subscribers)
-
-            //growth = subs - prevSubs;
-            //growth /= 1000
-
-            series.push([date, subs])
-        }
-
+        series = data;
         normalize(series);
+
         chartData.push({
             name: symbol + " reddit subs",
             data: series
         });
-
-        //buildSingleChart()
 
         pending--;
         if (pending == 0) {
@@ -110,17 +67,10 @@ function get_stats(coinId, symbol) {
 
 
 function get_prices(coinId, symbol) {
-    var url = '/api/prices?where={"coin_id": '+ coinId +'}&sort=date'
+    var url = '/api/historic_prices?coin_id=' + coinId;
 
     $.getJSON(url, function (data) {
-        series = []
-
-        for (var i in data._items) {
-            var date = new Date(data._items[i].date).getTime()
-            var price = parseFloat(data._items[i].close)
-
-            series.push([date, price])
-        }
+        series = data;
 
         normalize(series);
         chartData.push({
@@ -128,8 +78,6 @@ function get_prices(coinId, symbol) {
             data: series
         });
 
-        buildSingleChart();
-        
         pending--;
         if (pending == 0) {
             buildCompareChart()
@@ -137,19 +85,37 @@ function get_prices(coinId, symbol) {
     });
 }
 
+var coins = undefined
 
 function get_coins() {
     var url = '/api/coins';
-    $.getJSON(url, function (coins) {
-        console.log(coins);
+    $.getJSON(url, function (data) {
+        coins = data;
 
-        coins = coins._items;
-
-        btc = coins[0];
-
-        get_stats(btc._id);
-        get_prices(btc._id);
+        setSymbol("BTC");
     });
+}
+
+
+function setSymbol(symbol) {
+    if (!symbol) {
+        symbol = $("#symbol").val();
+    }
+
+    pending = 2
+    chartData = []
+
+    // TODO: make a by symbol map, and deal with duplicate symbols too
+    var coin_id = undefined;
+    for (var i = 0; i < coins.length; i++) {
+        if (symbol === coins[i].symbol) {
+            coin_id = coins[i]._id;
+            break;
+        }
+    }
+
+    get_stats(coin_id, symbol);
+    get_prices(coin_id, symbol);
 }
 
 
