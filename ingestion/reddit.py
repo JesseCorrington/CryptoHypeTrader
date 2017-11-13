@@ -1,11 +1,88 @@
 import datetime
 import re
 import praw
-from ingestion import util, config
+import textblob
+import numpy as np
+
+from ingestion import config
 from ingestion import datasource as ds
 
 
 # Provides access to reddit subscriber count numbers
+
+
+def get_avg_sentiment(subreddit):
+    # Calculate the current average sentiment of the top reddit posts, defined as follows
+    # sentiment(subreddit) = avg(sentiment(s1), sentiment(s2), ... sentiment(sn), weights=submission_scores)
+    # sentiment(reddit_submission) = avg(sentiment(title), sentiment(body), sentiment(comments)
+    # sentiment(comments) = avg(sentiment(c1), sentiment(c2), ... sentiment(cn), weights=comment_scores)
+
+    reddit = praw.Reddit(client_id=config.reddit["client_id"],
+                         client_secret=config.reddit["client_secret"],
+                         user_agent=config.reddit["user_agent"])
+
+    subreddit = reddit.subreddit(subreddit)
+
+    comment_limit = 20
+    submission_limit = 20
+
+    def comments_polarity(comments):
+        comment_polarities = []
+        comment_scores = []
+
+        for comment in comments[:comment_limit]:
+            comment_polarity = textblob.TextBlob(comment.body).polarity
+
+            comment_polarities.append(comment_polarity)
+            comment_scores.append(comment.score)
+
+        # TODO: get comment replies too
+
+        # Now calculate a weighted avg for all comment polarities, using score as weight factor
+        return np.average(comment_polarities, weights=comment_scores)
+
+    def submission_polarity(submission):
+        polarities_to_avg = []
+        polarities_to_avg.append(textblob.TextBlob(submission.title).polarity)
+
+        if submission.selftext:
+            # Average the polarity from title and body
+            polarities_to_avg.append(textblob.TextBlob(submission.selftext).polarity)
+
+        # Ignore any comments with no/negative score
+        comments = [x for x in submission.comments if hasattr(x, "score") and x.score > 0]
+
+        if len(comments) > 0:
+            polarities_to_avg.append(comments_polarity(comments))
+
+        return np.average(polarities_to_avg)
+
+    # Need to a bit to the submission limit here, beceause we'll likely get back some
+    # stickied submissions that we ignore below
+    limit = submission_limit + 5
+    submission_set = {
+        "hot": subreddit.hot(limit=limit),
+        "new": subreddit.new(limit=limit),
+        "rising": subreddit.rising(limit=limit)
+    }
+
+    polarities = []
+    scores = []
+    avg_polarities = {}
+
+    for name, submissions in submission_set.items():
+        # Ignore stickied posts and limit submissions
+        submissions = [x for x in submissions if not x.stickied and x.score > 0]
+        submissions = submissions[:submission_limit]
+
+        for submission in submissions:
+            polarities.append(submission_polarity(submission))
+            scores.append(submission.score)
+
+        avg_polarities[name] = np.average(polarities, weights=scores)
+
+    return avg_polarities
+
 
 def get_current_stats(subreddit):
     reddit = praw.Reddit(client_id=config.reddit["client_id"],

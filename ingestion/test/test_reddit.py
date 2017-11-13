@@ -2,9 +2,12 @@ from unittest import TestCase
 from ingestion import reddit
 from datetime import datetime, timedelta
 
+
 class TestReddit(TestCase):
     def test_get_historical_stats(self):
-        stats = reddit.HistoricalStats("bitcoin").get()
+        coin = {"subreddit": "bitcoin"}
+
+        stats = reddit.HistoricalStats(coin).get()
 
         stats.sort(key=lambda x: x["date"], reverse=True)
 
@@ -18,13 +21,20 @@ class TestReddit(TestCase):
 
         # test using a date range
         start = datetime(2017, 1, 1)
-        prices = reddit.HistoricalStats("bitcoin", start).get()
+        prices = reddit.HistoricalStats(coin, start).get()
         prices.sort(key=lambda x: x["date"], reverse=True)
 
         self.assertTrue(start == prices[-1]["date"])
 
     def test_get_current_stats(self):
         stats = reddit.get_current_stats("bitcoin")
-        print(stats)
-        self.assertTrue(stats["reddit_subscribers"] > 1)
-        self.assertTrue(stats["reddit_active"] > 1)
+        self.assertTrue(stats["subscribers"] > 1)
+        self.assertTrue(stats["active"] > 1)
+
+    def test_get_sentiment(self):
+        polarities = reddit.get_avg_sentiment("ethereum")
+        print(polarities)
+
+        self.assertTrue(-1.0 <= polarities["hot"] <= 1.0)
+        self.assertTrue(-1.0 <= polarities["new"] <= 1.0)
+        self.assertTrue(-1.0 <= polarities["rising"] <= 1.0)
