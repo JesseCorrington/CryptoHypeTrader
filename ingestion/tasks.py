@@ -85,9 +85,11 @@ class IngestionTask:
 
         data = None
         try:
+            # TODO: allow this to call an async task
             data = datasource(arg) if callable(datasource) else datasource.get()
             return data
         except (urllib.error.URLError, urllib.error.HTTPError) as err:
+            # TODO: log that url
             self._error_http(str(err))
             return None
         except Exception as err:
@@ -328,13 +330,23 @@ class ImportPrices(IngestionTask):
 
 
 class ImportRedditStats(IngestionTask):
+    def __init__(self, collection, get_stats):
+        super().__init__()
+
+        self.__collection = collection
+        self.__get_stats = get_stats
+        self._name += "-" + collection
+
     def _run(self):
         coins = db.get_coins({"subreddit": {"$exists": True}})
 
         processed = 0
         for coin in coins:
             subreddit = coin["subreddit"]
-            stats = self._get_data(reddit.get_current_stats, subreddit)
+
+            # TODO: this feels a little odd not being a proper data source, but okay for now
+
+            stats = self._get_data(self.__get_stats, subreddit)
 
             if stats:
                 today = datetime.datetime.today()
@@ -342,7 +354,7 @@ class ImportRedditStats(IngestionTask):
                 stats["date"] = today
                 stats["coin_id"] = coin["_id"]
 
-                self._db_insert("reddit_stats", stats)
+                self._db_insert(self.__collection, stats)
             else:
                 print("Failed to get reddit stats for r/{0}".format(subreddit))
 
@@ -390,6 +402,7 @@ def import_current_data():
     tasks = [
         ImportCoinList(),
         ImportPrices(),
-        ImportRedditStats(),
+        ImportRedditStats("reddit_stats", reddit.get_current_stats),
+        ImportRedditStats("reddit_sentiment", reddit.get_avg_sentiment)
     ]
     __run_tasks(tasks)
