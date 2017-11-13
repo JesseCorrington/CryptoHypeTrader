@@ -11,7 +11,7 @@ from ingestion import datasource as ds
 # Provides access to reddit subscriber count numbers
 
 
-def get_avg_sentiment(subreddit):
+def get_avg_sentiment(subreddit_name):
     # Calculate the current average sentiment of the top reddit posts, defined as follows
     # sentiment(subreddit) = avg(sentiment(s1), sentiment(s2), ... sentiment(sn), weights=submission_scores)
     # sentiment(reddit_submission) = avg(sentiment(title), sentiment(body), sentiment(comments)
@@ -21,25 +21,53 @@ def get_avg_sentiment(subreddit):
                          client_secret=config.reddit["client_secret"],
                          user_agent=config.reddit["user_agent"])
 
-    subreddit = reddit.subreddit(subreddit)
+    subreddit = reddit.subreddit(subreddit_name)
 
     comment_limit = 20
     submission_limit = 20
 
+
     def comments_polarity(comments):
+        polarities, scores = _comments_polarity(comments)
+        if polarities == None or scores == None:
+            return None
+
+        return np.average(polarities, weights=scores)
+
+    def _comments_polarity(comments, depth=0):
+        depth_weights = [1, .7, .4]
+
+        if depth >= len(depth_weights):
+            return None, None
+
         comment_polarities = []
         comment_scores = []
 
-        for comment in comments[:comment_limit]:
+        # exclude comments with negative score and limit
+        comments = [x for x in comments if hasattr(x, "score") and x.score > 0]
+        comments[:comment_limit]
+
+        if len(comments) == 0:
+            return None, None
+
+        for comment in comments:
             comment_polarity = textblob.TextBlob(comment.body).polarity
 
             comment_polarities.append(comment_polarity)
-            comment_scores.append(comment.score)
 
-        # TODO: get comment replies too
+            # Weight the comment by it's depth, so deeper ones count less
+            weighted_score = comment.score * depth_weights[depth]
+            comment_scores.append(weighted_score)
+
+            # TODO: get comment replies too
+            if len(comment.replies) > 0:
+                polarities, scores = _comments_polarity(comment.replies, depth + 1)
+                if polarities != None and scores != None:
+                    comment_polarities + polarities
+                    comment_scores + scores
 
         # Now calculate a weighted avg for all comment polarities, using score as weight factor
-        return np.average(comment_polarities, weights=comment_scores)
+        return comment_polarities, comment_scores
 
     def submission_polarity(submission):
         polarities_to_avg = []
@@ -49,11 +77,9 @@ def get_avg_sentiment(subreddit):
             # Average the polarity from title and body
             polarities_to_avg.append(textblob.TextBlob(submission.selftext).polarity)
 
-        # Ignore any comments with no/negative score
-        comments = [x for x in submission.comments if hasattr(x, "score") and x.score > 0]
-
-        if len(comments) > 0:
-            polarities_to_avg.append(comments_polarity(comments))
+        avg_comment_polarity = comments_polarity(submission.comments)
+        if avg_comment_polarity:
+            polarities_to_avg.append(avg_comment_polarity)
 
         return np.average(polarities_to_avg)
 
@@ -84,12 +110,12 @@ def get_avg_sentiment(subreddit):
     return avg_polarities
 
 
-def get_current_stats(subreddit):
+def get_current_stats(subreddit_name):
     reddit = praw.Reddit(client_id=config.reddit["client_id"],
                          client_secret=config.reddit["client_secret"],
                          user_agent=config.reddit["user_agent"])
 
-    subreddit = reddit.subreddit(subreddit)
+    subreddit = reddit.subreddit(subreddit_name)
     stats = {
         "subscribers": subreddit.subscribers,
         "active": subreddit.accounts_active
