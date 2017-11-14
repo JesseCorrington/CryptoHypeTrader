@@ -1,6 +1,7 @@
 import sys
 import datetime
 import urllib
+import concurrent.futures
 
 from ingestion import database as db
 from ingestion import util
@@ -82,6 +83,9 @@ class IngestionTask:
 
     def _get_data(self, datasource, arg=None):
         self.__http_requests += 1
+        # TODO: this can be wrong, in the case where we have a fn data source that makes many requests
+        # ie: reddit requests via praw
+        # ideally we'll ditch praw and make this only take datasources and not fns
 
         data = None
         try:
@@ -340,26 +344,30 @@ class ImportRedditStats(IngestionTask):
     def _run(self):
         coins = db.get_coins({"subreddit": {"$exists": True}})
 
+        # TODO: this feels a little odd not being a proper data source, but okay for now
+
         processed = 0
-        for coin in coins:
-            subreddit = coin["subreddit"]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_coin = {executor.submit(self._get_data, self.__get_stats, coin["subreddit"]): coin for coin in coins}
+            for future in concurrent.futures.as_completed(future_to_coin):
+                coin = future_to_coin[future]
 
-            # TODO: this feels a little odd not being a proper data source, but okay for now
+                try:
+                    today = datetime.datetime.today()
+                    stats = future.result()
+                    if stats:
+                        stats["date"] = today
+                        stats["coin_id"] = coin["_id"]
 
-            stats = self._get_data(self.__get_stats, subreddit)
+                        print(stats)
+                        self._db_insert(self.__collection, stats)
+                    else:
+                        self._error("Failed to get reddit stats for r/{}".format(coin["subreddit"]))
+                except Exception as err:
+                    self.__("Failed to get future results for r/{}, {}".format(coin["subreddit"]), err)
 
-            if stats:
-                today = datetime.datetime.today()
-
-                stats["date"] = today
-                stats["coin_id"] = coin["_id"]
-
-                self._db_insert(self.__collection, stats)
-            else:
-                print("Failed to get reddit stats for r/{0}".format(subreddit))
-
-            processed += 1
-            self._progress(processed, len(coins))
+                processed += 1
+                self._progress(processed, len(coins))
 
 
 def __run_tasks(tasks):
