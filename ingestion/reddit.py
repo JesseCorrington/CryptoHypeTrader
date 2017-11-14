@@ -1,6 +1,7 @@
 import datetime
 import re
 import praw
+import prawcore
 import textblob
 import numpy as np
 
@@ -11,19 +12,19 @@ from ingestion import datasource as ds
 # Provides access to reddit subscriber count numbers and average sentiment
 
 
-def __comments_polarity(comments):
-    polarities, scores = __comments_polarity_recursive(comments)
-    if polarities is None or scores is None:
-        return None
-
-    return np.average(polarities, weights=scores)
+# Use a single praw instance, so we get correct throttling per reddit's limits
+__reddit = praw.Reddit(client_id=config.reddit["client_id"],
+                       client_secret=config.reddit["client_secret"],
+                       user_agent=config.reddit["user_agent"])
 
 
-def __comments_polarity_recursive(comments, comment_limit=20, depth=0):
-    depth_weights = [1, .7, .4]
+def __comments_polarity(comments, comment_limit=20, depth=0):
+    # don't need to be too aggressive when weighting down nested comments,
+    # as they should already have a lower score
+    depth_weights = [1, .9, .8, .7]
 
     if depth >= len(depth_weights):
-        return None, None
+        return [], []
 
     comment_polarities = []
     comment_scores = []
@@ -33,7 +34,7 @@ def __comments_polarity_recursive(comments, comment_limit=20, depth=0):
     comments = comments[:comment_limit]
 
     if len(comments) == 0:
-        return None, None
+        return [], []
 
     for comment in comments:
         comment_polarity = textblob.TextBlob(comment.body).polarity
@@ -44,28 +45,46 @@ def __comments_polarity_recursive(comments, comment_limit=20, depth=0):
         comment_scores.append(weighted_score)
 
         if len(comment.replies) > 0:
-            polarities, scores = __comments_polarity_recursive(comment.replies, int(comment_limit / 2), depth + 1)
+            polarities, scores = __comments_polarity(comment.replies, int(comment_limit / 2), depth + 1)
             if polarities is not None and scores is not None:
                 comment_polarities += polarities
                 comment_scores += scores
 
-    # Now calculate a weighted avg for all comment polarities, using score as weight factor
     return comment_polarities, comment_scores
 
 
 def __submission_polarity(submission):
+    title_weight = 1
+    body_weight = 3
+    comments_weight = 3
+
     title_polarity = textblob.TextBlob(submission.title).polarity
     polarities_to_avg = [title_polarity]
+    weights = [title_weight]
 
     if submission.selftext:
         text_polarity = textblob.TextBlob(submission.selftext).polarity
         polarities_to_avg.append(text_polarity)
+        weights.append(body_weight)
 
-    avg_comment_polarity = __comments_polarity(submission.comments)
-    if avg_comment_polarity:
-        polarities_to_avg.append(avg_comment_polarity)
+    comment_polarities, comment_scores = __comments_polarity(submission.comments)
+    if len(comment_polarities) > 0 and len(comment_scores) > 0:
+        avg_comments_polarity = np.average(comment_polarities, weights=comment_scores)
+        polarities_to_avg.append(avg_comments_polarity)
+        weights.append(comments_weight)
 
-    return np.average(polarities_to_avg)
+    # count strong negative and positives
+    pos = 0
+    neg = 0
+    threshold = 0.3
+
+    for p in polarities_to_avg:
+        if p > threshold:
+            pos += 1
+        if p < -threshold:
+            neg += 1
+
+    return np.average(polarities_to_avg, weights=weights), pos, neg
 
 
 def get_avg_sentiment(subreddit_name):
@@ -74,16 +93,10 @@ def get_avg_sentiment(subreddit_name):
     # sentiment(reddit_submission) = avg(sentiment(title), sentiment(body), sentiment(comments)
     # sentiment(comments) = avg(sentiment(c1), sentiment(c2), ... sentiment(cn), weights=comment_scores)
 
-    reddit = praw.Reddit(client_id=config.reddit["client_id"],
-                         client_secret=config.reddit["client_secret"],
-                         user_agent=config.reddit["user_agent"])
-
-    subreddit = reddit.subreddit(subreddit_name)
-
-
     submission_limit = 20
+    subreddit = __reddit.subreddit(subreddit_name)
 
-    # Need to a bit to the submission limit here, beceause we'll likely get back some
+    # Need to a bit to the submission limit here, because we'll likely get back some
     # stickied submissions that we ignore below
     limit = submission_limit + 5
     submission_set = {
@@ -95,6 +108,7 @@ def get_avg_sentiment(subreddit_name):
     polarities = []
     scores = []
     avg_polarities = {}
+    counts = {name: {"pos": 0, "neg": 0} for name in submission_set}
 
     for name, submissions in submission_set.items():
         # Ignore stickied posts and limit submissions
@@ -102,26 +116,36 @@ def get_avg_sentiment(subreddit_name):
         submissions = submissions[:submission_limit]
 
         for submission in submissions:
-            polarities.append(__submission_polarity(submission))
+            polarity, positive, negative = __submission_polarity(submission)
+            polarities.append(polarity)
             scores.append(submission.score)
+            counts[name]["pos"] += positive
+            counts[name]["neg"] += negative
 
         avg_polarities[name] = np.average(polarities, weights=scores)
+
+    avg_polarities["counts"] = counts
 
     return avg_polarities
 
 
 def get_current_stats(subreddit_name):
-    reddit = praw.Reddit(client_id=config.reddit["client_id"],
-                         client_secret=config.reddit["client_secret"],
-                         user_agent=config.reddit["user_agent"])
-
-    subreddit = reddit.subreddit(subreddit_name)
+    subreddit = __reddit.subreddit(subreddit_name)
     stats = {
         "subscribers": subreddit.subscribers,
         "active": subreddit.accounts_active
     }
 
     return stats
+
+
+def is_valid(subreddit_name):
+    try:
+        get_current_stats(subreddit_name)
+    except prawcore.exceptions.NotFound as err:
+        return False
+
+    return True
 
 
 class HistoricalStats(ds.DataSource):

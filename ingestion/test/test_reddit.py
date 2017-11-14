@@ -32,9 +32,13 @@ class TestReddit(TestCase):
         self.assertTrue(stats["active"] > 1)
 
     def test_get_sentiment(self):
-        polarities = reddit.get_avg_sentiment("ethereum")
+        polarities = reddit.get_avg_sentiment("bitcoin")
         print(polarities)
 
         self.assertTrue(-1.0 <= polarities["hot"] <= 1.0)
         self.assertTrue(-1.0 <= polarities["new"] <= 1.0)
         self.assertTrue(-1.0 <= polarities["rising"] <= 1.0)
+
+    def test_is_valid(self):
+        self.assertEqual(reddit.is_valid("bitcoin"), True)
+        self.assertEqual(reddit.is_valid("doesnotexistdoesnotexistdoesnotexist"), False)

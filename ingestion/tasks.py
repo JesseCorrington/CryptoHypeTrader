@@ -358,8 +358,6 @@ class ImportRedditStats(IngestionTask):
                     if stats:
                         stats["date"] = today
                         stats["coin_id"] = coin["_id"]
-
-                        print(stats)
                         self._db_insert(self.__collection, stats)
                     else:
                         self._error("Failed to get reddit stats for r/{}".format(coin["subreddit"]))
