@@ -362,7 +362,7 @@ class ImportRedditStats(IngestionTask):
                     else:
                         self._error("Failed to get reddit stats for r/{}".format(coin["subreddit"]))
                 except Exception as err:
-                    self.__("Failed to get future results for r/{}, {}".format(coin["subreddit"]), err)
+                    self._error("Failed to get future results for r/{}, {}".format(coin["subreddit"], err))
 
                 processed += 1
                 self._progress(processed, len(coins))

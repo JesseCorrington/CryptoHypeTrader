@@ -142,7 +142,7 @@ def get_current_stats(subreddit_name):
 def is_valid(subreddit_name):
     try:
         get_current_stats(subreddit_name)
-    except prawcore.exceptions.NotFound as err:
+    except prawcore.exceptions.NotFound:
         return False
 
     return True

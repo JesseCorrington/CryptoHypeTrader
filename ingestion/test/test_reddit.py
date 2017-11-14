@@ -32,12 +32,18 @@ class TestReddit(TestCase):
         self.assertTrue(stats["active"] > 1)
 
     def test_get_sentiment(self):
-        polarities = reddit.get_avg_sentiment("bitcoin")
-        print(polarities)
+        sentiment = reddit.get_avg_sentiment("bitcoin")
 
-        self.assertTrue(-1.0 <= polarities["hot"] <= 1.0)
-        self.assertTrue(-1.0 <= polarities["new"] <= 1.0)
-        self.assertTrue(-1.0 <= polarities["rising"] <= 1.0)
+        self.assertTrue(-1.0 <= sentiment["hot"] <= 1.0)
+        self.assertTrue(-1.0 <= sentiment["new"] <= 1.0)
+        self.assertTrue(-1.0 <= sentiment["rising"] <= 1.0)
+
+        self.assertTrue(isinstance(sentiment["counts"]["hot"]["pos"], int))
+        self.assertTrue(isinstance(sentiment["counts"]["hot"]["neg"], int))
+        self.assertTrue(isinstance(sentiment["counts"]["new"]["pos"], int))
+        self.assertTrue(isinstance(sentiment["counts"]["new"]["neg"], int))
+        self.assertTrue(isinstance(sentiment["counts"]["rising"]["pos"], int))
+        self.assertTrue(isinstance(sentiment["counts"]["rising"]["neg"], int))
 
     def test_is_valid(self):
         self.assertEqual(reddit.is_valid("bitcoin"), True)
