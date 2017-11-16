@@ -66,21 +66,21 @@ cfg = config.dev
 
 username = None
 password = None
-if "username" in cfg.database and "password" in config.database:
-    username = cfg.database["username"]
-    password = cfg.database["password"]
+if "username" in cfg["database"] and "password" in cfg["database"]:
+    username = cfg["database"]["username"]
+    password = cfg["database"]["password"]
 
 
 MONGO_CLIENT = pymongo.MongoClient(
-    cfg.database["host"],
-    cfg.database["port"],
+    cfg["database"]["host"],
+    cfg["database"]["port"],
     username=username,
     password=password,
     authSource='hype-db',
     authMechanism='SCRAM-SHA-1',
     serverSelectionTimeoutMS=3)
 
-MONGO_DB = MONGO_CLIENT[cfg.database["name"]]
+MONGO_DB = MONGO_CLIENT[cfg["database"]["name"]]
 
 
 @app.route('/<path:path>')
