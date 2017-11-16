@@ -66,7 +66,7 @@ class Ticker(CoinList):
 
 class CoinLinks(ds.DataSource):
     def __init__(self, coin):
-        url = "https://coinmarketcap.com/currencies/{0}".format(coin["cmc_id"])
+        url = "https://coinmarketcap.com/currencies/{}".format(coin["cmc_id"])
         super().__init__(url, response_format="text")
 
     def parse(self, html):
@@ -109,7 +109,7 @@ class HistoricalPrices(ds.DataSource):
         super().__init__(url, params, "soup")
 
     def parse(self, soup):
-        # There's no API to get historic price data, but we can scrape it from a table
+        # There's no API to get historical price data, but we can scrape it from a table
         # on the /historical-data page
 
         div = soup.find("div", attrs={"class": "table-responsive"})
@@ -117,7 +117,7 @@ class HistoricalPrices(ds.DataSource):
         table_body = table.find('tbody')
         rows = table_body.find_all('tr')
 
-        historic_data = []
+        historical_data = []
 
         def to_float(text):
             if text is None:
@@ -157,6 +157,6 @@ class HistoricalPrices(ds.DataSource):
                 "market_cap": market_cap
             }
 
-            historic_data.append(daily_ticker)
+            historical_data.append(daily_ticker)
 
-        return historic_data
+        return historical_data

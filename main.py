@@ -15,7 +15,7 @@ def import_coin_list():
     mgr.run_tasks(tasks.ImportCoinList())
 
 
-def import_historic_data():
+def import_historical_data():
     mgr.run_tasks(tasks.historical_data_tasks())
 
 
@@ -23,9 +23,16 @@ def import_current_data():
     mgr.run_tasks(tasks.current_data_tasks())
 
 
+def import_all_data():
+    import_coin_list()
+    import_historical_data()
+    import_current_data()
+
 def main():
     from sys import argv
     opts = getopts(argv)
+
+    opts["-t"] = "all"
 
     if "-t" in opts:
         task_name = opts["-t"]
@@ -35,8 +42,9 @@ def main():
 
     task_map = {
         "coin_list": import_coin_list,
-        "historic": import_historic_data,
-        "current": import_current_data
+        "historical": import_historical_data,
+        "current": import_current_data,
+        "all": import_all_data()
     }
 
     if task_name not in task_map:

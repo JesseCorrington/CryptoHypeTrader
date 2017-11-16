@@ -42,7 +42,7 @@ class IngestionTask:
         self.__http_requests = 0
 
     def __str__(self):
-        return "{0} - running={1}, errors={2}, warnings={3}".\
+        return "{} - running={}, errors={}, warnings={}".\
             format(self._name, self.__running, len(self.__errors), len(self.__warnings))
 
     def _error(self, msg):
@@ -57,7 +57,7 @@ class IngestionTask:
         print("Ingestion HTTP error:", msg)
         self.__errors_http.append(msg)
 
-    def _fatal(self, msg):
+    def _fatal(self, msg, raise_error=True):
         """Derived classes call to raise a FatalError, which
         will stop the tasks run function, and bring control back to the manager
         """
@@ -66,7 +66,8 @@ class IngestionTask:
         self._error("FATAL - " + msg)
         self.__failed = True
 
-        raise FatalError(msg)
+        if raise_error:
+            raise FatalError(msg)
 
     def _warn(self, msg):
         """Derived classes call to signal a warning"""
@@ -125,17 +126,15 @@ class IngestionTask:
         # ie: reddit requests via praw
         # ideally we'll ditch praw and make this only take datasources and not fns
 
+        data = None
         try:
             data = datasource(arg) if callable(datasource) else datasource.get()
-            return data
         except (ds.HTTPError, ds.ParseError, ds.ValidationError) as err:
             self.__error_http("{} - {}".format(datasource.url, err))
         except Exception as err:
             self._error("Unknown get_data error {}".format(err))
-            if config.dev:
-                raise err
 
-            return None
+        return data
 
     def __update_db_status(self):
         """Updates the current status of the task in the database"""
@@ -196,7 +195,7 @@ class IngestionTask:
             print("Task stopped due to fatal error")
         except Exception as err:
             # Catch all so that we don't kill our process when running live
-            self._fatal("Unhandled exception {}".format(err))
+            self._fatal("Unhandled exception {}".format(err), False)
 
             # Re-raise in dev mode for easier debugging
             if config.dev:
@@ -210,14 +209,14 @@ class IngestionTask:
         elapsed_time = self.__end_time - self.__start_time
 
         sf = "Failure" if self.__failed else "Success"
-        print("Ingestion task {0} ({1})".format(self._name, sf))
+        print("Ingestion task {} ({})".format(self._name, sf))
         print("Elapsed time:", elapsed_time)
         print("HTTP requests:", self.__http_requests)
         print("Database inserts:", self.__db_inserts)
         print("Database updates:", self.__db_updates)
 
         def print_errors(name, error_list):
-            print("{0} ({1}):".format(name, len(error_list)))
+            print("{} ({}):".format(name, len(error_list)))
             for msg in error_list:
                 print("  *", msg)
 

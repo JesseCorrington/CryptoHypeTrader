@@ -151,7 +151,7 @@ class ImportCoinList(mgr.IngestionTask):
         print("Updated", coin_updates)
 
 
-class ImportHistoricData(mgr.IngestionTask):
+class ImportHistoricalData(mgr.IngestionTask):
     """Task to Import historical daily data from a specified DataSource"""
 
     def __init__(self, collection, data_source, coin_filter=None):
@@ -172,7 +172,7 @@ class ImportHistoricData(mgr.IngestionTask):
         """Returns a list of coins with outdated data in the db"""
 
         coins_to_update = {}
-        # Make a list of coins that don't have up to date historic data
+        # Make a list of coins that don't have up to date historical data
         for coin in coins:
             coin_id = coin["_id"]
             update_start = datetime.datetime(2011, 1, 1)
@@ -212,9 +212,9 @@ class ImportHistoricData(mgr.IngestionTask):
 
                 self._db_insert(self.__collection, new_data)
 
-                print("Added all historic", self.__collection, "data for", coin["symbol"])
+                print("Added all historical", self.__collection, "data for", coin["symbol"])
             else:
-                self._error("no historic data found for {}, starting on {}".format(coin["symbol"], update_start))
+                self._error("no historical data found for {}, starting on {}".format(coin["symbol"], update_start))
 
             processed += 1
             self._progress(processed, len(coins_to_update))
@@ -292,8 +292,8 @@ class ImportRedditStats(mgr.IngestionTask):
 # Helper function for task runs
 def historical_data_tasks():
     return [
-        ImportHistoricData("historic_prices", cmc.HistoricalPrices),
-        ImportHistoricData("historic_social_stats", reddit.HistoricalStats, {"subreddit": {"$exists": True}})
+        ImportHistoricalData("historical_prices", cmc.HistoricalPrices),
+        ImportHistoricalData("historical_social_stats", reddit.HistoricalStats, {"subreddit": {"$exists": True}})
     ]
 
 

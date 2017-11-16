@@ -47,7 +47,7 @@ function buildCompareChart() {
 
 
 function get_stats(coinId, symbol) {
-    var url = '/api/historic_social_stats?coin_id=' + coinId;
+    var url = '/api/historical_social_stats?coin_id=' + coinId;
 
     $.getJSON(url, function (data) {
         series = data;
@@ -67,7 +67,7 @@ function get_stats(coinId, symbol) {
 
 
 function get_prices(coinId, symbol) {
-    var url = '/api/historic_prices?coin_id=' + coinId;
+    var url = '/api/historical_prices?coin_id=' + coinId;
 
     $.getJSON(url, function (data) {
         series = data;

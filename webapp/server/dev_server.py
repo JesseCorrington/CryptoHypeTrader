@@ -62,23 +62,25 @@ def time_series(items, key):
 
 app = flask.Flask(__name__)
 
+cfg = config.dev
+
 username = None
 password = None
-if "username" in config.database and "password" in config.database:
-    username = config.database["username"]
-    password = config.database["password"]
+if "username" in cfg.database and "password" in config.database:
+    username = cfg.database["username"]
+    password = cfg.database["password"]
 
 
 MONGO_CLIENT = pymongo.MongoClient(
-    config.database["host"],
-    config.database["port"],
+    cfg.database["host"],
+    cfg.database["port"],
     username=username,
     password=password,
     authSource='hype-db',
     authMechanism='SCRAM-SHA-1',
     serverSelectionTimeoutMS=3)
 
-MONGO_DB = MONGO_CLIENT[config.database["name"]]
+MONGO_DB = MONGO_CLIENT[cfg.database["name"]]
 
 
 @app.route('/<path:path>')
@@ -111,27 +113,24 @@ def get_coins():
 def get_coin_summaries():
     # coin list joined with latest price and stats table
     # as well as 1, 3, and 7 day stats for growth of price and other stats
-    return None
+    pass
 
 
-
-@app.route('/api/historic_prices')
-def get_historic_prices():
+@app.route('/api/historical_prices')
+def get_historical_prices():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    prices = MONGO_DB.historic_prices.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
-
-    # TODO: need ways to get candle data too
+    prices = MONGO_DB.historical_prices.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
 
     series = time_series(prices, "close")
     return json_response(series)
 
 
-@app.route('/api/historic_social_stats')
-def get_historic_social_stats():
+@app.route('/api/historical_social_stats')
+def get_historical_social_stats():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    stats = MONGO_DB.historic_social_stats.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
+    stats = MONGO_DB.historical_social_stats.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
 
     series = time_series(stats, "reddit_subscribers")
     return json_response(series)

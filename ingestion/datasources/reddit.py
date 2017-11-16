@@ -159,7 +159,7 @@ class HistoricalStats(ds.DataSource):
         self._start = start
 
     def parse(self, html):
-        # There is no API to get historic subscriber counts, so scrape the data from redditmetrics.com
+        # There is no API to get historical subscriber counts, so scrape the data from redditmetrics.com
         # Once we're collecting data daily, we can just get the live stats from reddit and not use this
         dataStart = html.find("element: 'total-subscribers',")
         html = html[dataStart:]
