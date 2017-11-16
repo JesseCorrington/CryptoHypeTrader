@@ -32,8 +32,6 @@ def main():
     from sys import argv
     opts = getopts(argv)
 
-    opts["-t"] = "all"
-
     if "-t" in opts:
         task_name = opts["-t"]
     else:

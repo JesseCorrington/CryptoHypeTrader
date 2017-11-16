@@ -1,8 +1,9 @@
 import pymongo
 from pymongo import MongoClient
-
 from ingestion import config
-from ingestion import util
+
+
+# TODO: make it so the server can use this too, and they just pass in a config json file
 
 username = None
 password = None
@@ -40,8 +41,8 @@ def cursor_to_dict(cursor, key="_id"):
     return output
 
 
-def get_coins(filter=None):
-    coins = MONGO_DB.coins.find(filter)
+def get_coins(coin_filter=None):
+    coins = MONGO_DB.coins.find(coin_filter)
     return list(coins)
 
 
@@ -72,5 +73,5 @@ def create_indexes():
     # TODO: is there any way to use HASHED on symbol, is it faster
 
     MONGO_DB.coins.create_index([("cmc_id", pymongo.ASCENDING)], unique=True)
-    MONGO_DB.historic_prices.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
-    MONGO_DB.historic_social_stats.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
+    MONGO_DB.historical_prices.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
+    MONGO_DB.historical_social_stats.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)

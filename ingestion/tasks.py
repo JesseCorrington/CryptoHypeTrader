@@ -168,7 +168,7 @@ class ImportHistoricalData(mgr.IngestionTask):
         self._name += "-" + collection
 
     @staticmethod
-    def _outdated(self, coins, latest_updates):
+    def _outdated(coins, latest_updates):
         """Returns a list of coins with outdated data in the db"""
 
         coins_to_update = {}
