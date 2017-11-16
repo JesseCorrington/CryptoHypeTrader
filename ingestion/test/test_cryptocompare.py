@@ -1,6 +1,6 @@
 from unittest import TestCase
-from ingestion import cryptocompare as cc
 
+from ingestion.datasources import cryptocompare as cc
 
 
 class TestCryptoCompare(TestCase):
@@ -8,10 +8,15 @@ class TestCryptoCompare(TestCase):
         data = cc.CoinList().get()
         self.assertTrue(len(data) > 1000)
 
-    def test_get_stats(self):
+    def test_get_links(self):
         coins = cc.CoinList().get()
-        test_id = coins[0]["cc_id"]
-        data = cc.SocialStats(test_id).get()
 
-        for expected in ["General", "Twitter", "Reddit", "Facebook", "CodeRepository"]:
-            assert(expected in data)
+        btc = next(coin for coin in coins if coin["symbol"] == "BTC")
+        links = cc.CoinLinks(btc["cc_id"]).get()
+        self.assertTrue(links["subreddit"] == "bitcoin")
+        self.assertTrue(links["twitter"] == "bitcoin")
+
+        eth = next(coin for coin in coins if coin["symbol"] == "ETH")
+        links = cc.CoinLinks(eth["cc_id"]).get()
+        self.assertTrue(links["subreddit"] == "ethereum")
+        self.assertTrue(links["twitter"] == "ethereumproject")

@@ -1,6 +1,7 @@
-from unittest import TestCase
-from ingestion import reddit
 from datetime import datetime, timedelta
+from unittest import TestCase
+
+from ingestion.datasources import reddit
 
 
 class TestReddit(TestCase):

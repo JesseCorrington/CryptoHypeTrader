@@ -5,13 +5,26 @@ from xml.dom import minidom
 from bs4 import BeautifulSoup
 
 
+class HTTPError(Exception):
+    pass
+
+
+class ParseError(Exception):
+    pass
+
+
+class ValidationError(Exception):
+    pass
+
+
 class DataSource:
-    def __init__(self, url, params={}, format="json"):
+    """Abstract base class for data sources to derive from"""
+
+    def __init__(self, url, params={}, response_format="json"):
         self.url = url
         self.params = params
-        self.format = format  # json | text | xml | soup
+        self.format = response_format  # json | text | xml | soup
 
-    # TODO: add support for retries and centralized error handling/tracking
     def get(self):
         text = self._get(self.url, self.params)
 
@@ -24,20 +37,28 @@ class DataSource:
         elif self.format == "soup":
             data = BeautifulSoup(text, "lxml")
         else:
-            raise ValueError("Unsupported data source format: {0}".format(self.format))
+            raise ValueError("Unsupported data source format: {}".format(self.format))
 
-        self.validate(data)
-        data = self.pre_parse(data)
-        return self.parse(data)
+        error_msg = self.validate(data)
+        if error_msg is not None:
+            raise ValidationError(error_msg)
+
+        try:
+            data = self.pre_parse(data)
+            return self.parse(data)
+        except Exception as err:
+            raise ParseError(str(err))
 
     def parse(self, data):
         raise NotImplementedError("DataSource's must implement parse")
 
-    def pre_parse(self, data):
+    @staticmethod
+    def pre_parse(data):
         return data
 
-    def validate(self, data):
-        pass
+    @staticmethod
+    def validate(data):
+        return None
 
     @staticmethod
     def _get(url, params={}):
@@ -45,7 +66,8 @@ class DataSource:
         if len(str_params) > 0:
             url += "?" + str_params
 
-        ret = urllib.request.urlopen(url)
-
-        return ret.read().decode("utf-8")
-
+        try:
+            ret = urllib.request.urlopen(url, timeout=20)
+            return ret.read().decode("utf-8")
+        except Exception as err:
+            raise HTTPError(str(err))

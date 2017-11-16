@@ -7,10 +7,6 @@ class Singleton(object):
         return obj
 
 
-class Event(object):
-    pass
-
-
 def list_to_set(l, key):
     ret = set()
     for i in l:

@@ -1,187 +1,85 @@
-import sys
-import datetime
-import urllib
 import concurrent.futures
+import datetime
 
 from ingestion import database as db
 from ingestion import util
-from ingestion import coinmarketcap as cmc
-from ingestion import cryptocompare as cc
-from ingestion import reddit
+from ingestion.datasources import reddit, cryptocompare as cc, coinmarketcap as cmc
+from ingestion import manager as mgr
 
 
-class IngestionTask:
-    def __init__(self):
-        self._name = type(self).__name__
-        self.__id = None
+class ImportCoinList(mgr.IngestionTask):
+    """ Task to import the list of coins from coinmarketcap.com and cryptocompare.com
+    This checks all coins on every run, and only makes updates to new/changed items in the db
+    while this is inefficient, this only needs to run a couple times a day
+    and it's better to be sure we have correct info, as all other tasks depend on it
+    """
 
-        # Status
-        self.__running = False
-        self.__start_time = None
-        self.__end_time = None
-        self.__percent_done = 0.0
-        self.__failed = False
-        self.__canceled = False
-
-        # Error tracking
-        self.__errors = []
-        self.__errors_http = []
-        self.__warnings = []
-
-        # Profiling
-        self.__db_inserts = 0
-        self.__http_requests = 0
-
-        # TODO: print http errors and request count at the end
-        # and also update them when we insert our task into the db
-
-    def __str__(self):
-        return "{0} - running={1}, errors={2}, warnings={3}".\
-            format(self._name, self.__running, len(self.__errors), len(self.__warnings))
-
-    def _error(self, msg):
-        print("Ingestion error:", msg)
-        self.__errors.append(msg)
-
-    def _error_http(self, msg):
-        print("Ingestion HTTP error:", msg)
-        self.__errors_http.append(msg)
-
-    def _fatal(self, msg):
-        print("Ingestion FATAL error:", msg)
-        self._error("FATAL - " + msg)
-        self.__failed = True
-
-    def _warn(self, msg):
-        print("Ingestion warning:", msg)
-        self.__warnings.append(msg)
-
-    def _progress(self, completed, total):
-        self.__percent_done = completed / total
-
-        now = datetime.datetime.today()
-        elapsed = now - self.__start_time
-        avg_time_per = elapsed / completed
-        est_time_left = (avg_time_per * (total - completed))
-
-        print("Progress {0}/{1} - est. time remaining {2}".format(completed, total, est_time_left))
-
-        self.__update_db_status()
-
-    def _run(self):
-        raise NotImplementedError("Subclass must implement _run method")
-
-    def _db_insert(self, collection, items):
-        try:
-            db.insert(collection, items)
-            count = len(items) if isinstance(items, list) else 1
-            self.__db_inserts += count
-        # TODO: catch correct exception type
-        except Exception as e:
-            # TODO: we should keep a seperate count of db errors
-            self._error("Database insert failed: " + str(e))
-
-    def _get_data(self, datasource, arg=None):
-        self.__http_requests += 1
-        # TODO: this can be wrong, in the case where we have a fn data source that makes many requests
-        # ie: reddit requests via praw
-        # ideally we'll ditch praw and make this only take datasources and not fns
-
-        data = None
-        try:
-            # TODO: allow this to call an async task
-            data = datasource(arg) if callable(datasource) else datasource.get()
-            return data
-        except (urllib.error.URLError, urllib.error.HTTPError) as err:
-            # TODO: log that url
-            self._error_http(str(err))
+    def __get_links(self, coin):
+        links = self._get_data(cmc.CoinLinks(coin))
+        if links is None:
             return None
-        except Exception as err:
-            self._error(str(err))
 
-        return data
+        # If we have a subreddit, make sure it's valid, because some links are broken on cmc
+        if "subreddit" in links:
+            if not reddit.is_valid(links["subreddit"]):
+                self._warn("Invalid subreddit {}".format(links["subreddit"]))
+                del links["subreddit"]
 
+        missing_links = {"subreddit", "twitter", "btctalk_ann"} - set(links.keys())
+        if len(missing_links) > 0 and "cc_id" in coin:
+            cc_links = self._get_data(cc.CoinLinks(coin["cc_id"]))
 
-    def __update_db_status(self):
-        now = datetime.datetime.today()
+            if cc_links:
+                for missing_link in missing_links:
+                    if missing_link in cc_links:
+                        links[missing_link] = cc_links[missing_link]
 
-        # TODO: consider saving all the error messages too
+        return links
 
-        status = {
-            "name": self._name,
-            "start_time": self.__start_time,
-            "end_time": self.__end_time,
-            "running": self.__running,
-            "errors": len(self.__errors),
-            "errors_http": len(self.__errors_http),
-            "warnings": len(self.__warnings),
-            "percent_done": self.__percent_done,
-            "failed": self.__failed,
-            "db_inserts": self.__db_inserts,
-            "http_requests": self.__http_requests,
-            "canceled": self.__canceled,
-            "last_update": now
-        }
+    @staticmethod
+    def __duplicate_symbols(coins):
+        """Returns a list of symbols that have duplicates in the coin list"""
 
-        try:
-            if self.__id is None:
-                self.__id = db.MONGO_DB.ingestion_tasks.insert(status)
+        symbols = set()
+        duplicate_symbols = set()
+        for coin in coins:
+            sym = coin["symbol"]
+            if sym in symbols:
+                duplicate_symbols.add(sym)
             else:
-                # TODO: is it better to just replace what is updated in the doc
-                db.MONGO_DB.ingestion_tasks.replace_one({'_id': self.__id}, status)
-        except Exception as e:
-            self._error("Failed to update db status for ingestion tasks: " + str(e))
+                symbols.add(sym)
 
-    def cancel(self):
-        self.__running = False
-        self.__canceled = True
-        self.__end_time = datetime.datetime.today()
+        return duplicate_symbols
 
-        self.__update_db_status()
+    def __merge_cc_ids(self, coins, cc_coins):
+        """Merges the cryptocompare ids into the coin list
+        this allows us to pull coin data from both sources
+        """
 
-    def run(self):
-        self.__running = True
-        self.__start_time = datetime.datetime.today()
+        def full_id(coin):
+            return "{}_{}".format(coin["symbol"], coin["name"]).lower()
 
-        print("Running ingestion task:", self._name)
-        self.__update_db_status()
+        # Symbols are not guaranteed to be unique, so to be sure we map a coin from
+        # coinmarketcap to cryptocompare we use <symbol_name> as the id
+        cc_lookup = {}
+        for coin in cc_coins:
+            cid = full_id(coin)
+            if cid in cc_lookup:
+                self._fatal("Duplicate cid {}".format(cid))
+            else:
+                cc_lookup[cid] = coin
 
-        # TODO: should prob wrap in a try catch block
-        self._run()
+        for coin in coins:
+            cid = full_id(coin)
+            if cid in cc_lookup:
+                coin["cc_id"] = cc_lookup[cid]["cc_id"]
 
-        self.__end_time = datetime.datetime.today()
-        self.__running = False
-        self.__percent_done = 1.0
-        self.__update_db_status()
-
-        elapsed_time = self.__end_time - self.__start_time
-
-        sf = "Failure" if self.__failed else "Success"
-        print("Ingestion task {0} ({1})".format(self._name, sf))
-        print("Elapsed time:", elapsed_time)
-        print("HTTP requests:", self.__http_requests)
-        print("Database inserts:", self.__db_inserts)
-
-        def print_errors(name, error_list):
-            print("{0} ({1}):".format(name, len(error_list)))
-            for msg in error_list:
-                print("  *", msg)
-
-        print_errors("Errors", self.__errors)
-        print_errors("HTTP Errors", self.__errors_http)
-        print_errors("Warnings", self.__warnings)
-
-
-# TODO: periodically we need to make sure the reddit's haven't changed
-# or check if a reddit link that was missing has been added
-# add a param that will just force a full update of all and run once per day
-class ImportCoinList(IngestionTask):
     def _run(self):
-        try:
-            current_coins = self._get_data(cmc.CoinList())
-        except Exception as e:
-            self._fatal("get_coin_list failed " + str(e))
-            return
+        current_coins = self._get_data(cmc.CoinList())
+        cc_coins = self._get_data(cc.CoinList())
+
+        if not current_coins or not cc_coins:
+            self._fatal("Failed to get coinlists from remotes")
 
         stored_coins = db.get_coins()
 
@@ -190,75 +88,78 @@ class ImportCoinList(IngestionTask):
         stored_ids = util.list_to_set(stored_coins, "cmc_id")
         new_ids = current_ids - stored_ids
 
-        # Find the coins with missing subreddits, so we can look again for them
-        missing_subreddit_ids = set()
-        for coin in stored_coins:
-            if "subreddit" not in coin:
-                missing_subreddit_ids.add(coin["cmc_id"])
+        # map from coinmarketcap id to coins
+        stored_coins_map = util.list_to_dict(stored_coins, "cmc_id")
 
         print("Total current coins (coinmarketcap.com):", len(current_ids))
         print("Locally stored coins:", len(stored_ids))
-        print("Locally stored coins without subreddit links:", len(missing_subreddit_ids))
         print("New coins to process:", len(new_ids))
 
+        # TODO: what happens if a coin market cap id changes
+        # is it possible, how would we even know that, we'd just fail to look it up in our db
+        # and then make a new record for it this might be what the whole [OLD] thing is about
+
+        # TODO: if cmc removes the coin, note that in our db, and then don't do any
+        # more stats collection on the coin, but keep the data to prevent survivorship bias
+
+        self.__merge_cc_ids(current_coins, cc_coins)
+
         processed = 0
-        missing_subreddits = 0
-        new_coins = [x for x in current_coins if x["cmc_id"] in new_ids]
+        coin_updates = 0
+        for coin in current_coins:
+            links = self.__get_links(coin)
+            if links is None:
+                continue
 
-        if len(new_coins) == 0:
-            print("No new coins to add")
-            return
+            for name, val in links.items():
+                coin[name] = val
 
-        cc_coins = self._get_data(cc.CoinList())
-        cc_by_symbol = {}
-        for coin in cc_coins:
-            cc_by_symbol[coin["symbol"]] = coin
+            in_db = coin["cmc_id"] in stored_ids
+            if not in_db:
+                coin["_id"] = db.next_sequence_id("coins")
+                self._db_insert("coins", coin)
+            else:
+                stored_coin = stored_coins_map[coin["cmc_id"]]
+                coin["_id"] = stored_coin["_id"]
 
-        for coin in new_coins:
-            try:
-                subreddit = self._get_data(cmc.SubredditName(coin["cmc_id"]))
-                if subreddit:
-                    coin["subreddit"] = subreddit
-                else:
-                    # Reddit link isn't on coinmarketcap, so check cryptocompare
+                # Update only if changed
+                if coin != stored_coin:
+                    # fields will allow to be updated only if not empty.
+                    # This prevents removing good data if we simply failed to get the data this time.
+                    # This has the drawback that bad data won't get removed
+                    # The only draw back is that if bad data got corrected to be empty
+                    # we would not remove it here, but we can deal with that manually for now
 
-                    # TODO: we could at least log an error if the names don't match after looking up by symbol
+                    updateable = {"cc_id", "subreddit", "twitter", "btctalk_ann"}
+                    updates = {}
+                    for field in updateable:
+                        current = coin[field] if field in coin else ""
+                        stored = stored_coin[field] if field in stored_coin else ""
 
-                    # Note that technically there is a very minor issue here in that
-                    # symbols aren't truly unique and cryptocompare treats them as unique,
-                    # whereas coinmarketcap doesn't. This means there is the tiniest potential
-                    # this line looks up the wrong coin. In practice though, this likely will
-                    # never happen as only a couple coins share symbols
+                        if current != stored and len(current) > 0:
+                            updates[field] = current
 
-                    symbol = coin["symbol"]
-                    cc_id = cc_by_symbol[symbol]["cc_id"]
-                    stats = self._get_data(cc.SocialStats(cc_id))
-
-                    if "Reddit" in stats and "link" in stats["Reddit"] and stats["Reddit"]["link"]:
-                        subreddit = stats["Reddit"]["link"]
-                        subreddit = urllib.urlparse(subreddit).path.replace("/r/", "").replace("/", "")
-                        coin["subreddit"] = subreddit
-                    else:
-                        self._warn("missing subreddit for symbol " + symbol)
-
-            except Exception as err:
-                self._error("failed to lookup subreddit on cmc: " + str(err))
-                missing_subreddits += 1
-
-            coin["_id"] = db.next_sequence_id("coins")
-            self._db_insert("coins", coin)
+                    if len(updates) > 0:
+                        coin_updates += 1
+                        self._db_update_one("coins", coin["_id"], updates)
 
             processed += 1
-            self._progress(processed, len(new_ids))
+            self._progress(processed, len(current_coins))
 
         print("Total coins", len(current_coins))
         print("Added", len(new_ids), "new coins")
-        print("Missing subreddits", missing_subreddits)
+        print("Updated", coin_updates)
 
 
+class ImportHistoricData(mgr.IngestionTask):
+    """Task to Import historical daily data from a specified DataSource"""
 
-class ImportHistoricData(IngestionTask):
     def __init__(self, collection, data_source, coin_filter=None):
+        """
+        :param collection: the db collection to store the data
+        :param data_source: the DataSource used to get the data
+        :param coin_filter: optional to filter which coins to use
+        """
         super().__init__()
 
         self.__collection = collection
@@ -266,7 +167,10 @@ class ImportHistoricData(IngestionTask):
         self.__coin_filter = coin_filter
         self._name += "-" + collection
 
+    @staticmethod
     def _outdated(self, coins, latest_updates):
+        """Returns a list of coins with outdated data in the db"""
+
         coins_to_update = {}
         # Make a list of coins that don't have up to date historic data
         for coin in coins:
@@ -291,8 +195,8 @@ class ImportHistoricData(IngestionTask):
         latest_data = db.get_latest(self.__collection)
         coins_to_update = self._outdated(coins, latest_data)
 
-        print("Coins with no {0} data: {1}".format(self.__collection, len(coins) - len(latest_data)))
-        print("Coins with out of date {0} data: {1}".format(self.__collection, len(coins_to_update)))
+        print("Coins with no {} data: {}".format(self.__collection, len(coins) - len(latest_data)))
+        print("Coins with out of date {} data: {}".format(self.__collection, len(coins_to_update)))
 
         processed = 0
         coins = util.list_to_dict(coins, "_id")
@@ -310,30 +214,47 @@ class ImportHistoricData(IngestionTask):
 
                 print("Added all historic", self.__collection, "data for", coin["symbol"])
             else:
-                self._error("no historic data found for {0}, starting on {1}".format(coin["symbol"], update_start))
+                self._error("no historic data found for {}, starting on {}".format(coin["symbol"], update_start))
 
             processed += 1
             self._progress(processed, len(coins_to_update))
 
 
-class ImportPrices(IngestionTask):
+class ImportPrices(mgr.IngestionTask):
+    """Task to import current prices for all coins"""
+
     def _run(self):
         data = self._get_data(cmc.Ticker())
+        if not data:
+            self._fatal("Failed to get coinmarketcap ticker")
 
-        # Need to map our ids to coin market cap ids
-        coins = db.get_coins()
+        # Need to map coinmarketcap ids back to ours
+        stored_coins = db.get_coins()
         id_map = {}
-        for coin in coins:
+        for coin in stored_coins:
             id_map[coin["cmc_id"]] = coin["_id"]
 
+        filter_out = set()
         for coin in data:
-            coin["coin_id"] = id_map[coin["cmc_id"]]
-            del coin["cmc_id"]
+            cmc_id = coin["cmc_id"]
+
+            if cmc_id in id_map:
+                coin["coin_id"] = id_map[cmc_id]
+                del coin["cmc_id"]
+            else:
+                self._error("Can't add price data to unknown coin {}", cmc_id)
+                filter_out.add(coin)
+
+        # filter out coins we haven't seen yet
+        # we'll pick them up after our ImportCoinList runs again
+        data = [x for x in data if "coin_id" in x]
 
         self._db_insert("prices", data)
 
 
-class ImportRedditStats(IngestionTask):
+class ImportRedditStats(mgr.IngestionTask):
+    """Task to import current reddit stats"""
+
     def __init__(self, collection, get_stats):
         super().__init__()
 
@@ -344,10 +265,10 @@ class ImportRedditStats(IngestionTask):
     def _run(self):
         coins = db.get_coins({"subreddit": {"$exists": True}})
 
-        # TODO: this feels a little odd not being a proper data source, but okay for now
+        # TODO: make sure request rate limiting is working correctly
 
         processed = 0
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             future_to_coin = {executor.submit(self._get_data, self.__get_stats, coin["subreddit"]): coin for coin in coins}
             for future in concurrent.futures.as_completed(future_to_coin):
                 coin = future_to_coin[future]
@@ -368,47 +289,17 @@ class ImportRedditStats(IngestionTask):
                 self._progress(processed, len(coins))
 
 
-def __run_tasks(tasks):
-    if not db.connected():
-        print("Database not connected, exiting")
-        return
-
-    start_time = datetime.datetime.today()
-
-    # TODO: where does this belong
-    db.create_indexes()
-
-    for task in tasks:
-        try:
-            task.run()
-        except (KeyboardInterrupt, SystemExit):
-            # TODO: this cleanup is good, but won't work if we crash or are terminated forcefully
-            # prob can just kill any running tasks on startup, assuming we only use one process
-            # but that won't scale to having multiple nodes doing processing
-            task.cancel()
-            sys.exit()
-
-    end_time = datetime.datetime.today()
-    elapsed_time = end_time - start_time
-
-    print("Ingestion complete, elapsed time:", elapsed_time)
-
-
-def import_historic_data():
-    tasks = [
-        ImportCoinList(),
+# Helper function for task runs
+def historical_data_tasks():
+    return [
         ImportHistoricData("historic_prices", cmc.HistoricalPrices),
         ImportHistoricData("historic_social_stats", reddit.HistoricalStats, {"subreddit": {"$exists": True}})
     ]
 
-    __run_tasks(tasks)
 
-
-def import_current_data():
-    tasks = [
-        ImportCoinList(),
+def current_data_tasks():
+    return [
         ImportPrices(),
         ImportRedditStats("reddit_stats", reddit.get_current_stats),
         ImportRedditStats("reddit_sentiment", reddit.get_avg_sentiment)
     ]
-    __run_tasks(tasks)
