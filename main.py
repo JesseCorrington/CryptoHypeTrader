@@ -28,6 +28,7 @@ def import_all_data():
     import_historical_data()
     import_current_data()
 
+
 def main():
     from sys import argv
     opts = getopts(argv)
@@ -35,14 +36,14 @@ def main():
     if "-t" in opts:
         task_name = opts["-t"]
     else:
-        print("Error: must specificy -mode")
+        print("Error: must specify -t")
         return
 
     task_map = {
         "coin_list": import_coin_list,
         "historical": import_historical_data,
         "current": import_current_data,
-        "all": import_all_data()
+        "all": import_all_data
     }
 
     if task_name not in task_map:
