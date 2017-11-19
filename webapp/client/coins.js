@@ -26,25 +26,25 @@ class Coin {
         }
     }
 
-    subredditUrl() {
-        if (this.subreddit)
-            return "https://www.reddit.com/r/" + this.subreddit;
+    _makeUrl(base, key) {
+        if (this[key]) {
+            return base + this[key]
+        }
 
-        return "";
+        return ""
+    }
+
+
+    subredditUrl() {
+        return this._makeUrl("https://www.reddit.com/r/", "subreddit");
     }
 
     twitterUrl() {
-        if (this.twitter)
-            return "https://www.twitter.com/" + this.twitter;
-
-        return "";
+        return this._makeUrl("https://www.twitter.com/", "twitter");
     }
 
     bitcointalkUrl() {
-        if (this.btctalk_ann)
-            return "https://www.bitcointalk.org/?topic=" + this.btctalk_ann;
-
-        return "";
+        return this._makeUrl("https://www.bitcointalk.org/?topic=", "btctalk_ann");
     }
 }
 
@@ -60,10 +60,17 @@ $(document).ready(function () {
 
             coin = new Coin(coins[i])
 
+            function link(url, name) {
+                if (url && name) {
+                    return `<a href="${url}">${name}</a>`
+                }
+            }
+
+
             if (sub) {
-                coins[i].subreddit = `<a href="${coin.subredditUrl()}">${coin.subreddit}</a>`
-                coins[i].twitter = `<a href="${coin.twitterUrl()}">${coin.twitter}</a>`
-                coins[i].btctalk_ann = `<a href="${coin.bitcointalkUrl()}">${coin.btctalk_ann}</a>`
+                coins[i].subreddit = link(coin.subredditUrl(), coin.subreddit)
+                coins[i].twitter = link(coin.twitterUrl(), coin.twitter)
+                coins[i].btctalk_ann = link(coin.bitcointalkUrl(), coin.btctalk_ann)
             }
         }
 
