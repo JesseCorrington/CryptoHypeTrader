@@ -79,7 +79,7 @@ class IngestionTask:
         """Derived classes call to signal status updates"""
         self.__percent_done = completed / total
 
-        now = datetime.datetime.today()
+        now = datetime.datetime.utcnow()
         elapsed = now - self.__start_time
         avg_time_per = elapsed / completed
         est_time_left = (avg_time_per * (total - completed))
@@ -139,7 +139,7 @@ class IngestionTask:
     def __update_db_status(self):
         """Updates the current status of the task in the database"""
 
-        now = datetime.datetime.today()
+        now = datetime.datetime.utcnow()
 
         # TODO: consider saving all the error messages too
 
@@ -176,7 +176,7 @@ class IngestionTask:
 
         self.__running = False
         self.__canceled = True
-        self.__end_time = datetime.datetime.today()
+        self.__end_time = datetime.datetime.utcnow()
 
         self.__update_db_status()
 
@@ -184,7 +184,7 @@ class IngestionTask:
         """Run the task"""
 
         self.__running = True
-        self.__start_time = datetime.datetime.today()
+        self.__start_time = datetime.datetime.utcnow()
 
         print("Running ingestion task:", self._name)
         self.__update_db_status()
@@ -201,7 +201,7 @@ class IngestionTask:
             if config.dev:
                 raise err
 
-        self.__end_time = datetime.datetime.today()
+        self.__end_time = datetime.datetime.utcnow()
         self.__running = False
         self.__percent_done = 1.0
         self.__update_db_status()
@@ -237,7 +237,7 @@ def run_tasks(tasks):
         print("Database not connected, exiting")
         return
 
-    start_time = datetime.datetime.today()
+    start_time = datetime.datetime.utcnow()
 
     # TODO: where does this belong
     db.create_indexes()
@@ -252,7 +252,7 @@ def run_tasks(tasks):
             task.cancel()
             sys.exit()
 
-    end_time = datetime.datetime.today()
+    end_time = datetime.datetime.utcnow()
     elapsed_time = end_time - start_time
 
     print("Ingestion complete, elapsed time:", elapsed_time)

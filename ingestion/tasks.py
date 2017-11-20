@@ -179,7 +179,7 @@ class ImportHistoricalData(mgr.IngestionTask):
 
             if coin_id in latest_updates:
                 most_recent = latest_updates[coin_id]["date"]
-                today = datetime.datetime.today()
+                today = datetime.datetime.utcnow()
 
                 if today.day - most_recent.day <= 1:
                     continue
@@ -274,7 +274,7 @@ class ImportRedditStats(mgr.IngestionTask):
                 coin = future_to_coin[future]
 
                 try:
-                    today = datetime.datetime.today()
+                    today = datetime.datetime.utcnow()
                     stats = future.result()
                     if stats:
                         stats["date"] = today

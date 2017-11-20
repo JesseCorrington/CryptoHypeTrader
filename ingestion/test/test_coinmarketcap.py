@@ -31,7 +31,7 @@ class TestCoinMarketCap(TestCase):
         newest = prices[0]["date"]
         oldest = prices[-1]["date"]
 
-        today = datetime.today()
+        today = datetime.utcnow()
 
         self.assertTrue(newest > oldest)
         self.assertTrue(today - newest < timedelta(days=2))

@@ -15,7 +15,7 @@ class TestReddit(TestCase):
         newest = stats[0]["date"]
         oldest = stats[-1]["date"]
 
-        today = datetime.today()
+        today = datetime.utcnow()
 
         self.assertTrue(newest > oldest)
         self.assertTrue(today - newest < timedelta(days=3))
