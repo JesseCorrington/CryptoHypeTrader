@@ -141,16 +141,14 @@ class IngestionTask:
 
         now = datetime.datetime.today()
 
-        # TODO: consider saving all the error messages too
-
         status = {
             "name": self._name,
             "start_time": self.__start_time,
             "end_time": self.__end_time,
             "running": self.__running,
-            "errors": len(self.__errors),
-            "errors_http": len(self.__errors_http),
-            "warnings": len(self.__warnings),
+            "errors": self.__errors,
+            "errors_http": self.__errors_http,
+            "warnings": self.__warnings,
             "percent_done": self.__percent_done,
             "failed": self.__failed,
             "db_inserts": self.__db_inserts,
