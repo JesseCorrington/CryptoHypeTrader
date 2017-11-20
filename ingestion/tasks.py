@@ -3,7 +3,7 @@ import datetime
 
 from ingestion import database as db
 from ingestion import util
-from ingestion.datasources import reddit, cryptocompare as cc, coinmarketcap as cmc
+from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmarketcap as cmc
 from ingestion import manager as mgr
 
 
@@ -289,6 +289,36 @@ class ImportRedditStats(mgr.IngestionTask):
                 self._progress(processed, len(coins))
 
 
+# TODO: add other twitter things for coin specific twitter
+# follower count, and look for hot posts with lots of retweets
+class ImportTwitterStats(mgr.IngestionTask):
+    def _run(self):
+        # TODO: filter out duplicate symbols, since we can't be sure which one we find
+        # make sure these aren't big name symbols, if they are we need to maybe just use
+        # the one with the bigger market cap
+
+        hours = 1
+
+        coins = db.get_coins()
+        processed = 0
+        for coin in coins:
+            sym = coin["symbol"]
+            print("getting twitter counts for {}".format(sym))
+            count = twitter.count_tweets(sym, hours)
+            print(count)
+
+            processed += 1
+            self._progress(processed, len(coins))
+
+            record = {
+                "date": datetime.datetime.utcnow(),
+                "coin_id": coin["_id"],
+                "count": count
+            }
+
+            self._db_insert("twitter_counts", record)
+
+
 # Helper function for task runs
 def historical_data_tasks():
     return [
@@ -299,7 +329,8 @@ def historical_data_tasks():
 
 def current_data_tasks():
     return [
-        ImportPrices(),
-        ImportRedditStats("reddit_stats", reddit.get_current_stats),
-        ImportRedditStats("reddit_sentiment", reddit.get_avg_sentiment)
+        #ImportPrices(),
+        #ImportRedditStats("reddit_stats", reddit.get_current_stats),
+        #ImportRedditStats("reddit_sentiment", reddit.get_avg_sentiment),
+        ImportTwitterStats()
     ]
