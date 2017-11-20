@@ -11,6 +11,9 @@ class RunningTaskTable extends Table {
             {header: "Subreddit", key: "subreddit"},
             {header: "Twitter", key: "twitter"},
             {header: "Bitcointalk ANN", key: "btctalk_ann"},
+            {header: "1d", key: "1d_p"},
+            {header: "3d", key: "3d_p"},
+            {header: "5d", key: "5d_p"},
         ]);
     }
 
@@ -46,42 +49,33 @@ class Coin {
     bitcointalkUrl() {
         return this._makeUrl("https://www.bitcointalk.org/?topic=", "btctalk_ann");
     }
+
+    coinmarketcapUrl() {
+        return this._makeUrl("https://coinmarketcap.com/currencies/", "cmc_id");
+    }
 }
 
 
 $(document).ready(function () {
     coins = $.getJSON("/api/coins", function(coins) {
-        table = new RunningTaskTable("coinsTable");
-
+        var table = new RunningTaskTable("coinsTable");
 
         for (var i = 0; i < coins.length; i++) {
-            var sub = coins[i].subreddit;
-            var twitter = coins[1].twitter;
-
-            coin = new Coin(coins[i])
+            var coin = new Coin(coins[i])
 
             function link(url, name) {
                 if (url && name) {
                     return `<a href="${url}">${name}</a>`
                 }
+                return ""
             }
 
-
-            if (sub) {
-                coins[i].subreddit = link(coin.subredditUrl(), coin.subreddit)
-                coins[i].twitter = link(coin.twitterUrl(), coin.twitter)
-                coins[i].btctalk_ann = link(coin.bitcointalkUrl(), coin.btctalk_ann)
-            }
+            coins[i].subreddit = link(coin.subredditUrl(), coin.subreddit)
+            coins[i].twitter = link(coin.twitterUrl(), coin.twitter)
+            coins[i].btctalk_ann = link(coin.bitcointalkUrl(), coin.btctalk_ann)
+            coins[i].cmc_id = link(coin.coinmarketcapUrl(), coin.cmc_id)
         }
 
         table.setData(coins);
-
-        // TODO: we want to add some stats here too
-        // market cap, price, 24 hr volume, 24hr price change,
-        // 3 day price change, 24hr reddit sub change, 3 day reddit sub change, etc.
-
-        // TODO: we need some kind of get summary end point for all this data,
-        // or maybe just have coins always give it for now
-
     });
 });

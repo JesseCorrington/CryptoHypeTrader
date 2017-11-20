@@ -1,3 +1,5 @@
+# TODO: move into the source root so all packages can use
+
 class Singleton(object):
     _shared_state = {}
 
