@@ -50,13 +50,20 @@ def json_response(items, key_filter=None, filter_out=False):
     return JSONEncoder().encode(filtered)
 
 
-def time_series(items, key):
+def time_series(items, keys):
     if not isinstance(items, list):
         items = list(items)
 
+    if not isinstance(keys, list):
+        keys = [keys]
+
     series = []
     for item in items:
-        series.append([item["date"], item[key]])
+        entry = [item["date"]]
+        for key in keys:
+            entry.append(item[key])
+
+        series.append(entry)
 
     return series
 
@@ -132,9 +139,9 @@ def get_coin_summaries():
 def get_historical_prices():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    prices = MONGO_DB.historic_prices.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
+    prices = MONGO_DB.historical_prices.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
 
-    series = time_series(prices, "close")
+    series = time_series(prices, ["close", "volume"])
     return json_response(series)
 
 
@@ -142,7 +149,7 @@ def get_historical_prices():
 def get_historical_social_stats():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    stats = MONGO_DB.historic_social_stats.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
+    stats = MONGO_DB.historical_social_stats.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
 
     series = time_series(stats, "reddit_subscribers")
     return json_response(series)

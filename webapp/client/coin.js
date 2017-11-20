@@ -24,6 +24,34 @@ function normalize(arr) {
 function buildCompareChart() {
     Highcharts.stockChart('container', {
 
+        yAxis: [{
+            labels: {
+                align: 'right',
+                x: -3
+            },
+            title: {
+                text: 'Close Price'
+            },
+            height: '60%',
+            lineWidth: 2,
+            resize: {
+                enabled: true
+            }
+        }, {
+            labels: {
+                align: 'right',
+                x: -3
+            },
+            title: {
+                text: 'Reddit Growth'
+            },
+            top: '65%',
+            height: '35%',
+            offset: 0,
+            lineWidth: 2
+        }
+        ],
+
         rangeSelector: {
             selected: 4
         },
@@ -50,12 +78,46 @@ function get_stats(coinId, symbol) {
     var url = '/api/historical_social_stats?coin_id=' + coinId;
 
     $.getJSON(url, function (data) {
-        series = data;
+        var series = data;
+
+        var growth = [series[0][0], 0]
+        for (var i = 1; i < series.length; i++) {
+            var n = [series[i][0], series[i][1] - series[i - 1][1]]
+
+            //n[1] *= 1000000
+
+            if (n[1] <= 0)
+                n[1] = 1
+
+            console.log(`${new Date(n[0])}, ${n[1]}`)
+
+            growth.push(n)
+        }
+
         normalize(series);
 
         chartData.push({
             name: symbol + " reddit subs",
+            yAxis: 0,
             data: series
+        });
+
+                var groupingUnits = [[
+            'week',                         // unit name
+            [1]                             // allowed multiples
+        ], [
+            'month',
+            [1, 2, 3, 4, 6]
+        ]]
+
+        chartData.push({
+            type: 'column',
+            name: 'Volume',
+            data: growth,
+            yAxis: 1,
+            dataGrouping: {
+                units: groupingUnits
+            }
         });
 
         pending--;
@@ -72,11 +134,41 @@ function get_prices(coinId, symbol) {
     $.getJSON(url, function (data) {
         series = data;
 
+        volume = []
+        for (var i = 0; i < series.length; i++) {
+            var v = series[i][2]
+            if (v == null)
+                v = 0;
+
+            v = 100;
+
+            volume.push([series[i][0], v])
+        }
+
         normalize(series);
         chartData.push({
             name: symbol + " price",
+            yAxis: 0,
             data: series
         });
+
+        var groupingUnits = [[
+            'week',                         // unit name
+            [1]                             // allowed multiples
+        ], [
+            'month',
+            [1, 2, 3, 4, 6]
+        ]]
+
+        /*chartData.push({
+            type: 'column',
+            name: 'Volume',
+            data: volume,
+            yAxis: 1,
+            //dataGrouping: {
+            //    units: groupingUnits
+            //}
+        });*/
 
         pending--;
         if (pending == 0) {
@@ -114,8 +206,9 @@ function setSymbol(symbol) {
         }
     }
 
-    get_stats(coin_id, symbol);
+
     get_prices(coin_id, symbol);
+    get_stats(coin_id, symbol);
 }
 
 
