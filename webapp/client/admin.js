@@ -1,8 +1,21 @@
+"use strict"
+
+
+function list_count(list) {
+    if (list) return list.length
+    return 0
+}
+
 var DISPLAY_FORMATS = {
     start_time: 'DateTime',
     end_time: 'DateTime',
     percent_done: '(0.00 %)',
+    errors: list_count,
+    errors_http: list_count,
+    warnings: list_count
 }
+
+var taskView = undefined;
 
 
 class RunningTaskTable extends Table {
@@ -88,13 +101,13 @@ function updateCompletedTasks() {
         processTasks(tasks);
         completedTasksTable.setData(tasks);
 
-        taskNames = {}
+        var taskNames = {}
         tasks.forEach(function(task) {
             taskNames[task.name] = 1;
         });
 
         var select = $("#taskSelect");
-        for (name in taskNames) {
+        for (var name in taskNames) {
             var op = $("<option>", {value: name});
             op.html(name);
 
@@ -114,22 +127,30 @@ function updateCompletedTasks() {
         });
 
         showFor("ImportCoinList")
+
+        taskView = new TaskView(tasks[0])
+        taskView.render()
+
+        var parent = $("#taskDetails");
+        parent.append(taskView._container)
     });
 }
 
 
 function updateTasks() {
     updateRunningTasks();
-    setInterval(updateRunningTasks, 5000);
+    //setInterval(updateRunningTasks, 5000);
 
     updateCompletedTasks();
 }
 
 
 
+
+
 function buildChart(name, tasks) {
     function toSeries(key) {
-        points = [];
+        var points = [];
         tasks.forEach(function (task) {
             points.push([task.start_time, task[key]]);
         });
@@ -137,9 +158,9 @@ function buildChart(name, tasks) {
         return points;
     }
 
-    errors = toSeries("errors");
-    httpErrors = toSeries("errors_http");
-    warnings = toSeries("warnings");
+    var errors = toSeries("errors");
+    var httpErrors = toSeries("errors_http");
+    var warnings = toSeries("warnings");
 
 
     Highcharts.chart('chart', {
@@ -192,4 +213,64 @@ function buildChart(name, tasks) {
             data: warnings
         }]
 });
+}
+
+
+
+class TaskView extends Component {
+    constructor(task) {
+        super();
+        this._task = task;
+    }
+
+    render() {
+
+
+
+
+        /*db_inserts
+db_updates
+elapsed_time
+end_time
+errors
+errors_http
+failed
+http_requests
+last_update
+1511244003476
+name
+percent_done
+running
+*/
+
+        var self = this
+        function line(name, key) {
+            return `<br/>${name}: ${self._task[key]}`
+        }
+
+        var html = line("Name", "name");
+        html += line("Start Time", "start_time");
+        html += line("Elapsed Time", "elapsed_time");
+
+        function error_list(name, errors) {
+            html = `<hX>${name}(${errors.length})</hX>`
+            html += "<ul>"
+
+            errors.forEach(function(error) {
+                html += "<li>"
+                html += error
+                html += "</li>"
+            });
+
+            html += "</ul>"
+            return html
+        }
+
+        html += "<br/>"
+        html += error_list("Errors", this._task.errors);
+        html += error_list("Warnings", this._task.warnings);
+        html += error_list("HTTP Errors", this._task.errors_http);
+
+        this._container.append(html);
+    }
 }

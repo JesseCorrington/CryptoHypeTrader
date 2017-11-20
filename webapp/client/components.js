@@ -69,12 +69,14 @@ class Table extends Component {
                     var cellFormat = this._dataFormats[this._cols[c].key]
 
                     if (cellFormat) {
-                        // TODO: distinguish date format in a non hack way
                         if (cellFormat === "DateTime") {
                             cell = formatDate(cell);
                         }
                         else if (cellFormat === "ElapsedTime") {
                             cell = formatElapsedTime(cell);
+                        }
+                        else if (typeof(cellFormat) === "function") {
+                            cell = cellFormat(cell)
                         }
                         else {
                             cell = numeral(cell).format(cellFormat)
