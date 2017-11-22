@@ -26,9 +26,14 @@
                                               v-model="search"></v-text-field>
                             </v-card-title>
 
-                            <v-data-table v-bind:headers="headers" v-bind:search="search" v-model="selected"
-                                          :items="items" hide-actions
-                                          class="elevation-1" select-all class="elevation-1">
+                            <v-data-table v-bind:headers="headers"
+                                          v-bind:search="search"
+                                          v-bind:pagination.sync="pagination"
+                                          v-bind:items="items"
+                                          v-model="selected"
+                                          class="elevation-1"
+                                          select-all>
+
                                 <template slot="items" slot-scope="props">
                                     <td>
                                         <v-checkbox primary hide-details v-model="props.selected"></v-checkbox>
@@ -47,9 +52,22 @@
                         </v-card>
                     </v-tabs-content>
                     <v-tabs-content id="detailTab">
-                        <v-card flat>
-                            {{selected}}
-                        </v-card>
+                        <template v-for="item in selected">
+                            <label> {{ item.name }} </label>
+                            <label> {{ item.start_time | formatDateTime }} </label>
+                            <label>Errors({{item.errors.length}}):</label>
+                            <ul>
+                                <li v-for="msg in item.errors">{{msg}}</li>
+                            </ul>
+                            <label>Warnings({{item.warnings.length}}):</label>
+                            <ul>
+                                <li v-for="msg in item.warnings">{{msg}}</li>
+                            </ul>
+                            <label>HTTP Errors({{item.errors_http.length}}):</label>
+                            <ul>
+                                <li v-for="msg in item.errors_http">{{msg}}</li>
+                            </ul>
+                        </template>
                     </v-tabs-content>
                 </v-tabs-items>
             </v-tabs>

@@ -20,7 +20,10 @@ var app = new Vue({
         ],
       items: [],
       selected: [],
-      search: ""
+      search: "",
+      pagination: {
+          sortBy: 'start_time'
+      }
   },
 
   mounted: function() {
