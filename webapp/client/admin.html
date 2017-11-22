@@ -1,49 +1,41 @@
+<!DOCTYPE html>
+<html>
 <head>
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/series-label.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-
-    <script src = "util.js"></script>
-    <script src = "components.js"></script>
-    <script src = "admin.js"></script>
-
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
+    <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 
 <body>
+    <div id="vueApp">
+        <v-app>
+            <v-content>
+                <v-card-title>
+                    Ingestion Tasks
+                    <v-spacer></v-spacer>
+                    <v-text-field append-icon="search" label="Search" single-line hide-details v-model="search"></v-text-field>
+                </v-card-title>
 
+                <v-data-table v-bind:headers="headers" v-bind:search="search" :items="items" hide-actions class="elevation-1">
+                <template slot="items" slot-scope="props">
+                    <td>{{ props.item.name }}</td>
+                    <td class="text-xs-right">{{ props.item.start_time }}</td>
+                    <td class="text-xs-right">{{ props.item.running }}</td>
+                    <td class="text-xs-right">{{ props.item.failed }}</td>
+                    <td class="text-xs-right">{{ props.item.canceled }}</td>
+                </template>
+                </v-data-table>
+            </v-content>
+        </v-app>
+    </div>
 
-<div><h1>
-    Admin Page
-</div></h1>
-
-
-<div>
-    Running Tasks
-    <table id="runningTasksTable" class="tableclass"}></table>
-</div>
-
-
-
-<div>
-    Completed Tasks
-    <table id="completedTasksTable" class="tableclass"}></table>
-</div>
-
-
-<div>
-    Select Tasks
-<select id="taskSelect">
-</select>
-
-<div id="chart"></div>
-</div>
-
-
-<div id="taskDetails">
-    <h3>Task Details</h3>
-</div>
-
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/series-label.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src = "admin.js"></script>
 </body>
+</html>

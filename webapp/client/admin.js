@@ -1,6 +1,9 @@
 "use strict"
 
 
+
+
+
 function list_count(list) {
     if (list) return list.length
     return 0
@@ -69,11 +72,51 @@ class CompletedTaskTable extends Table {
 var runningTaksTable = undefined;
 var completedTasksTable = undefined;
 
+var app = undefined;
+function createComponents() {
+    Vue.use(Vuetify)
+
+    app = new Vue({
+      el: '#vueApp',
+      data: {
+
+          // TODO: what's the proper way to deal with lazy loading?
+          tableDataSimple: [],
+          selected: {},
+          headers: [
+          { text: 'Name', value: 'name'},
+          { text: 'Start Time', value: 'start_time' },
+          { text: 'Running', value: 'running' },
+          { text: 'Failed', value: 'failed' },
+          { text: 'Canceled', value: 'canceled' },
+
+        ],
+        items: [],
+        search: "",
+      },
+
+      mounted: function() {
+          var self = this
+          $.getJSON('/api/ingestion_tasks?running=false', function (json) {
+              self.tableDataSimple = json;
+              self.selected = self.tableDataSimple[0]
+              self.items = json;
+
+          });
+      }
+    });
+}
+
+
 $(document).ready(function () {
-    runningTaksTable = new RunningTaskTable("runningTasksTable")
+
+    createComponents()
+
+
+    /*runningTaksTable = new RunningTaskTable("runningTasksTable")
     completedTasksTable = new CompletedTaskTable("completedTasksTable")
 
-    updateTasks()
+    updateTasks()*/
 });
 
 function processTasks(tasks) {
@@ -226,22 +269,6 @@ class TaskView extends Component {
     render() {
 
 
-
-
-        /*db_inserts
-db_updates
-elapsed_time
-end_time
-errors
-errors_http
-failed
-http_requests
-last_update
-1511244003476
-name
-percent_done
-running
-*/
 
         var self = this
         function line(name, key) {
