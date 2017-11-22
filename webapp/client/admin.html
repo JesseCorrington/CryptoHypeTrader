@@ -34,11 +34,11 @@
                                         <v-checkbox primary hide-details v-model="props.selected"></v-checkbox>
                                     </td>
                                     <td>{{ props.item.name }}</td>
-                                    <td class="text-xs-right">{{ props.item.start_time }}</td>
-                                    <td class="text-xs-right">{{ props.item.end_time }}</td>
-                                    <td class="text-xs-right">{{ props.item.running }}</td>
-                                    <td class="text-xs-right">{{ props.item.failed }}</td>
-                                    <td class="text-xs-right">{{ props.item.canceled }}</td>
+                                    <td class="text-xs-right">{{ props.item.start_time | formatDateTime }}</td>
+                                    <td class="text-xs-right">{{ props.item.end_time | formatDateTime}}</td>
+                                    <td class="text-xs-right">{{ props.item.running | capitalize }}</td>
+                                    <td class="text-xs-right">{{ props.item.failed | capitalize}}</td>
+                                    <td class="text-xs-right">{{ props.item.canceled | capitalize}}</td>
                                     <td class="text-xs-right">{{ props.item.errors.length }}</td>
                                     <td class="text-xs-right">{{ props.item.warnings.length }}</td>
                                     <td class="text-xs-right">{{ props.item.errors_http.length }}</td>
@@ -64,6 +64,7 @@
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/series-label.js"></script>
 <script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="util.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>
