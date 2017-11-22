@@ -7,35 +7,63 @@
 </head>
 
 <body>
-    <div id="vueApp">
-        <v-app>
-            <v-content>
-                <v-card-title>
-                    Ingestion Tasks
-                    <v-spacer></v-spacer>
-                    <v-text-field append-icon="search" label="Search" single-line hide-details v-model="search"></v-text-field>
-                </v-card-title>
+<div id="vueApp">
+    <v-app>
+        <v-content>
+            <v-tabs>
+                <v-tabs-bar class="cyan" dark>
+                    <v-tabs-item href="#tableTab" ripple>Task Table</v-tabs-item>
+                    <v-tabs-item href="#detailTab" ripple>Task Detail</v-tabs-item>
+                    <v-tabs-slider color="yellow"></v-tabs-slider>
+                </v-tabs-bar>
 
-                <v-data-table v-bind:headers="headers" v-bind:search="search" :items="items" hide-actions class="elevation-1">
-                <template slot="items" slot-scope="props">
-                    <td>{{ props.item.name }}</td>
-                    <td class="text-xs-right">{{ props.item.start_time }}</td>
-                    <td class="text-xs-right">{{ props.item.running }}</td>
-                    <td class="text-xs-right">{{ props.item.failed }}</td>
-                    <td class="text-xs-right">{{ props.item.canceled }}</td>
-                </template>
-                </v-data-table>
-            </v-content>
-        </v-app>
-    </div>
+                <v-tabs-items>
+                    <v-tabs-content id="tableTab">
+                        <v-card flat>
+                            <v-card-title>
+                                <v-spacer></v-spacer>
+                                <v-text-field append-icon="search" label="Search" single-line hide-details
+                                              v-model="search"></v-text-field>
+                            </v-card-title>
 
-    <script src="https://unpkg.com/vue/dist/vue.js"></script>
-    <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/series-label.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-    <script src = "admin.js"></script>
+                            <v-data-table v-bind:headers="headers" v-bind:search="search" v-model="selected"
+                                          :items="items" hide-actions
+                                          class="elevation-1" select-all class="elevation-1">
+                                <template slot="items" slot-scope="props">
+                                    <td>
+                                        <v-checkbox primary hide-details v-model="props.selected"></v-checkbox>
+                                    </td>
+                                    <td>{{ props.item.name }}</td>
+                                    <td class="text-xs-right">{{ props.item.start_time }}</td>
+                                    <td class="text-xs-right">{{ props.item.end_time }}</td>
+                                    <td class="text-xs-right">{{ props.item.running }}</td>
+                                    <td class="text-xs-right">{{ props.item.failed }}</td>
+                                    <td class="text-xs-right">{{ props.item.canceled }}</td>
+                                    <td class="text-xs-right">{{ props.item.errors.length }}</td>
+                                    <td class="text-xs-right">{{ props.item.warnings.length }}</td>
+                                    <td class="text-xs-right">{{ props.item.errors_http.length }}</td>
+                                </template>
+                            </v-data-table>
+                        </v-card>
+                    </v-tabs-content>
+                    <v-tabs-content id="detailTab">
+                        <v-card flat>
+                            {{selected}}
+                        </v-card>
+                    </v-tabs-content>
+                </v-tabs-items>
+            </v-tabs>
+        </v-content>
+    </v-app>
+</div>
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/series-label.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="admin.js"></script>
 </body>
 </html>
