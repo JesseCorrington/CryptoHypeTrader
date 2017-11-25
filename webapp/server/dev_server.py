@@ -70,7 +70,7 @@ def time_series(items, keys):
 
 app = flask.Flask(__name__)
 
-cfg = config.dev
+cfg = config.prod
 
 username = None
 password = None
@@ -204,8 +204,8 @@ def coin_growth_summaries():
         for name, time_range in time_ranges.items():
             from_date = now - time_range
             amount, percent = growth(entries, "subscribers", from_date, now)
-            coin_stats[name + "_g"] = amount
-            coin_stats[name + "_p"] = percent
+            coin_stats["_" + name + "_g"] = amount
+            coin_stats["_" + name + "_p"] = percent
 
     return stats
 

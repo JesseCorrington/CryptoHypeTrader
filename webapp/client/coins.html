@@ -1,26 +1,74 @@
+<!DOCTYPE html>
+<html>
 <head>
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
-
-    <script src = "util.js"></script>
-    <script src = "components.js"></script>
-    <script src = "coins.js"></script>
-
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
+    <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 
 <body>
+<div id="vueApp">
+    <v-app>
+        <v-content>
+            <v-tabs>
+                <v-tabs-bar class="cyan" dark>
+                    <v-tabs-item href="#tableTab" ripple>Task Table</v-tabs-item>
+                    <v-tabs-item href="#detailTab" ripple>Task Detail</v-tabs-item>
+                    <v-tabs-slider color="yellow"></v-tabs-slider>
+                </v-tabs-bar>
 
+                <v-tabs-items>
+                    <v-tabs-content id="tableTab">
+                        <v-card flat>
+                            <v-card-title>
+                                <v-spacer></v-spacer>
+                                <v-text-field append-icon="search" label="Search" single-line hide-details
+                                              v-model="search"></v-text-field>
+                            </v-card-title>
 
-<div>
-    <h1>Coins</h1>
+                            <v-data-table v-bind:headers="headers"
+                                          v-bind:search="search"
+                                          v-bind:pagination.sync="pagination"
+                                          v-bind:items="items"
+                                          v-model="selected"
+                                          class="elevation-1"
+                                          select-all>
+
+                                <template slot="items" slot-scope="props">
+                                    <td>
+                                        <v-checkbox primary hide-details v-model="props.selected"></v-checkbox>
+                                    </td>
+                                    <td>{{ props.item.name }}</td>
+                                    <td>{{ props.item.symbol }}</td>
+                                    <td>{{ props.item.cmc_id }}</td>
+                                    <td>{{ props.item.cc_id }}</td>
+                                    <td>{{ props.item.subreddit }}</td>
+                                    <td>{{ props.item.twitter }}</td>
+                                    <td>{{ props.item.btctalk_ann }}</td>
+                                    <td>{{ props.item._1d_p }}</td>
+                                    <td>{{ props.item._3d_p }}</td>
+                                    <td>{{ props.item._5d_p }}</td>
+                                </template>
+                            </v-data-table>
+                        </v-card>
+                    </v-tabs-content>
+                    <v-tabs-content id="detailTab">
+
+                    </v-tabs-content>
+                </v-tabs-items>
+            </v-tabs>
+        </v-content>
+    </v-app>
 </div>
 
-
-<table id="coinsTable" class="tableclass"}></table>
-
-
-
-
-
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/series-label.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="util.js"></script>
+<script src="coins.js"></script>
 </body>
+</html>
