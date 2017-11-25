@@ -39,8 +39,8 @@
                                         <v-checkbox primary hide-details v-model="props.selected"></v-checkbox>
                                     </td>
                                     <td>{{ props.item.name }}</td>
-                                    <td class="text-xs-right">{{ props.item.start_time | formatDateTime }}</td>
-                                    <td class="text-xs-right">{{ props.item.end_time | formatDateTime}}</td>
+                                    <td class="text-xs-right">{{ props.item.start_time | dateTime }}</td>
+                                    <td class="text-xs-right">{{ props.item.end_time | dateTime}}</td>
                                     <td class="text-xs-right">{{ props.item.running | capitalize }}</td>
                                     <td class="text-xs-right">{{ props.item.failed | capitalize}}</td>
                                     <td class="text-xs-right">{{ props.item.canceled | capitalize}}</td>

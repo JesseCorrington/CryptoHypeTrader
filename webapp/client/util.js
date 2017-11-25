@@ -114,7 +114,7 @@ function formatElapsedTime(milliseconds) {
 
 
 // TODO: need an entry point where we install filters
-Vue.filter('formatDateTime', function (dt) {
+Vue.filter('dateTime', function (dt) {
     if (!dt) return ''
 
     if (typeof(dt) !== Date) {
@@ -132,7 +132,13 @@ Vue.filter('formatDateTime', function (dt) {
 })
 
 Vue.filter('capitalize', function (value) {
-    if (value === undefined) return ''
-    value = value.toString()
+    if (value === undefined) return '';
+    value = value.toString();
     return value.charAt(0).toUpperCase() + value.slice(1)
 });
+
+Vue.filter('percent', function (value) {
+    if (value === undefined) return ''
+    value = value.toString();
+    return numeral(value).format('0.00%')
+})
