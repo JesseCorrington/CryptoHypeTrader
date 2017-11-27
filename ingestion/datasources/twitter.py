@@ -26,7 +26,7 @@ class TwitterCommentScanner(comment.CommentScanner):
         self.query = "$" + symbol.lower()
         self.hours = hours
 
-    def get_comments(self):
+    def find_comments(self):
         global api
 
         now = datetime.datetime.utcnow()
@@ -57,6 +57,7 @@ class TwitterCommentScanner(comment.CommentScanner):
 
                 cc = comment.Comment(tweet.text, score)
                 self.comments.append(cc)
+                self._add_comment(tweet.text, score)
 
             except tweepy.TweepError:
                 print("Twitter Rate limit exceeded, waiting 15 minutes")

@@ -32,20 +32,16 @@ class TestReddit(TestCase):
         self.assertTrue(stats["subscribers"] > 1)
         self.assertTrue(stats["active"] > 1)
 
-    def test_get_sentiment(self):
-        sentiment = reddit.get_avg_sentiment("bitcoin")
-
-        self.assertTrue(-1.0 <= sentiment["hot"] <= 1.0)
-        self.assertTrue(-1.0 <= sentiment["new"] <= 1.0)
-        self.assertTrue(-1.0 <= sentiment["rising"] <= 1.0)
-
-        self.assertTrue(isinstance(sentiment["counts"]["hot"]["pos"], int))
-        self.assertTrue(isinstance(sentiment["counts"]["hot"]["neg"], int))
-        self.assertTrue(isinstance(sentiment["counts"]["new"]["pos"], int))
-        self.assertTrue(isinstance(sentiment["counts"]["new"]["neg"], int))
-        self.assertTrue(isinstance(sentiment["counts"]["rising"]["pos"], int))
-        self.assertTrue(isinstance(sentiment["counts"]["rising"]["neg"], int))
-
     def test_is_valid(self):
         self.assertEqual(reddit.is_valid("bitcoin"), True)
         self.assertEqual(reddit.is_valid("doesnotexistdoesnotexistdoesnotexist"), False)
+
+    def test_comment_scanner(self):
+        reddit.init_api()
+
+        btc_scanner = reddit.RedditCommentScanner("bitcoin")
+        btc_scanner.find_comments()
+        self.assertTrue(btc_scanner.count() > 100)
+        self.assertTrue(btc_scanner.sum_score() > 10000)
+        self.assertTrue(btc_scanner.avg_score() > 10)
+        self.assertTrue(-1 < btc_scanner.avg_sentiment() < 1)
