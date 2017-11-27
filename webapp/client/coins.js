@@ -73,7 +73,18 @@ var app = new Vue({
       $.getJSON('/api/coins', function (json) {
           self.items = json;
       });
-  }
+  },
+    methods: {
+        tabClicked: function () {
+            console.log("clicked tab");
+            var coin = this.selected[0];
+            var pending = 2
+            var chartData = []
+
+            get_prices(coin._id, coin.symbol);
+            get_stats(coin._id, coin.symbol);
+        }
+    }
 });
 
 
@@ -253,11 +264,4 @@ function get_prices(coinId, symbol) {
             buildCompareChart()
         }
     });
-}
-
-function load_chart() {
-
-
-    get_prices(1, "BTC");
-    get_stats(1, "BTC");
 }
