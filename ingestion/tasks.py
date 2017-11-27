@@ -289,34 +289,44 @@ class ImportRedditStats(mgr.IngestionTask):
                 self._progress(processed, len(coins))
 
 
-# TODO: add other twitter things for coin specific twitter
-# follower count, and look for hot posts with lots of retweets
-class ImportTwitterStats(mgr.IngestionTask):
+class ImportCommentStats(mgr.IngestionTask):
+    def __init__(self, collection, comment_scanner):
+        super().__init__()
+        self.__comment_scanner = comment_scanner
+        self.__collection = collection
+        self._name += "-" + collection
+
     def _run(self):
-        # TODO: filter out duplicate symbols, since we can't be sure which one we find
+        # TODO: for twitter filter out duplicate symbols, since we can't be sure which one we find
         # make sure these aren't big name symbols, if they are we need to maybe just use
         # the one with the bigger market cap
-
-        hours = 1
 
         coins = db.get_coins()
         processed = 0
         for coin in coins:
             sym = coin["symbol"]
-            print("getting twitter counts for {}".format(sym))
-            count = twitter.count_tweets(sym, hours)
-            print(count)
+            print("getting comments for {}".format(sym))
 
-            processed += 1
-            self._progress(processed, len(coins))
+            scanner = self.__comment_scanner(coin, 1)
+            scanner.find_comments()
 
             record = {
                 "date": datetime.datetime.utcnow(),
                 "coin_id": coin["_id"],
-                "count": count
+                "count": scanner.count(),
+                "sum_score": scanner.sum_score(),
+                "avg_score": scanner.avg_score(),
+                "avg_sentiment": scanner.avg_sentiment(),
+                "strong_pos": scanner.count_strong_pos(),
+                "strong_neg" : scanner.count_strong_neg()
             }
 
-            self._db_insert("twitter_counts", record)
+            print(record)
+
+            self._db_insert(self.__collection, record)
+
+            processed += 1
+            self._progress(processed, len(coins))
 
 
 # Helper function for task runs
@@ -328,9 +338,16 @@ def historical_data_tasks():
 
 
 def current_data_tasks():
+    reddit.init_api()
+    twitter.init_api()
+
     return [
         #ImportPrices(),
         #ImportRedditStats("reddit_stats", reddit.get_current_stats),
-        #ImportRedditStats("reddit_sentiment", reddit.get_avg_sentiment),
-        ImportTwitterStats()
+        ImportCommentStats("twitter_comments", twitter.CommentScanner),
+        #ImportCommentStats("reddit_comments", reddit.CommentScanner)
     ]
+
+
+# TODO: add other twitter things for coin specific twitter
+# follower count, and look for hot posts with lots of retweets

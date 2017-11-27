@@ -162,7 +162,7 @@ class IngestionTask:
 
         try:
             if self.__id is None:
-                self.__id = db.MONGO_DB.ingestion_tasks.insert(status)
+                self.__id = db.MONGO_DB.ingestion_tasks.insert_one(status)
             else:
                 db.MONGO_DB.ingestion_tasks.replace_one({'_id': self.__id}, status)
         except Exception as e:

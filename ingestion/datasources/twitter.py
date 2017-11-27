@@ -19,11 +19,11 @@ def init_api():
     api = tweepy.API(auth)
 
 
-class TwitterCommentScanner(comment.CommentScanner):
-    def __init__(self, symbol, hours):
+class CommentScanner(comment.CommentScanner):
+    def __init__(self, coin, hours):
         super().__init__()
 
-        self.query = "$" + symbol.lower()
+        self.query = "$" + coin["symbol"].lower()
         self.hours = hours
 
     def find_comments(self):
@@ -56,7 +56,6 @@ class TwitterCommentScanner(comment.CommentScanner):
                 score = tweet.retweet_count + 1
 
                 cc = comment.Comment(tweet.text, score)
-                self.comments.append(cc)
                 self._add_comment(tweet.text, score)
 
             except tweepy.TweepError:

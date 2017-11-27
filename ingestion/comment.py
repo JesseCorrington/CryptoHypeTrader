@@ -1,3 +1,4 @@
+import re
 from textblob import TextBlob
 
 
@@ -5,15 +6,20 @@ class Comment:
     def __init__(self, text, score):
         self.text = text
         self.score = score
-        self.sentiment = TextBlob(self.text).polarity
 
-        # TODO: consider cleaning the text here
+        clean_text = self.__clean_text(self.text)
+        self.sentiment = TextBlob(clean_text).polarity
+
 
     def __str__(self):
         return self.text
 
     def count_refs(self, token):
         return self.text.count(token)
+
+    @staticmethod
+    def __clean_text(text):
+        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) | (\w +:\ / \ / \S +)", " ", text).split())
 
 
 class CommentScanner:
@@ -38,10 +44,8 @@ class CommentScanner:
     def avg_sentiment(self):
         return sum(c.sentiment for c in self.__comments) / len(self.__comments)
 
-
-    # TODO: implement
     def count_strong_pos(self):
-        return 0
+        return sum(1 if c.sentiment > 0.5 else 0 for c in self.__comments)
 
     def count_strong_neg(self):
-        return 0
+        return sum(1 if c.sentiment < -0.5 else 0 for c in self.__comments)
