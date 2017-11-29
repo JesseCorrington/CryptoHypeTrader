@@ -31,6 +31,10 @@ class BackTester():
     def __init__(self):
         self.data_frames = {}
         self.coins = []
+        self.slippage_percent = 0.02
+        self.fee_percent = 0.0025
+        #self.slippage_percent = 0
+        #self.fee_percent = 0
 
     @staticmethod
     def __data_for_coin(data, coin):
@@ -40,6 +44,18 @@ class BackTester():
         # likely has to do with indexing on id and price
         data.sort(key=lambda x: x["date"])
         return data
+
+    def estimate_price(self, price, amount, buy_or_sell):
+        total = price * amount
+
+        slippage = total * self.slippage_percent
+        if buy_or_sell == "buy":
+            total += slippage
+        else:
+            total -= slippage
+
+        total += total * self.fee_percent
+        return total
 
     def load_data(self):
         self.coins = db.get_coins({"subreddit": {"$exists": True}})
@@ -120,12 +136,19 @@ class BackTester():
 
         positions = []
 
-        start_money = 1000
+        start_money = 100000
         current_money = start_money
+        money_in_positions = 0
 
         total_fees_paid = 0
 
+
+        # TODO: looks like there may be some issues with df padding
+        # so it looks like currencies are alive that aren't
+
         for current_day in daterange(start_date, end_date):
+            #print(current_day)
+
             daily_growth = []
             for coin_id, coin in self.data_frames.items():
                 df = coin["df"]
@@ -134,6 +157,9 @@ class BackTester():
                 try:
                     day = df.loc[current_day]
                     day_change = dfp.loc[current_day]
+                    prev_day = df.loc[current_day - timedelta(days=1)]
+                    reddit_growth = day["reddit_subs"] - prev_day["reddit_subs"]
+
 
                 except KeyError:
                     # TODO: prob just this coin wasn't active yet, can we prep data better
@@ -143,34 +169,28 @@ class BackTester():
                 i = 0
                 for pos in positions:
                     if pos["coin"]["_id"] == coin_id:
+                        pos["days"] += 1
+
                         # TODO: estimate slippage based on market size
-                        slippage_percent = 0.1
+                        est_sell = self.estimate_price(day["open"], pos["amount"], "sell")
+                        gain = (est_sell - pos["est_price"])
 
-                        # reduce sell by slippage, increase buy by slippage
-                        sell_price = day["open"] - day["open"] * slippage_percent
-                        buy_price = pos["buy_price"] + pos["buy_price"] * slippage_percent
+                        percent_gain = gain / pos["est_price"]
 
-                        gain = (sell_price - buy_price) * pos["amount"]
-                        current_money += gain
+                        if percent_gain > .1 or pos["days"] > 10 or current_day >= end_date - timedelta(days=5):
+                            current_money += est_sell
 
-                        # TODO: need more accurate fee calculation
-                        fee_percent = 0.002
-                        buy_cost = pos["amount"] * buy_price
-                        buy_fee = buy_cost * fee_percent
+                            # TODO: we need to update money in positons daily
+                            money_in_positions -= pos["est_price"]
 
-                        sell_cost = pos["amount"] * sell_price
-                        sell_fee = sell_cost * fee_percent
-                        total_fee = buy_fee + sell_fee
+                            print("POSITION CLOSE: {}, buy: {}, est_sell: {}, gain {}".format(
+                                pos["coin"]["symbol"], pos["est_price"], est_sell, gain
+                            ))
 
-                        current_money -= total_fee
-                        total_fees_paid += total_fee
+                            del positions[i]
+                            break
 
-                        print("POSITION CLOSED: {}, buy: {}, sell: {}, gain {} fee {}".format(
-                            pos["coin"]["symbol"], pos["buy_price"], sell_price, gain, total_fee
-                        ))
-
-                        del positions[i]
-                        break
+                            # TODO: doh, this break only allows us to close 1 position each day
 
                     i += 1
 
@@ -179,48 +199,61 @@ class BackTester():
 
             daily_growth.sort(key=lambda x: x["sub_growth"], reverse=True)
 
-            portfolio_size = 5
+            portfolio_size = 20
             top_pics = daily_growth[:portfolio_size]
 
-            print("Current money", current_money)
+            print("Current money, in pos", current_money, money_in_positions)
 
-            print(current_day, "Pics ------------------")
-            #assert (len(positions) == 0)
+            # TODO: don't open position on the last day
 
-            # TODO: this is an issue if the position didn't get closed above
-            positions = []
-
-            #top_pics = [{"coin_id": 1, "sub_growth": 1}]
-            #portfolio_size = 1
+            if current_money <= 10:
+                continue
 
             for pick in top_pics:
                 cid = pick["coin_id"]
                 coin = self.coinid_map[cid]
 
+                skip = False
+                for p in positions:
+                    if cid == p["coin"]["_id"]:
+                        skip = True
+                        break
+
+                if skip:
+                    continue
+
+                #if skip or pick["sub_growth"] < .07:
+                #    continue
+
                 df = self.data_frames[cid]["df"]
                 day = df.loc[current_day]
 
-                max_invest = min(current_money, 50000)
+                allocation = current_money / 10
 
-                # TODO: in reality we'd not reinvestie 100% each day, but take out profits
-                allocation = max_invest / portfolio_size
                 amount = allocation / day["open"]
 
-                # TODO: this is getting the same values for all the coins,
-                # because day is not correct
+                est_price = self.estimate_price(day["open"], amount, "buy")
+                positions.append({"coin": coin, "est_price": est_price, "amount": amount, "days": 0})
 
-                positions.append({"coin": coin, "buy_price": day["open"], "amount": amount})
+                print("POSITION OPEN: symbol {}, sub_growth {}, est_price {}, amount {}".format(
+                    coin["symbol"], "{0:.0f}%".format(pick["sub_growth"] * 100), est_price, amount
+                ))
 
-                print(coin["symbol"], "{0:.0f}%".format(pick["sub_growth"] * 100), day["open"], amount)
+                money_in_positions += est_price
+                current_money -= est_price
+
+        for p in positions:
+            print(p)
 
         print("final balance", current_money)
         print("total fees paid", total_fees_paid)
 
+# best pics
+#20,890,428,556
+# worst pics
+#12,142,910.6829
 
-# just bitcoin
-# final: 8743.29141358
-
-# compare against
+# compare against:
 # buying a random coin each day
 # just holding bitcoin
 # holding all coins
