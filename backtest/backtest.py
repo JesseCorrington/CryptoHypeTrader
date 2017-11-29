@@ -98,8 +98,15 @@ class BackTester():
             print("progress: {} / {}".format(progress, len(self.coins)))
 
             # TODO: for now test on a small sub set (for quicker iteration)
-            #if progress >= 5:
-            #    break
+            if progress >= 5:
+                break
+
+        # TODO: now add a couple columns to capture ranking
+        # subreddit growth
+        # subreddit growth / total subreddit growth
+        # growth rank
+
+
 
     def run(self):
         # init start and end dates
@@ -113,7 +120,8 @@ class BackTester():
 
         positions = []
 
-        total_gain = 0
+        start_money = 1000
+        current_money = start_money
 
         for current_day in daterange(start_date, end_date):
             daily_growth = []
@@ -134,9 +142,9 @@ class BackTester():
                 for pos in positions:
                     if pos["coin"]["_id"] == coin["coin_id"]:
                         sell_price = day["open"]
-                        change = sell_price - pos["buy_price"]
-                        total_gain += change
-                        print(pos["coin"]["symbol"], change)
+                        change = (sell_price - pos["buy_price"]) * pos["amount"]
+                        current_money += change
+                        print(pos["coin"]["symbol"], "gain/loss of", change)
                         del positions[i]
                         break
 
@@ -147,9 +155,10 @@ class BackTester():
 
             daily_growth.sort(key=lambda x: x["sub_growth"], reverse=True)
 
+            portfolio_size = 5
             top_pics = daily_growth[:5]
 
-            print("Total gain", total_gain)
+            print("Current money", current_money)
 
             print(current_day, "Pics ------------------")
             #assert (len(positions) == 0)
@@ -161,6 +170,26 @@ class BackTester():
                 cid = pick["coin_id"]
                 coin = self.coinid_map[cid]
 
-                positions.append({"coin": coin, "buy_price": day["open"]})
+                # TODO: in reality we'd not reinvestie 100% each day, but take out profits
+                allocation = current_money / portfolio_size
+                amount = allocation / day["open"]
 
-                print(coin["symbol"], "{0:.0f}%".format(pick["sub_growth"] * 100))
+                # TODO: this is getting the same values for all the coins,
+                # because day is not correct
+
+                positions.append({"coin": coin, "buy_price": day["open"], "amount": amount})
+
+                print(coin["symbol"], "{0:.0f}%".format(pick["sub_growth"] * 100), amount)
+
+
+# taking the top 5 daily
+# Total gain 30368.4297886
+
+# taking the bottom 5 daily
+# Total gain 10805.1391073
+
+# buying a random coin each day
+
+# just holding bitcoin
+
+# holding all coins
