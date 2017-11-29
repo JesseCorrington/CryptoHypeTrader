@@ -29,7 +29,7 @@ def daterange(start_date, end_date):
 
 class BackTester():
     def __init__(self):
-        self.data = []
+        self.data_frames = {}
         self.coins = []
 
     @staticmethod
@@ -92,14 +92,14 @@ class BackTester():
             df.index = df['date']
             del df['date']
 
-            self.data.append({"coin_id": coin["_id"], "df": df, "dfp": df.pct_change(1)})
+            self.data_frames[coin["_id"]] = {"df": df, "dfp": df.pct_change(1)}
 
             progress += 1
             print("progress: {} / {}".format(progress, len(self.coins)))
 
             # TODO: for now test on a small sub set (for quicker iteration)
-            if progress >= 5:
-                break
+            #if progress >= 100:
+            #    break
 
         # TODO: now add a couple columns to capture ranking
         # subreddit growth
@@ -115,7 +115,7 @@ class BackTester():
         # rank coins by reddit growth
         # buy coin at open, sell at next open
 
-        start_date = datetime(2015, 1, 1)
+        start_date = datetime(2016, 11, 1)
         end_date = datetime(2017, 11, 1)
 
         positions = []
@@ -123,9 +123,11 @@ class BackTester():
         start_money = 1000
         current_money = start_money
 
+        total_fees_paid = 0
+
         for current_day in daterange(start_date, end_date):
             daily_growth = []
-            for coin in self.data:
+            for coin_id, coin in self.data_frames.items():
                 df = coin["df"]
                 dfp = coin["dfp"]
 
@@ -140,23 +142,45 @@ class BackTester():
                 # close our position if we had one from yesterday
                 i = 0
                 for pos in positions:
-                    if pos["coin"]["_id"] == coin["coin_id"]:
-                        sell_price = day["open"]
-                        change = (sell_price - pos["buy_price"]) * pos["amount"]
-                        current_money += change
-                        print(pos["coin"]["symbol"], "gain/loss of", change)
+                    if pos["coin"]["_id"] == coin_id:
+                        # TODO: estimate slippage based on market size
+                        slippage_percent = 0.1
+
+                        # reduce sell by slippage, increase buy by slippage
+                        sell_price = day["open"] - day["open"] * slippage_percent
+                        buy_price = pos["buy_price"] + pos["buy_price"] * slippage_percent
+
+                        gain = (sell_price - buy_price) * pos["amount"]
+                        current_money += gain
+
+                        # TODO: need more accurate fee calculation
+                        fee_percent = 0.002
+                        buy_cost = pos["amount"] * buy_price
+                        buy_fee = buy_cost * fee_percent
+
+                        sell_cost = pos["amount"] * sell_price
+                        sell_fee = sell_cost * fee_percent
+                        total_fee = buy_fee + sell_fee
+
+                        current_money -= total_fee
+                        total_fees_paid += total_fee
+
+                        print("POSITION CLOSED: {}, buy: {}, sell: {}, gain {} fee {}".format(
+                            pos["coin"]["symbol"], pos["buy_price"], sell_price, gain, total_fee
+                        ))
+
                         del positions[i]
                         break
 
                     i += 1
 
                 rs = day_change["reddit_subs"]
-                daily_growth.append({"coin_id": coin["coin_id"], "sub_growth": rs})
+                daily_growth.append({"coin_id": coin_id, "sub_growth": rs})
 
             daily_growth.sort(key=lambda x: x["sub_growth"], reverse=True)
 
             portfolio_size = 5
-            top_pics = daily_growth[:5]
+            top_pics = daily_growth[:portfolio_size]
 
             print("Current money", current_money)
 
@@ -166,12 +190,20 @@ class BackTester():
             # TODO: this is an issue if the position didn't get closed above
             positions = []
 
+            #top_pics = [{"coin_id": 1, "sub_growth": 1}]
+            #portfolio_size = 1
+
             for pick in top_pics:
                 cid = pick["coin_id"]
                 coin = self.coinid_map[cid]
 
+                df = self.data_frames[cid]["df"]
+                day = df.loc[current_day]
+
+                max_invest = min(current_money, 50000)
+
                 # TODO: in reality we'd not reinvestie 100% each day, but take out profits
-                allocation = current_money / portfolio_size
+                allocation = max_invest / portfolio_size
                 amount = allocation / day["open"]
 
                 # TODO: this is getting the same values for all the coins,
@@ -179,17 +211,16 @@ class BackTester():
 
                 positions.append({"coin": coin, "buy_price": day["open"], "amount": amount})
 
-                print(coin["symbol"], "{0:.0f}%".format(pick["sub_growth"] * 100), amount)
+                print(coin["symbol"], "{0:.0f}%".format(pick["sub_growth"] * 100), day["open"], amount)
+
+        print("final balance", current_money)
+        print("total fees paid", total_fees_paid)
 
 
-# taking the top 5 daily
-# Total gain 30368.4297886
+# just bitcoin
+# final: 8743.29141358
 
-# taking the bottom 5 daily
-# Total gain 10805.1391073
-
+# compare against
 # buying a random coin each day
-
 # just holding bitcoin
-
 # holding all coins
