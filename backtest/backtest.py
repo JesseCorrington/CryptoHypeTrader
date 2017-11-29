@@ -98,7 +98,7 @@ class BackTester():
             print("progress: {} / {}".format(progress, len(self.coins)))
 
             # TODO: for now test on a small sub set (for quicker iteration)
-            #if progress >= 10:
+            #if progress >= 5:
             #    break
 
     def run(self):
@@ -110,27 +110,57 @@ class BackTester():
 
         start_date = datetime(2015, 1, 1)
         end_date = datetime(2017, 11, 1)
-        for current_day in daterange(start_date, end_date):
 
+        positions = []
+
+        total_gain = 0
+
+        for current_day in daterange(start_date, end_date):
             daily_growth = []
             for coin in self.data:
+                df = coin["df"]
                 dfp = coin["dfp"]
 
                 try:
-                    day = dfp.loc[current_day]
+                    day = df.loc[current_day]
+                    day_change = dfp.loc[current_day]
+
                 except KeyError:
-                    # # TODO: prob just this coin wasn't active yet, can we prep data better
+                    # TODO: prob just this coin wasn't active yet, can we prep data better
                     continue
 
-                rs = day["reddit_subs"]
+                # close our position if we had one from yesterday
+                i = 0
+                for pos in positions:
+                    if pos["coin"]["_id"] == coin["coin_id"]:
+                        sell_price = day["open"]
+                        change = sell_price - pos["buy_price"]
+                        total_gain += change
+                        print(pos["coin"]["symbol"], change)
+                        del positions[i]
+                        break
+
+                    i += 1
+
+                rs = day_change["reddit_subs"]
                 daily_growth.append({"coin_id": coin["coin_id"], "sub_growth": rs})
 
             daily_growth.sort(key=lambda x: x["sub_growth"], reverse=True)
 
-            top_pics = daily_growth[:3]
+            top_pics = daily_growth[:5]
+
+            print("Total gain", total_gain)
 
             print(current_day, "Pics ------------------")
+            #assert (len(positions) == 0)
+
+            # TODO: this is an issue if the position didn't get closed above
+            positions = []
+
             for pick in top_pics:
                 cid = pick["coin_id"]
                 coin = self.coinid_map[cid]
+
+                positions.append({"coin": coin, "buy_price": day["open"]})
+
                 print(coin["symbol"], "{0:.0f}%".format(pick["sub_growth"] * 100))
