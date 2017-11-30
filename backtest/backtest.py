@@ -1,15 +1,41 @@
 from datetime import datetime, timedelta
+from enum import Enum
 import pandas as pd
-import pymongo
+
 
 # TODO: database/util should be moved to a common/util package
 from ingestion import util, database as db
 
-class Holding:
+class Position:
     def __init__(self, coin_id, amount, buy_price):
         self.coin_id = coin_id
         self.amount = amount
         self.buy_price = buy_price
+        self.sell_price = None
+        self.closed = False
+
+    def close(self, sell_price):
+        self.sell_price = sell_price
+        self.closed = True
+
+    # TODO: fees and slippage
+    # TODO: do all calcs in BTC too, or ETH
+    # TODO: value seems like the wrong word too
+
+    def buy_value(self):
+        return self.amount * self.buy_price
+
+    def current_value(self, current_price):
+        return self.amount * current_price
+
+    def current_profit(self, current_price):
+        return self.current_value(current_price) - self.buy_value()
+
+    def sell_value(self):
+        return self.amount * self.sell_price
+
+    def sell_profit(self):
+        return self.sell_value() - self.buy_value()
 
 
 class Portfolio:
@@ -18,8 +44,34 @@ class Portfolio:
     pass
 
 
+class Signal(Enum):
+    BUY = 1
+    SELL = 2
+    HOLD = 3
+    NONE = 4
+
+
 class Strategy:
-    pass
+    def generate_signals(self, coin_id, dataframe):
+        raise NotImplementedError("Must implement generate_signals")
+
+
+class BuyAndHoldStrategy(Strategy):
+    def __init__(self, coin_ids, buy_date, sell_date):
+        self.coin_ids = coin_ids
+        self.buy_date = buy_date
+        self.sell_date = sell_date
+
+    def generate_signals(self, coin_id, df):
+        if coin_id in self.coin_ids:
+            df = pd.DataFrame(index=df.index)
+            df["signals"] = Signal.NONE
+
+            df.loc[self.buy_date:self.sell_date]["signals"] = Signal.HOLD
+            df.loc[self.buy_date]["signals"] = Signal.BUY
+            df.loc[self.sell_date]["signals"] = Signal.SELL
+
+            return df
 
 
 def daterange(start_date, end_date):
@@ -31,10 +83,20 @@ class BackTester():
     def __init__(self):
         self.data_frames = {}
         self.coins = []
+        self.signals = {}
         self.slippage_percent = 0.02
         self.fee_percent = 0.0025
-        #self.slippage_percent = 0
-        #self.fee_percent = 0
+
+        # TODO: this needs to be configurable
+        self.start_date = datetime(2016, 11, 1)
+        self.end_date = datetime(2017, 11, 1)
+        self.current_day = self.start_date
+
+        # TODO:
+        # mapping coin_id to position limits us to a single position for a coin
+        # down the road we'll want to remove this restriction so we can build positions over time
+        self.positions = {}
+        self.closed_positions = []
 
     @staticmethod
     def __data_for_coin(data, coin):
@@ -108,19 +170,84 @@ class BackTester():
             df.index = df['date']
             del df['date']
 
-            self.data_frames[coin["_id"]] = {"df": df, "dfp": df.pct_change(1)}
+            if df.isnull().values.any():
+                # TODO: use linear interpolation for small gaps
+                raise Exception("missing data")
+
+            self.data_frames[coin["_id"]] = df
 
             progress += 1
             print("progress: {} / {}".format(progress, len(self.coins)))
 
             # TODO: for now test on a small sub set (for quicker iteration)
-            #if progress >= 100:
-            #    break
+            if progress >= 1:
+                break
 
         # TODO: now add a couple columns to capture ranking
         # subreddit growth
         # subreddit growth / total subreddit growth
         # growth rank
+
+
+    def generate_signals(self, strategy):
+        for coin_id, df in self.data_frames.items():
+            signals = strategy.generate_signals(coin_id, df)
+            self.signals[coin_id] = signals
+
+    def tick(self):
+        if self.current_day > self.end_date:
+            assert(len(self.positions) == 0)
+
+            for pos in self.closed_positions:
+                print("buy value", pos.buy_value())
+                print("sell value", pos.sell_value())
+                print("profit", pos.sell_profit())
+
+            return False
+
+        daily_growth = []
+        for coin_id, df in self.data_frames.items():
+            try:
+                signals = self.signals[coin_id]
+                days_signal = signals.loc[self.current_day]["signals"]
+                day = df.loc[self.current_day]
+                open_price = day["open"]
+
+                if days_signal == Signal.BUY:
+                    print("BUY", coin_id)
+
+                    # TODO: config for this
+                    amount = 1
+                    self.positions[coin_id] = Position(coin_id, amount, open_price)
+                elif days_signal == Signal.HOLD:
+                    pass
+                    #print("HOLD", coin_id)
+                elif days_signal == Signal.SELL:
+                    print("SELL", coin_id)
+
+                    assert(coin_id in self.positions)
+
+                    pos = self.positions[coin_id]
+                    pos.close(open_price)
+                    self.closed_positions.append(pos)
+                    del self.positions[coin_id]
+
+
+            except KeyError:
+                # TODO: prob just this coin wasn't active yet, can we prep data better
+                continue
+
+
+        self.current_day += timedelta(days=1)
+        return True
+
+
+
+
+
+
+
+
 
 
 
