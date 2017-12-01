@@ -35,7 +35,7 @@ class TestBackTest(TestCase):
         buy_hold2 = backtest.BuyAndHoldStrategy([eth], start_date, end_date)
         buy_hold3 = backtest.BuyAndHoldStrategy([btc, eth], start_date, end_date)
 
-        reddit_growth = backtest.RedditGrowthStrategy()
+        reddit_growth = backtest.RedditGrowthStrategy(0, .05)
 
         strategies = [
             ("hold btc", buy_hold1),
@@ -44,14 +44,17 @@ class TestBackTest(TestCase):
             ("reddit growth", reddit_growth)
         ]
 
-        testers = []
+        tests = []
         for name, strategy in strategies:
             back_test = backtest.BackTest(name, coins, data_frames, strategy)
             back_test.generate_signals()
             back_test.run(start_date, end_date)
 
-            testers.append(back_test)
+            back_test.print_results()
+            back_test.print_trades()
 
-        backtest.create_equity_compare_graph(testers)
+            tests.append(back_test)
+
+        backtest.create_equity_compare_graph(tests)
 
         #backtest.create_equity_graph(testers[0])

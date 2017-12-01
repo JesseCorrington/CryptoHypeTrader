@@ -9,18 +9,20 @@ from plotly.graph_objs import Scatter, Layout
 from ingestion import util, database as db
 
 TRADE_FEE = .0025
-TRADE_SLIPPAGE = .03
+TRADE_SLIPPAGE = .02
 
 
 # TODO: do all calcs in BTC too, or ETH
 class Position:
-    def __init__(self, coin_id, amount, coin_price):
+    def __init__(self, coin_id, amount, coin_price, date):
         self.coin_id = coin_id
         self.amount = amount
         self.coin_buy_price = coin_price
+        self.buy_date = date
         self.coin_sell_price = None
         self.full_sell_price = None
         self.closed = False
+        self.sell_date = None
 
         # Add slippage to full buy cost
         self.full_buy_price = self.amount * self.coin_buy_price
@@ -31,11 +33,12 @@ class Position:
         self.full_buy_price += fee
         self.fees_paid = fee
 
-    def close(self, coin_price):
+    def close(self, coin_price, date):
         if self.closed:
             return
 
         self.coin_sell_price = coin_price
+        self.sell_date = date
 
         # Reduce sell value by slippage
         self.full_sell_price = self.amount * self.coin_sell_price
@@ -104,18 +107,25 @@ class BuyAndHoldStrategy(Strategy):
 
         return self.starting_cash / len(self.coin_ids)
 
-
+# TODO: only trade coins with high enough market cap
+# and size positions based on market cap to reduce slippage
 class RedditGrowthStrategy(Strategy):
+    def __init__(self, min_market_cap, sub_growth_threshold):
+        self.min_market_cap = min_market_cap
+        self.sub_growth_threshold = sub_growth_threshold
+
     def generate_signals(self, coin_id, df):
         df_signals = pd.DataFrame(index=df.index)
         df_change = df.pct_change(1)
 
         holding = False
         for index, row in df_change.iterrows():
-            if not holding and row["reddit_subs"] > .05:
+            market_cap = df.loc[index, "market_cap"]
+
+            if not holding and row["reddit_subs"] > self.sub_growth_threshold and market_cap > self.min_market_cap:
                 df_signals.loc[index, "signals"] = Signal.BUY
                 holding = True
-            if holding and row["reddit_subs"] < .05:
+            if holding and row["reddit_subs"] < self.sub_growth_threshold:
                 df_signals.loc[index, "signals"] = Signal.SELL
                 holding = False
 
@@ -179,7 +189,9 @@ class BackTest:
                 current_price = self.data_frames[coin_id].loc[date]["close"]
             except:
                 print("ERROR: missing days price")
-                current_price = 0
+
+                # TODO: this is an issue somewhere upstream, just use previous days price for now
+                current_price = self.data_frames[coin_id].loc[date - timedelta(days=1)]["close"]
 
             total_value += pos.current_value(current_price)
 
@@ -225,10 +237,9 @@ class BackTest:
                 #buy_cash = min(buy_cash, 5000)
 
                 buy_cash = self.strategy.allocation(current_cash)
-
                 amount = buy_cash / close_price
 
-                pos = Position(coin_id, amount, close_price)
+                pos = Position(coin_id, amount, close_price, self.current_day)
                 self.positions[coin_id] = pos
 
                 current_cash -= pos.full_buy_price
@@ -241,7 +252,7 @@ class BackTest:
                 assert(coin_id in self.positions)
 
                 pos = self.positions[coin_id]
-                pos.close(close_price)
+                pos.close(close_price, self.current_day)
                 self.closed_positions.append(pos)
                 del self.positions[coin_id]
 
@@ -253,6 +264,29 @@ class BackTest:
         self.current_day += timedelta(days=1)
 
         return True
+
+    def print_trades(self):
+        print("Trades made:", len(self.closed_positions))
+
+        print("Symbol, buy date, buy price, sell date, sell price, days held, profit, percent profit")
+
+        for pos in self.closed_positions:
+            coin = self.coins[pos.coin_id]
+            days_held = pos.sell_date - pos.buy_date
+            print(coin["symbol"], pos.buy_date, pos.coin_buy_price, pos.sell_date, days_held, pos.profit(), pos.pct_profit())
+
+    def print_results(self):
+
+        # TODO: implement
+        # number of trades
+        # winning trades
+        # loosing trades
+        # percent winning
+        # average gain amount
+        # average gain percent
+        # average days held
+
+        pass
 
 
 def data_for_coin(data, coin):
@@ -286,6 +320,7 @@ def load_data():
             "date": [],
             "open": [],
             "close": [],
+            "market_cap": [],
         }
 
         social_data = {
@@ -301,6 +336,7 @@ def load_data():
             price_data["date"].append(price["date"])
             price_data["open"].append(price["open"])
             price_data["close"].append(price["close"])
+            price_data["market_cap"].append(price["market_cap"])
 
             prev_date = price["date"]
 
@@ -308,7 +344,7 @@ def load_data():
             social_data["date"].append(sub["date"])
             social_data["reddit_subs"].append(sub["reddit_subscribers"])
 
-        dfp = pd.DataFrame(price_data, columns=["date", "open", "close"])
+        dfp = pd.DataFrame(price_data, columns=["date", "open", "close", "market_cap"])
         dfs = pd.DataFrame(social_data, columns=["date", "reddit_subs"])
         df = pd.merge(dfp, dfs, on="date")
 
@@ -327,11 +363,14 @@ def load_data():
         df["open"].interpolate()
         df["close"] = df["close"].combine_first(s2)
         df["close"].interpolate()
+        df["market_cap"] = df["market_cap"].combine_first(s2)
+        df["market_cap"].interpolate()
         df["reddit_subs"] = df["reddit_subs"].combine_first(s2)
         df["reddit_subs"].interpolate()
 
         if df.isnull().values.any():
-            raise Exception("missing data")
+            print("ERROR: nulls in data")
+            #raise Exception("missing data")
 
         data_frames[coin["_id"]] = df
 
@@ -339,7 +378,7 @@ def load_data():
         print("progress: {} / {}".format(progress, len(coins)))
 
         # TODO: for now test on a small sub set (for quicker iteration)
-        #if progress >= 100:
+        #if progress >= 10:
         #    break
 
     return coins, data_frames
