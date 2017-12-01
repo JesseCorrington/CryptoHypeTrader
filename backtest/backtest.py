@@ -8,43 +8,57 @@ from plotly.graph_objs import Scatter, Layout
 # TODO: database/util should be moved to a common/util package
 from ingestion import util, database as db
 
+TRADE_FEE = .0025
+TRADE_SLIPPAGE = .03
 
+
+# TODO: do all calcs in BTC too, or ETH
 class Position:
-    def __init__(self, coin_id, amount, buy_price):
+    def __init__(self, coin_id, amount, coin_price):
         self.coin_id = coin_id
         self.amount = amount
-        self.buy_price = buy_price
-        self.sell_price = None
+        self.coin_buy_price = coin_price
+        self.coin_sell_price = None
+        self.full_sell_price = None
         self.closed = False
 
-    def close(self, sell_price):
-        self.sell_price = sell_price
+        # Add slippage to full buy cost
+        self.full_buy_price = self.amount * self.coin_buy_price
+        self.full_buy_price += self.full_buy_price * TRADE_SLIPPAGE
+
+        # and the trade fee
+        fee = self.full_buy_price * TRADE_FEE
+        self.full_buy_price += fee
+        self.fees_paid = fee
+
+    def close(self, coin_price):
+        if self.closed:
+            return
+
+        self.coin_sell_price = coin_price
+
+        # Reduce sell value by slippage
+        self.full_sell_price = self.amount * self.coin_sell_price
+        self.full_sell_price -= self.full_sell_price * TRADE_SLIPPAGE
+
+        # and reduce by fee
+        fee = self.full_sell_price * TRADE_FEE
+        self.full_sell_price -= fee
+        self.fees_paid += fee
+
         self.closed = True
 
-    # TODO: fees and slippage
-    # TODO: do all calcs in BTC too, or ETH
-    # TODO: value seems like the wrong word too
-
-    def buy_value(self):
-        return self.amount * self.buy_price
-
     def current_value(self, current_price):
-        return self.amount * current_price
+        base = self.amount * current_price
+        base -= base * TRADE_SLIPPAGE
+        base -= base * TRADE_FEE
+        return base
 
-    def current_profit(self, current_price):
-        return self.current_value(current_price) - self.buy_value()
+    def profit(self):
+        return self.full_sell_price - self.full_buy_price
 
-    def sell_value(self):
-        return self.amount * self.sell_price
-
-    def sell_profit(self):
-        return self.sell_value() - self.buy_value()
-
-
-class Portfolio:
-    def __init__(self):
-        self.holdings = []
-    pass
+    def pct_profit(self):
+        return self.profit() / self.full_buy_price
 
 
 class Signal(Enum):
@@ -58,12 +72,16 @@ class Strategy:
     def generate_signals(self, coin_id, dataframe):
         raise NotImplementedError("Must implement generate_signals")
 
+    def allocation(self, current_cash):
+        raise NotImplementedError("Must implement allocation")
+
 
 class BuyAndHoldStrategy(Strategy):
     def __init__(self, coin_ids, buy_date, sell_date):
         self.coin_ids = coin_ids
         self.buy_date = buy_date
         self.sell_date = sell_date
+        self.starting_cash = None
 
     def generate_signals(self, coin_id, df):
         if coin_id in self.coin_ids:
@@ -80,25 +98,50 @@ class BuyAndHoldStrategy(Strategy):
 
             return df
 
+    def allocation(self, available_cash):
+        if not self.starting_cash:
+            self.starting_cash = available_cash
+
+        return self.starting_cash / len(self.coin_ids)
+
+
+class RedditGrowthStrategy(Strategy):
+    def generate_signals(self, coin_id, df):
+        df_signals = pd.DataFrame(index=df.index)
+        df_change = df.pct_change(1)
+
+        holding = False
+        for index, row in df_change.iterrows():
+            if not holding and row["reddit_subs"] > .05:
+                df_signals.loc[index, "signals"] = Signal.BUY
+                holding = True
+            if holding and row["reddit_subs"] < .05:
+                df_signals.loc[index, "signals"] = Signal.SELL
+                holding = False
+
+        return df_signals
+
+    def allocation(self, current_cash):
+        size = current_cash / 10
+        size = min(size, 5000)
+        return size
+
 
 def daterange(start_date, end_date):
-    for n in range(int ((end_date - start_date).days)):
+    for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
 
-class BackTester:
-    def __init__(self, name, coins, data_frames):
+class BackTest:
+    def __init__(self, name, coins, data_frames, strategy):
         self.name = name
         self.coins = coins
         self.data_frames = data_frames
+        self.strategy = strategy
         self.signals = {}
-        self.slippage_percent = 0.02
-        self.fee_percent = 0.0025
-
-        # TODO: this needs to be configurable
-        self.start_date = datetime(2016, 11, 1)
-        self.end_date = datetime(2017, 11, 1)
-        self.current_day = self.start_date
+        self.start_date = None
+        self.end_date = None
+        self.current_day = None
 
         # TODO:
         # mapping coin_id to position limits us to a single position for a coin
@@ -108,19 +151,6 @@ class BackTester:
 
         self.initial_cash = 1000
         self.value_over_time = pd.DataFrame(columns=["date", "cash", "equity"])
-
-
-    def estimate_price(self, price, amount, buy_or_sell):
-        total = price * amount
-
-        slippage = total * self.slippage_percent
-        if buy_or_sell == "buy":
-            total += slippage
-        else:
-            total -= slippage
-
-        total += total * self.fee_percent
-        return total
 
     def current_cash(self):
         if len(self.value_over_time) == 0:
@@ -134,30 +164,38 @@ class BackTester:
 
         return self.value_over_time.iloc[-1].cash
 
-    def generate_signals(self, strategy):
+    def generate_signals(self):
         for coin_id, df in self.data_frames.items():
-            signals = strategy.generate_signals(coin_id, df)
+            signals = self.strategy.generate_signals(coin_id, df)
             self.signals[coin_id] = signals
 
     def update_equity(self, date, current_cash):
         total_value = 0
         for coin_id, pos in self.positions.items():
 
-            # TODO: this feels kinda ugly
-            current_price = self.data_frames[coin_id].loc[date]["open"]
+            # TODO: we shouldn't need to try catch here if we've properly cleaned the data
+            # fix upstream setup errors and remove
+            try:
+                current_price = self.data_frames[coin_id].loc[date]["close"]
+            except:
+                print("ERROR: missing days price")
+                current_price = 0
+
             total_value += pos.current_value(current_price)
 
         self.value_over_time.loc[len(self.value_over_time)] = [date, current_cash, total_value]
 
+    def run(self, start_date, end_date):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.current_day = self.start_date
+
+        while self.tick():
+            pass
+
     def tick(self):
         if self.current_day > self.end_date:
-            assert(len(self.positions) == 0)
-
-            for pos in self.closed_positions:
-                print("buy value", pos.buy_value())
-                print("sell value", pos.sell_value())
-                print("profit", pos.sell_profit())
-
+            #assert(len(self.positions) == 0)
             return False
 
         current_cash = self.current_cash()
@@ -167,163 +205,54 @@ class BackTester:
                 # No actions to take for this coin
                 continue
 
-            days_signal = signals.loc[self.current_day]["signals"]
+            # TODO: we need better handling around missing data, and date ranges the coins existed
+            try:
+                days_signal = signals.loc[self.current_day]["signals"]
+            except Exception:
+                continue
+
             day = df.loc[self.current_day]
-            open_price = day["open"]
+            close_price = day["close"]
 
             if days_signal == Signal.BUY:
                 # TODO: config for position sizing, and it needs to take into account fees and slip, real price
                 # and strategies should be able to do position sizing, or have strengths for signals
                 # currently this only works with a buy and hold strategy
-                percent = signals.loc[self.current_day]["allocation"]
-                amount = self.initial_cash * percent / open_price
+                #percent = signals.loc[self.current_day]["allocation"]
+                #amount = self.initial_cash * percent / close_price
 
-                pos = Position(coin_id, amount, open_price)
+                #buy_cash = current_cash / 10
+                #buy_cash = min(buy_cash, 5000)
+
+                buy_cash = self.strategy.allocation(current_cash)
+
+                amount = buy_cash / close_price
+
+                pos = Position(coin_id, amount, close_price)
                 self.positions[coin_id] = pos
 
-                current_cash -= pos.buy_value()
+                current_cash -= pos.full_buy_price
 
             elif days_signal == Signal.SELL:
+                # TODO: remove this
+                if coin_id not in self.positions:
+                    continue
+
                 assert(coin_id in self.positions)
 
                 pos = self.positions[coin_id]
-                pos.close(open_price)
+                pos.close(close_price)
                 self.closed_positions.append(pos)
                 del self.positions[coin_id]
 
-                current_cash += pos.sell_value()
+                current_cash += pos.full_sell_price
+
+        # TODO: if we just sold, then this equity update seems a bit wonky
 
         self.update_equity(self.current_day, current_cash)
         self.current_day += timedelta(days=1)
 
         return True
-
-
-
-
-    def run(self):
-        # init start and end dates
-        # iterate over dates
-        # for each date, find the set of available coins
-        # rank coins by reddit growth
-        # buy coin at open, sell at next open
-
-        start_date = datetime(2016, 11, 1)
-        end_date = datetime(2017, 11, 1)
-
-        positions = []
-
-        start_money = 100000
-        current_money = start_money
-        money_in_positions = 0
-
-        total_fees_paid = 0
-
-
-        # TODO: looks like there may be some issues with df padding
-        # so it looks like currencies are alive that aren't
-
-        for current_day in daterange(start_date, end_date):
-            #print(current_day)
-
-            daily_growth = []
-            for coin_id, coin in self.data_frames.items():
-                df = coin["df"]
-                dfp = coin["dfp"]
-
-                try:
-                    day = df.loc[current_day]
-                    day_change = dfp.loc[current_day]
-                    prev_day = df.loc[current_day - timedelta(days=1)]
-                    reddit_growth = day["reddit_subs"] - prev_day["reddit_subs"]
-
-
-                except KeyError:
-                    # TODO: prob just this coin wasn't active yet, can we prep data better
-                    continue
-
-                # close our position if we had one from yesterday
-                i = 0
-                for pos in positions:
-                    if pos["coin"]["_id"] == coin_id:
-                        pos["days"] += 1
-
-                        # TODO: estimate slippage based on market size
-                        est_sell = self.estimate_price(day["open"], pos["amount"], "sell")
-                        gain = (est_sell - pos["est_price"])
-
-                        percent_gain = gain / pos["est_price"]
-
-                        if percent_gain > .1 or pos["days"] > 10 or current_day >= end_date - timedelta(days=5):
-                            current_money += est_sell
-
-                            # TODO: we need to update money in positons daily
-                            money_in_positions -= pos["est_price"]
-
-                            print("POSITION CLOSE: {}, buy: {}, est_sell: {}, gain {}".format(
-                                pos["coin"]["symbol"], pos["est_price"], est_sell, gain
-                            ))
-
-                            del positions[i]
-                            break
-
-                            # TODO: doh, this break only allows us to close 1 position each day
-
-                    i += 1
-
-                rs = day_change["reddit_subs"]
-                daily_growth.append({"coin_id": coin_id, "sub_growth": rs})
-
-            daily_growth.sort(key=lambda x: x["sub_growth"], reverse=True)
-
-            portfolio_size = 20
-            top_pics = daily_growth[:portfolio_size]
-
-            print("Current money, in pos", current_money, money_in_positions)
-
-            # TODO: don't open position on the last day
-
-            if current_money <= 10:
-                continue
-
-            for pick in top_pics:
-                cid = pick["coin_id"]
-                coin = self.coinid_map[cid]
-
-                skip = False
-                for p in positions:
-                    if cid == p["coin"]["_id"]:
-                        skip = True
-                        break
-
-                if skip:
-                    continue
-
-                #if skip or pick["sub_growth"] < .07:
-                #    continue
-
-                df = self.data_frames[cid]["df"]
-                day = df.loc[current_day]
-
-                allocation = current_money / 10
-
-                amount = allocation / day["open"]
-
-                est_price = self.estimate_price(day["open"], amount, "buy")
-                positions.append({"coin": coin, "est_price": est_price, "amount": amount, "days": 0})
-
-                print("POSITION OPEN: symbol {}, sub_growth {}, est_price {}, amount {}".format(
-                    coin["symbol"], "{0:.0f}%".format(pick["sub_growth"] * 100), est_price, amount
-                ))
-
-                money_in_positions += est_price
-                current_money -= est_price
-
-        for p in positions:
-            print(p)
-
-        print("final balance", current_money)
-        print("total fees paid", total_fees_paid)
 
 
 def data_for_coin(data, coin):
@@ -364,31 +293,44 @@ def load_data():
             "reddit_subs": []
         }
 
+        prev_date = None
         for price in prices:
+            if prev_date and price["date"] - prev_date > timedelta(days=1):
+                print("missed previous day(s), curr={}, prev={}".format(price["date"], prev_date))
+
             price_data["date"].append(price["date"])
             price_data["open"].append(price["open"])
             price_data["close"].append(price["close"])
+
+            prev_date = price["date"]
 
         for sub in subs:
             social_data["date"].append(sub["date"])
             social_data["reddit_subs"].append(sub["reddit_subscribers"])
 
-        # TODO: if our frame contained data about the overall market grwoth (reddit and price)
-        # then we should be able to more easily determine daily rank
-
         dfp = pd.DataFrame(price_data, columns=["date", "open", "close"])
         dfs = pd.DataFrame(social_data, columns=["date", "reddit_subs"])
         df = pd.merge(dfp, dfs, on="date")
-
-        # ensure correct date type
-        #df['date'] = pd.to_datetime(df['date'])
 
         # make date the index
         df.index = df['date']
         del df['date']
 
+        if len(df) == 0:
+            # TODO: handle this cleaner, this also breaks progress count
+            print("ERROR: No data for coin", coin["symbol"])
+            continue
+
+        datetime_index = [df.index.min(), df.index.max()]
+        s2 = pd.Series(None, datetime_index)
+        df["open"] = df["open"].combine_first(s2)
+        df["open"].interpolate()
+        df["close"] = df["close"].combine_first(s2)
+        df["close"].interpolate()
+        df["reddit_subs"] = df["reddit_subs"].combine_first(s2)
+        df["reddit_subs"].interpolate()
+
         if df.isnull().values.any():
-            # TODO: use linear interpolation for small gaps
             raise Exception("missing data")
 
         data_frames[coin["_id"]] = df
@@ -397,21 +339,16 @@ def load_data():
         print("progress: {} / {}".format(progress, len(coins)))
 
         # TODO: for now test on a small sub set (for quicker iteration)
-        if progress >= 2:
-            break
-
-    # TODO: now add a couple columns to capture ranking
-    # subreddit growth
-    # subreddit growth / total subreddit growth
-    # growth rank
+        #if progress >= 100:
+        #    break
 
     return coins, data_frames
 
-def create_equity_graph(backtest):
-    data = [Scatter(x=backtest.value_over_time.date, y=backtest.value_over_time.equity),
-            Scatter(x=backtest.value_over_time.date, y=backtest.value_over_time.cash)]
-    plotly.offline.plot(data)
 
+def create_equity_graph(backtest):
+    data = [Scatter(x=backtest.value_over_time.date, y=backtest.value_over_time.equity, name="Equity"),
+            Scatter(x=backtest.value_over_time.date, y=backtest.value_over_time.cash, name="Cash")]
+    plotly.offline.plot(data)
 
 
 def create_equity_compare_graph(backtests):
