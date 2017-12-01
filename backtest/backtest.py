@@ -82,10 +82,10 @@ def daterange(start_date, end_date):
         yield start_date + timedelta(n)
 
 
-class BackTester():
-    def __init__(self):
-        self.data_frames = {}
-        self.coins = []
+class BackTester:
+    def __init__(self, coins, data_frames):
+        self.coins = coins
+        self.data_frames = data_frames
         self.signals = {}
         self.slippage_percent = 0.02
         self.fee_percent = 0.0025
@@ -104,14 +104,6 @@ class BackTester():
         self.initial_cash = 1000
         self.value_over_time = pd.DataFrame(columns=["date", "cash", "equity"])
 
-    @staticmethod
-    def __data_for_coin(data, coin):
-        data = [x for x in data if x["coin_id"] == coin["_id"]]
-
-        # TODO: why doesn't db index take care of this already
-        # likely has to do with indexing on id and price
-        data.sort(key=lambda x: x["date"])
-        return data
 
     def estimate_price(self, price, amount, buy_or_sell):
         total = price * amount
@@ -136,75 +128,6 @@ class BackTester():
             return 0
 
         return self.value_over_time.iloc[-1].cash
-
-    def load_data(self):
-        self.coins = db.get_coins({"subreddit": {"$exists": True}})
-
-        self.coinid_map = util.list_to_dict(self.coins, "_id")
-
-        all_prices = db.MONGO_DB.historical_prices.find()
-        all_reddit_subs = db.MONGO_DB.historical_social_stats.find()
-
-        all_prices = list(all_prices)
-        all_reddit_subs = list(all_reddit_subs)
-
-        # build a pandas data frame (datetime, price, reddit subs)
-        progress = 0
-        for coin in self.coins:
-            prices = self.__data_for_coin(all_prices, coin)
-            subs = self.__data_for_coin(all_reddit_subs, coin)
-
-            price_data = {
-                "date": [],
-                "open": [],
-                "close": [],
-            }
-
-            social_data = {
-                "date": [],
-                "reddit_subs": []
-            }
-
-            for price in prices:
-                price_data["date"].append(price["date"])
-                price_data["open"].append(price["open"])
-                price_data["close"].append(price["close"])
-
-            for sub in subs:
-                social_data["date"].append(sub["date"])
-                social_data["reddit_subs"].append(sub["reddit_subscribers"])
-
-            # TODO: if our frame contained data about the overall market grwoth (reddit and price)
-            # then we should be able to more easily determine daily rank
-
-            dfp = pd.DataFrame(price_data, columns=["date", "open", "close"])
-            dfs = pd.DataFrame(social_data, columns=["date", "reddit_subs"])
-            df = pd.merge(dfp, dfs, on="date")
-
-            # ensure correct date type
-            #df['date'] = pd.to_datetime(df['date'])
-
-            # make date the index
-            df.index = df['date']
-            del df['date']
-
-            if df.isnull().values.any():
-                # TODO: use linear interpolation for small gaps
-                raise Exception("missing data")
-
-            self.data_frames[coin["_id"]] = df
-
-            progress += 1
-            print("progress: {} / {}".format(progress, len(self.coins)))
-
-            # TODO: for now test on a small sub set (for quicker iteration)
-            if progress >= 2:
-                break
-
-        # TODO: now add a couple columns to capture ranking
-        # subreddit growth
-        # subreddit growth / total subreddit growth
-        # growth rank
 
 
     def generate_signals(self, strategy):
@@ -233,17 +156,23 @@ class BackTester():
 
             return False
 
-
         current_cash = self.current_cash()
         for coin_id, df in self.data_frames.items():
             signals = self.signals[coin_id]
+            if signals is None:
+                # No actions to take for this coin
+                continue
+
             days_signal = signals.loc[self.current_day]["signals"]
             day = df.loc[self.current_day]
             open_price = day["open"]
 
             if days_signal == Signal.BUY:
-                # TODO: config for position sizing
-                amount = 1
+                # TODO: config for position sizing, and it needs to take into account fees and slip, real price
+                # and strategies should be able to do position sizing, or have strengths for signals
+                # currently this only works with a buy and hold strategy
+                amount = self.current_cash() / open_price
+
                 pos = Position(coin_id, amount, open_price)
                 self.positions[coin_id] = pos
 
@@ -263,17 +192,6 @@ class BackTester():
         self.current_day += timedelta(days=1)
 
         return True
-
-
-
-    def create_equity_graph(self):
-        data = [Scatter(x=self.value_over_time.date, y=self.value_over_time.equity),
-                Scatter(x=self.value_over_time.date, y=self.value_over_time.cash)]
-        plotly.offline.plot(data)
-
-
-
-
 
 
 
@@ -402,12 +320,100 @@ class BackTester():
         print("final balance", current_money)
         print("total fees paid", total_fees_paid)
 
-# best pics
-#20,890,428,556
-# worst pics
-#12,142,910.6829
 
-# compare against:
-# buying a random coin each day
-# just holding bitcoin
-# holding all coins
+def data_for_coin(data, coin):
+    data = [x for x in data if x["coin_id"] == coin["_id"]]
+
+    # TODO: why doesn't db index take care of this already
+    # likely has to do with indexing on id and price
+    data.sort(key=lambda x: x["date"])
+    return data
+
+
+def load_data():
+    coins = db.get_coins({"subreddit": {"$exists": True}})
+
+    # TODO: would be cleaner if the frames were stored in each coin maybe
+    data_frames = {}
+
+    all_prices = db.MONGO_DB.historical_prices.find()
+    all_reddit_subs = db.MONGO_DB.historical_social_stats.find()
+
+    all_prices = list(all_prices)
+    all_reddit_subs = list(all_reddit_subs)
+
+    # build a pandas data frame (datetime, price, reddit subs)
+    progress = 0
+    for coin in coins:
+        prices = data_for_coin(all_prices, coin)
+        subs = data_for_coin(all_reddit_subs, coin)
+
+        price_data = {
+            "date": [],
+            "open": [],
+            "close": [],
+        }
+
+        social_data = {
+            "date": [],
+            "reddit_subs": []
+        }
+
+        for price in prices:
+            price_data["date"].append(price["date"])
+            price_data["open"].append(price["open"])
+            price_data["close"].append(price["close"])
+
+        for sub in subs:
+            social_data["date"].append(sub["date"])
+            social_data["reddit_subs"].append(sub["reddit_subscribers"])
+
+        # TODO: if our frame contained data about the overall market grwoth (reddit and price)
+        # then we should be able to more easily determine daily rank
+
+        dfp = pd.DataFrame(price_data, columns=["date", "open", "close"])
+        dfs = pd.DataFrame(social_data, columns=["date", "reddit_subs"])
+        df = pd.merge(dfp, dfs, on="date")
+
+        # ensure correct date type
+        #df['date'] = pd.to_datetime(df['date'])
+
+        # make date the index
+        df.index = df['date']
+        del df['date']
+
+        if df.isnull().values.any():
+            # TODO: use linear interpolation for small gaps
+            raise Exception("missing data")
+
+        data_frames[coin["_id"]] = df
+
+        progress += 1
+        print("progress: {} / {}".format(progress, len(coins)))
+
+        # TODO: for now test on a small sub set (for quicker iteration)
+        if progress >= 2:
+            break
+
+    # TODO: now add a couple columns to capture ranking
+    # subreddit growth
+    # subreddit growth / total subreddit growth
+    # growth rank
+
+    return coins, data_frames
+
+def create_equity_graph(backtest):
+    data = [Scatter(x=backtest.value_over_time.date, y=backtest.value_over_time.equity),
+            Scatter(x=backtest.value_over_time.date, y=backtest.value_over_time.cash)]
+    plotly.offline.plot(data)
+
+
+
+def create_equity_compare_graph(backtests):
+    data = []
+    for bt in backtests:
+        bt.value_over_time.equity_and_cash = bt.value_over_time.equity + bt.value_over_time.cash
+        s = Scatter(x=bt.value_over_time.date, y=bt.value_over_time.equity_and_cash, name=bt.name)
+        data.append(s)
+
+    plotly.offline.plot(data)

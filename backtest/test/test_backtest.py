@@ -6,8 +6,7 @@ from backtest import backtest
 
 class TestBackTest(TestCase):
     def test(self):
-        tester = backtest.BackTester()
-        tester.load_data()
+        coins, data_frames = backtest.load_data()
 
         btc = 1
         eth = 2
@@ -15,11 +14,20 @@ class TestBackTest(TestCase):
         start_date = datetime(2016, 11, 1)
         end_date = datetime(2017, 11, 1)
 
-        buy_hold = backtest.BuyAndHoldStrategy([btc, eth], start_date, end_date)
+        buy_hold1 = backtest.BuyAndHoldStrategy([btc], start_date, end_date)
+        buy_hold2 = backtest.BuyAndHoldStrategy([eth], start_date, end_date)
+        buy_hold3 = backtest.BuyAndHoldStrategy([btc, eth], start_date, end_date)
 
-        tester.generate_signals(buy_hold)
+        strategies = [buy_hold1, buy_hold2, buy_hold3]
 
-        while tester.tick():
-            pass
+        testers = []
+        for strategy in strategies:
+            tester = backtest.BackTester(coins, data_frames)
+            tester.generate_signals(strategy)
 
-        tester.create_equity_graph()
+            while tester.tick():
+                pass
+
+            testers.append(tester)
+
+        backtest.create_equity_compare_graph(testers)
