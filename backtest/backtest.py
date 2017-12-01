@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta
 from enum import Enum
 import pandas as pd
+import plotly
+from plotly.graph_objs import Scatter, Layout
 
 
 # TODO: database/util should be moved to a common/util package
 from ingestion import util, database as db
+
 
 class Position:
     def __init__(self, coin_id, amount, buy_price):
@@ -98,6 +101,9 @@ class BackTester():
         self.positions = {}
         self.closed_positions = []
 
+        self.initial_cash = 1000
+        self.value_over_time = pd.DataFrame(columns=["date", "cash", "equity"])
+
     @staticmethod
     def __data_for_coin(data, coin):
         data = [x for x in data if x["coin_id"] == coin["_id"]]
@@ -118,6 +124,15 @@ class BackTester():
 
         total += total * self.fee_percent
         return total
+
+    def current_cash(self):
+        if len(self.value_over_time) == 0:
+            return self.initial_cash
+
+        return self.value_over_time.loc[-1]["cash"]
+
+    def current_equity(self):
+        return self.value_over_time.loc[-1]["equity"]
 
     def load_data(self):
         self.coins = db.get_coins({"subreddit": {"$exists": True}})
@@ -180,7 +195,7 @@ class BackTester():
             print("progress: {} / {}".format(progress, len(self.coins)))
 
             # TODO: for now test on a small sub set (for quicker iteration)
-            if progress >= 1:
+            if progress >= 2:
                 break
 
         # TODO: now add a couple columns to capture ranking
@@ -194,6 +209,18 @@ class BackTester():
             signals = strategy.generate_signals(coin_id, df)
             self.signals[coin_id] = signals
 
+    def update_equity(self, date):
+        total_value = 0
+        for coin_id, pos in self.positions.items():
+
+            # TODO: this feels kinda ugly
+            current_price = self.data_frames[coin_id].loc[date]["open"]
+            total_value += pos.current_value(current_price)
+
+        # TODO: track cash
+        cash = 0
+        self.value_over_time.loc[len(self.value_over_time)] = [date, cash, total_value]
+
     def tick(self):
         if self.current_day > self.end_date:
             assert(len(self.positions) == 0)
@@ -205,44 +232,50 @@ class BackTester():
 
             return False
 
-        daily_growth = []
         for coin_id, df in self.data_frames.items():
-            try:
-                signals = self.signals[coin_id]
-                days_signal = signals.loc[self.current_day]["signals"]
-                day = df.loc[self.current_day]
-                open_price = day["open"]
+            signals = self.signals[coin_id]
+            days_signal = signals.loc[self.current_day]["signals"]
+            day = df.loc[self.current_day]
+            open_price = day["open"]
 
-                if days_signal == Signal.BUY:
-                    print("BUY", coin_id)
+            if days_signal == Signal.BUY:
+                print("BUY", coin_id)
 
-                    # TODO: config for this
-                    amount = 1
-                    self.positions[coin_id] = Position(coin_id, amount, open_price)
-                elif days_signal == Signal.HOLD:
-                    pass
-                    #print("HOLD", coin_id)
-                elif days_signal == Signal.SELL:
-                    print("SELL", coin_id)
+                # TODO: config for this
+                amount = 1
+                pos = Position(coin_id, amount, open_price)
+                self.positions[coin_id] = pos
 
-                    assert(coin_id in self.positions)
+                #buy_value = pos.buy_value()
+                #current_cash = self.current_cash()
+                #current_cash -= buy_value
+                #self.cash_over_time.append((self.current_day, current_cash))
 
-                    pos = self.positions[coin_id]
-                    pos.close(open_price)
-                    self.closed_positions.append(pos)
-                    del self.positions[coin_id]
+            elif days_signal == Signal.SELL:
+                print("SELL", coin_id)
+
+                assert(coin_id in self.positions)
+
+                pos = self.positions[coin_id]
+                pos.close(open_price)
+                self.closed_positions.append(pos)
+                del self.positions[coin_id]
+
+                #current_cash = self.current_cash()
+                #current_cash += pos.sell_value()
+                #self.cash_over_time.append((self.current_day, current_cash))
 
 
-            except KeyError:
-                # TODO: prob just this coin wasn't active yet, can we prep data better
-                continue
-
+        self.update_equity(self.current_day)
 
         self.current_day += timedelta(days=1)
         return True
 
 
 
+    def create_equity_graph(self):
+        data = [Scatter(x=self.value_over_time.date, y=self.value_over_time.equity)]
+        plotly.offline.plot(data)
 
 
 
