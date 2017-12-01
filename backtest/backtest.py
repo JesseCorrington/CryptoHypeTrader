@@ -69,10 +69,14 @@ class BuyAndHoldStrategy(Strategy):
         if coin_id in self.coin_ids:
             df = pd.DataFrame(index=df.index)
             df["signals"] = Signal.NONE
+            df["allocation"] = 0
 
-            df.loc[self.buy_date:self.sell_date]["signals"] = Signal.HOLD
-            df.loc[self.buy_date]["signals"] = Signal.BUY
-            df.loc[self.sell_date]["signals"] = Signal.SELL
+            df.loc[self.buy_date:self.sell_date, "signals"] = Signal.HOLD
+            df.loc[self.buy_date, "signals"] = Signal.BUY
+            df.loc[self.sell_date, "signals"] = Signal.SELL
+
+            # TODO: there must be a better way to do position sizing
+            df.loc[self.buy_date, "allocation"] = 1 / len(self.coin_ids)
 
             return df
 
@@ -171,7 +175,8 @@ class BackTester:
                 # TODO: config for position sizing, and it needs to take into account fees and slip, real price
                 # and strategies should be able to do position sizing, or have strengths for signals
                 # currently this only works with a buy and hold strategy
-                amount = current_cash / open_price
+                percent = signals.loc[self.current_day]["allocation"]
+                amount = self.initial_cash * percent / open_price
 
                 pos = Position(coin_id, amount, open_price)
                 self.positions[coin_id] = pos
