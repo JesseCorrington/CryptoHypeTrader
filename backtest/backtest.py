@@ -129,10 +129,13 @@ class BackTester():
         if len(self.value_over_time) == 0:
             return self.initial_cash
 
-        return self.value_over_time.loc[-1]["cash"]
+        return self.value_over_time.iloc[-1].cash
 
     def current_equity(self):
-        return self.value_over_time.loc[-1]["equity"]
+        if len(self.value_over_time) == 0:
+            return 0
+
+        return self.value_over_time.iloc[-1].cash
 
     def load_data(self):
         self.coins = db.get_coins({"subreddit": {"$exists": True}})
@@ -209,7 +212,7 @@ class BackTester():
             signals = strategy.generate_signals(coin_id, df)
             self.signals[coin_id] = signals
 
-    def update_equity(self, date):
+    def update_equity(self, date, current_cash):
         total_value = 0
         for coin_id, pos in self.positions.items():
 
@@ -217,9 +220,7 @@ class BackTester():
             current_price = self.data_frames[coin_id].loc[date]["open"]
             total_value += pos.current_value(current_price)
 
-        # TODO: track cash
-        cash = 0
-        self.value_over_time.loc[len(self.value_over_time)] = [date, cash, total_value]
+        self.value_over_time.loc[len(self.value_over_time)] = [date, current_cash, total_value]
 
     def tick(self):
         if self.current_day > self.end_date:
@@ -232,6 +233,8 @@ class BackTester():
 
             return False
 
+
+        current_cash = self.current_cash()
         for coin_id, df in self.data_frames.items():
             signals = self.signals[coin_id]
             days_signal = signals.loc[self.current_day]["signals"]
@@ -239,21 +242,14 @@ class BackTester():
             open_price = day["open"]
 
             if days_signal == Signal.BUY:
-                print("BUY", coin_id)
-
-                # TODO: config for this
+                # TODO: config for position sizing
                 amount = 1
                 pos = Position(coin_id, amount, open_price)
                 self.positions[coin_id] = pos
 
-                #buy_value = pos.buy_value()
-                #current_cash = self.current_cash()
-                #current_cash -= buy_value
-                #self.cash_over_time.append((self.current_day, current_cash))
+                current_cash -= pos.buy_value()
 
             elif days_signal == Signal.SELL:
-                print("SELL", coin_id)
-
                 assert(coin_id in self.positions)
 
                 pos = self.positions[coin_id]
@@ -261,20 +257,18 @@ class BackTester():
                 self.closed_positions.append(pos)
                 del self.positions[coin_id]
 
-                #current_cash = self.current_cash()
-                #current_cash += pos.sell_value()
-                #self.cash_over_time.append((self.current_day, current_cash))
+                current_cash += pos.sell_value()
 
-
-        self.update_equity(self.current_day)
-
+        self.update_equity(self.current_day, current_cash)
         self.current_day += timedelta(days=1)
+
         return True
 
 
 
     def create_equity_graph(self):
-        data = [Scatter(x=self.value_over_time.date, y=self.value_over_time.equity)]
+        data = [Scatter(x=self.value_over_time.date, y=self.value_over_time.equity),
+                Scatter(x=self.value_over_time.date, y=self.value_over_time.cash)]
         plotly.offline.plot(data)
 
 
