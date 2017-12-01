@@ -83,7 +83,8 @@ def daterange(start_date, end_date):
 
 
 class BackTester:
-    def __init__(self, coins, data_frames):
+    def __init__(self, name, coins, data_frames):
+        self.name = name
         self.coins = coins
         self.data_frames = data_frames
         self.signals = {}
@@ -129,7 +130,6 @@ class BackTester:
 
         return self.value_over_time.iloc[-1].cash
 
-
     def generate_signals(self, strategy):
         for coin_id, df in self.data_frames.items():
             signals = strategy.generate_signals(coin_id, df)
@@ -171,7 +171,7 @@ class BackTester:
                 # TODO: config for position sizing, and it needs to take into account fees and slip, real price
                 # and strategies should be able to do position sizing, or have strengths for signals
                 # currently this only works with a buy and hold strategy
-                amount = self.current_cash() / open_price
+                amount = current_cash / open_price
 
                 pos = Position(coin_id, amount, open_price)
                 self.positions[coin_id] = pos

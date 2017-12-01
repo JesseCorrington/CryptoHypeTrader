@@ -18,11 +18,15 @@ class TestBackTest(TestCase):
         buy_hold2 = backtest.BuyAndHoldStrategy([eth], start_date, end_date)
         buy_hold3 = backtest.BuyAndHoldStrategy([btc, eth], start_date, end_date)
 
-        strategies = [buy_hold1, buy_hold2, buy_hold3]
+        strategies = [
+            ("hold btc", buy_hold1),
+            ("hold eth", buy_hold2),
+            ("hold btc and eth", buy_hold3)
+        ]
 
         testers = []
-        for strategy in strategies:
-            tester = backtest.BackTester(coins, data_frames)
+        for name, strategy in strategies:
+            tester = backtest.BackTester(name, coins, data_frames)
             tester.generate_signals(strategy)
 
             while tester.tick():
