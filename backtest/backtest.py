@@ -3,6 +3,7 @@ from enum import Enum
 import pandas as pd
 import plotly
 from plotly.graph_objs import Scatter, Layout
+from random import randint
 
 
 # TODO: database/util should be moved to a common/util package
@@ -115,25 +116,56 @@ class RedditGrowthStrategy(Strategy):
         self.sub_growth_threshold = sub_growth_threshold
 
     def generate_signals(self, coin_id, df):
+
+        # TODO: the base class should handle creating this for better abstraction
         df_signals = pd.DataFrame(index=df.index)
         df_change = df.pct_change(1)
 
         holding = False
+        buy_price = 1
+
         for index, row in df_change.iterrows():
             market_cap = df.loc[index, "market_cap"]
+            current_price = df.loc[index, "close"]
+
+            profit_percent = (current_price - buy_price) / buy_price
+
+            # TODO: consider stop losses, and add config for threshold, trailing stops too
 
             if not holding and row["reddit_subs"] > self.sub_growth_threshold and market_cap > self.min_market_cap:
                 df_signals.loc[index, "signals"] = Signal.BUY
                 holding = True
-            if holding and row["reddit_subs"] < self.sub_growth_threshold:
+                buy_price = current_price
+            elif holding and (row["reddit_subs"] < self.sub_growth_threshold or profit_percent > 5):
                 df_signals.loc[index, "signals"] = Signal.SELL
                 holding = False
 
         return df_signals
 
     def allocation(self, current_cash):
-        size = current_cash / 10
-        size = min(size, 5000)
+        size = current_cash / 5
+        size = min(size, 10000)
+        return size
+
+
+class RandomStrategy(Strategy):
+    def generate_signals(self, coin_id, df):
+        holding = False
+        df_signals = pd.DataFrame(index=df.index)
+
+        for index, row in df.iterrows():
+            if not holding and randint(1, 20) == 1:
+                df_signals.loc[index, "signals"] = Signal.BUY
+                holding = True
+            elif holding and randint(1, 20) == 1:
+                df_signals.loc[index, "signals"] = Signal.SELL
+                holding = False
+
+        return df_signals
+
+    def allocation(self, current_cash):
+        size = current_cash / 5
+        size = min(size, 10000)
         return size
 
 
@@ -145,7 +177,7 @@ def daterange(start_date, end_date):
 class BackTest:
     def __init__(self, name, coins, data_frames, strategy):
         self.name = name
-        self.coins = coins
+        self.coins = util.list_to_dict(coins, "_id")
         self.data_frames = data_frames
         self.strategy = strategy
         self.signals = {}
@@ -191,7 +223,10 @@ class BackTest:
                 print("ERROR: missing days price")
 
                 # TODO: this is an issue somewhere upstream, just use previous days price for now
-                current_price = self.data_frames[coin_id].loc[date - timedelta(days=1)]["close"]
+                try:
+                    current_price = self.data_frames[coin_id].loc[date - timedelta(days=1)]["close"]
+                except:
+                    current_price = 0
 
             total_value += pos.current_value(current_price)
 
@@ -227,15 +262,6 @@ class BackTest:
             close_price = day["close"]
 
             if days_signal == Signal.BUY:
-                # TODO: config for position sizing, and it needs to take into account fees and slip, real price
-                # and strategies should be able to do position sizing, or have strengths for signals
-                # currently this only works with a buy and hold strategy
-                #percent = signals.loc[self.current_day]["allocation"]
-                #amount = self.initial_cash * percent / close_price
-
-                #buy_cash = current_cash / 10
-                #buy_cash = min(buy_cash, 5000)
-
                 buy_cash = self.strategy.allocation(current_cash)
                 amount = buy_cash / close_price
 
@@ -268,14 +294,39 @@ class BackTest:
     def print_trades(self):
         print("Trades made:", len(self.closed_positions))
 
-        print("Symbol, buy date, buy price, sell date, sell price, days held, profit, percent profit")
+        if len(self.closed_positions) > 0:
+            print("Symbol, buy date, buy price, sell date, sell price, days held, profit, percent profit")
 
-        for pos in self.closed_positions:
-            coin = self.coins[pos.coin_id]
-            days_held = pos.sell_date - pos.buy_date
-            print(coin["symbol"], pos.buy_date, pos.coin_buy_price, pos.sell_date, days_held, pos.profit(), pos.pct_profit())
+            for pos in self.closed_positions:
+                coin = self.coins[pos.coin_id]
+                days_held = pos.sell_date - pos.buy_date
+                print(coin["symbol"], pos.buy_date, pos.coin_buy_price, pos.sell_date, days_held, pos.profit(), pos.pct_profit())
 
     def print_results(self):
+        print("Trade stats")
+
+        if len(self.closed_positions) == 0:
+            return
+
+        trade_data = {
+            "days_held": [],
+            "profit": [],
+            "percent_profit": []
+        }
+
+        for pos in self.closed_positions:
+            days_held = pos.sell_date - pos.buy_date
+            trade_data["days_held"].append(days_held)
+            trade_data["profit"].append(pos.profit())
+            trade_data["percent_profit"].append(pos.pct_profit())
+
+        df = pd.DataFrame(trade_data, columns=["days_held", "profit", "percent_profit"])
+
+        mean_days = df.days_held.mean()
+        min_days = df.days_held.min()
+        max_days = df.days_held.max()
+
+        print("duration stats mean, min, max", mean_days, min_days, max_days)
 
         # TODO: implement
         # number of trades
@@ -285,6 +336,15 @@ class BackTest:
         # average gain amount
         # average gain percent
         # average days held
+        # ratio between hold duration and gain
+        # ratio between signal strength (ie: sub growth) and gain
+        # ratio between market cap and avg gain
+        # best trade
+        # worst trade
+        # max drawdown
+        # max value
+        # min value
+
 
         pass
 
@@ -378,7 +438,10 @@ def load_data():
         print("progress: {} / {}".format(progress, len(coins)))
 
         # TODO: for now test on a small sub set (for quicker iteration)
-        #if progress >= 10:
+        # TODO: this is very bad look ahead bias, because we're trading
+        # the top coins as of today, but when we start the test a year ago they may not even exist
+        # so this is a HUGE filtering out of failed coins
+        #if progress >= 20:
         #    break
 
     return coins, data_frames
@@ -387,6 +450,7 @@ def load_data():
 def create_equity_graph(backtest):
     data = [Scatter(x=backtest.value_over_time.date, y=backtest.value_over_time.equity, name="Equity"),
             Scatter(x=backtest.value_over_time.date, y=backtest.value_over_time.cash, name="Cash")]
+
     plotly.offline.plot(data)
 
 
