@@ -42,13 +42,13 @@ class TestBackTest(TestCase):
         random = backtest.RandomStrategy()
 
         strategies = [
-            ("hold btc", buy_hold1),
-            ("hold eth", buy_hold2),
-            ("hold btc and eth", buy_hold3),
+            #("hold btc", buy_hold1),
+            #("hold eth", buy_hold2),
+            #("hold btc and eth", buy_hold3),
             #("reddit growth 1", reddit_growth1),
             #("reddit growth 3", reddit_growth2),
             ("reddit growth 5", reddit_growth3),
-            ("random", random)
+            #("random", random)
         ]
 
         # TODO: add a hold whole market strategy too
@@ -59,11 +59,16 @@ class TestBackTest(TestCase):
             back_test.generate_signals()
             back_test.run(start_date, end_date)
 
-            back_test.print_results()
-            back_test.print_trades()
+            print("\nStrategy Summary")
+            summary = back_test.summary()
+            for key, val in summary.items():
+                print(key, ":", val)
+            print(summary)
+
+            back_test.create_trades_csv("trades.csv")
 
             tests.append(back_test)
 
-        backtest.create_equity_compare_graph(tests)
+        #backtest.create_equity_compare_graph(tests)
 
-        #backtest.create_equity_graph(tests[3])
+        backtest.create_equity_graph(tests[0])

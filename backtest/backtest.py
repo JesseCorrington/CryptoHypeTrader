@@ -88,7 +88,7 @@ class BuyAndHoldStrategy(Strategy):
         self.starting_cash = None
 
     def generate_signals(self, coin_id, df):
-        if coin_id in self.coin_ids:
+        if self.coin_ids == "all" or coin_id in self.coin_ids:
             df = pd.DataFrame(index=df.index)
             df["signals"] = Signal.NONE
             df["allocation"] = 0
@@ -143,8 +143,9 @@ class RedditGrowthStrategy(Strategy):
         return df_signals
 
     def allocation(self, current_cash):
-        size = current_cash / 5
+        size = current_cash / 8
         size = min(size, 10000)
+        size = current_cash
         return size
 
 
@@ -164,7 +165,7 @@ class RandomStrategy(Strategy):
         return df_signals
 
     def allocation(self, current_cash):
-        size = current_cash / 5
+        size = current_cash / 8
         size = min(size, 10000)
         return size
 
@@ -286,27 +287,41 @@ class BackTest:
 
         # TODO: if we just sold, then this equity update seems a bit wonky
 
+        #assert(current_cash > 0)
+
         self.update_equity(self.current_day, current_cash)
         self.current_day += timedelta(days=1)
 
         return True
 
-    def print_trades(self):
-        print("Trades made:", len(self.closed_positions))
+    def create_trades_csv(self, filename):
+        import csv
+        with open(filename, 'w') as csvfile:
+            writer = csv.writer(csvfile)
+            headers = ["Symbol",
+                       "buy date", "coin buy price", "full buy price",
+                       "sell date", "coin sell price", "full sell price",
+                       "days held", "profit", "percent profit"]
 
-        if len(self.closed_positions) > 0:
-            print("Symbol, buy date, buy price, sell date, sell price, days held, profit, percent profit")
+            writer.writerow(headers)
+
+            for pos in self.positions:
+                pass
 
             for pos in self.closed_positions:
                 coin = self.coins[pos.coin_id]
                 days_held = pos.sell_date - pos.buy_date
-                print(coin["symbol"], pos.buy_date, pos.coin_buy_price, pos.sell_date, days_held, pos.profit(), pos.pct_profit())
+                writer.writerow([coin["symbol"],
+                                pos.buy_date, pos.coin_buy_price, pos.full_buy_price,
+                                pos.sell_date, pos.coin_sell_price, pos.full_sell_price,
+                                days_held.days, pos.profit(), pos.pct_profit()])
 
-    def print_results(self):
-        print("Trade stats")
-
+    def summary(self):
         if len(self.closed_positions) == 0:
-            return
+            return {
+                "trades": 0,
+                "trades_unclosed": len(self.positions)
+            }
 
         trade_data = {
             "days_held": [],
@@ -322,31 +337,33 @@ class BackTest:
 
         df = pd.DataFrame(trade_data, columns=["days_held", "profit", "percent_profit"])
 
-        mean_days = df.days_held.mean()
-        min_days = df.days_held.min()
-        max_days = df.days_held.max()
+        stats = {
+            "trades": len(self.closed_positions),
+            "trades_unclosed": len(self.positions),
+            "days_mean": df.days_held.mean().days,
+            "days_min": df.days_held.min().days,
+            "days_max": df.days_held.max().days,
+            "profit_mean": df.profit.mean(),
+            "profit_min": df.profit.min(),
+            "profit_max": df.profit.max(),
+            "pct_profit_mean": df.percent_profit.mean(),
+            "pct_profit_min": df.percent_profit.min(),
+            "pct_profit_max": df.percent_profit.max(),
+            "winning_trades": df[df.profit > 0].sum(),
+            "losing_trades": df[df.profit <= 0].sum(),
+            #"best_trade": df[df.profit].max(),
+            #"worst_trade": df[df.profit].min(),
+            #"win_percent": df[df.profit > 0].sum() / len(self.closed_positions)
+        }
 
-        print("duration stats mean, min, max", mean_days, min_days, max_days)
-
-        # TODO: implement
-        # number of trades
-        # winning trades
-        # loosing trades
-        # percent winning
-        # average gain amount
-        # average gain percent
-        # average days held
         # ratio between hold duration and gain
         # ratio between signal strength (ie: sub growth) and gain
         # ratio between market cap and avg gain
-        # best trade
-        # worst trade
         # max drawdown
         # max value
         # min value
 
-
-        pass
+        return stats
 
 
 def data_for_coin(data, coin):
@@ -441,8 +458,8 @@ def load_data():
         # TODO: this is very bad look ahead bias, because we're trading
         # the top coins as of today, but when we start the test a year ago they may not even exist
         # so this is a HUGE filtering out of failed coins
-        #if progress >= 20:
-        #    break
+        if progress >= 5:
+            break
 
     return coins, data_frames
 
