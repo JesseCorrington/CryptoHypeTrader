@@ -2,7 +2,6 @@ import flask
 import os
 import json
 import pymongo
-from webapp.server import config
 from bson import ObjectId
 from datetime import datetime, timedelta
 from ingestion import util
