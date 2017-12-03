@@ -4,6 +4,7 @@ import pandas as pd
 import plotly
 from plotly.graph_objs import Scatter, Layout
 from random import randint
+import csv
 
 
 # TODO: database/util should be moved to a common/util package
@@ -15,7 +16,7 @@ TRADE_SLIPPAGE = .02
 
 # TODO: do all calcs in BTC too, or ETH
 class Position:
-    def __init__(self, coin_id, amount, coin_price, date):
+    def __init__(self, coin_id, amount, coin_price, date, cash_limit):
         self.coin_id = coin_id
         self.amount = amount
         self.coin_buy_price = coin_price
@@ -25,14 +26,15 @@ class Position:
         self.closed = False
         self.sell_date = None
 
-        # Add slippage to full buy cost
-        self.full_buy_price = self.amount * self.coin_buy_price
-        self.full_buy_price += self.full_buy_price * TRADE_SLIPPAGE
+        # Add slippage and fees to coin price
+        real_coin_price = self.coin_buy_price
+        real_coin_price += self.coin_buy_price * TRADE_SLIPPAGE + self.coin_buy_price * TRADE_FEE
 
-        # and the trade fee
-        fee = self.full_buy_price * TRADE_FEE
-        self.full_buy_price += fee
-        self.fees_paid = fee
+        self.amount = min(amount, cash_limit / real_coin_price)
+        self.full_buy_price = self.amount * real_coin_price
+
+        # TODO: need to separate fees out for running total
+        self.fees_paid = 0
 
     def close(self, coin_price, date):
         if self.closed:
@@ -263,13 +265,18 @@ class BackTest:
             close_price = day["close"]
 
             if days_signal == Signal.BUY:
-                buy_cash = self.strategy.allocation(current_cash)
-                amount = buy_cash / close_price
+                # TODO: this means we can get in a situation where we have a sell without a position below
+                if current_cash > 0:
+                    buy_cash = self.strategy.allocation(current_cash)
+                    amount = buy_cash / close_price
 
-                pos = Position(coin_id, amount, close_price, self.current_day)
-                self.positions[coin_id] = pos
+                    pos = Position(coin_id, amount, close_price, self.current_day, current_cash)
+                    self.positions[coin_id] = pos
 
-                current_cash -= pos.full_buy_price
+                    #TODO: buy less if it would go below 0
+                    current_cash -= pos.full_buy_price
+                else:
+                    print("ERROR: Can't buy, no remaining cash")
 
             elif days_signal == Signal.SELL:
                 # TODO: remove this
@@ -294,25 +301,32 @@ class BackTest:
 
         return True
 
-    def create_trades_csv(self, filename):
-        import csv
+    def create_report_csv(self, filename):
+        stats = self.summary()
+
         with open(filename, 'w') as csvfile:
             writer = csv.writer(csvfile)
+
+            for key, val in stats.items():
+                writer.writerow([key, val])
+
             headers = ["Symbol",
-                       "buy date", "coin buy price", "full buy price",
+                       "buy date", "coin buy price", "full buy price", "amount",
                        "sell date", "coin sell price", "full sell price",
                        "days held", "profit", "percent profit"]
 
+            writer.writerow([])
             writer.writerow(headers)
 
             for pos in self.positions:
+                # TODO: write list of positions that are still open with current market value
                 pass
 
             for pos in self.closed_positions:
                 coin = self.coins[pos.coin_id]
                 days_held = pos.sell_date - pos.buy_date
                 writer.writerow([coin["symbol"],
-                                pos.buy_date, pos.coin_buy_price, pos.full_buy_price,
+                                pos.buy_date, pos.coin_buy_price, pos.full_buy_price, pos.amount,
                                 pos.sell_date, pos.coin_sell_price, pos.full_sell_price,
                                 days_held.days, pos.profit(), pos.pct_profit()])
 
@@ -337,8 +351,12 @@ class BackTest:
 
         df = pd.DataFrame(trade_data, columns=["days_held", "profit", "percent_profit"])
 
+        win_count = df[df.profit > 0].profit.count()
+        lose_count = df[df.profit <= 0].profit.count(),
+        trade_count = len(self.closed_positions),
+
         stats = {
-            "trades": len(self.closed_positions),
+            "trades": trade_count,
             "trades_unclosed": len(self.positions),
             "days_mean": df.days_held.mean().days,
             "days_min": df.days_held.min().days,
@@ -349,11 +367,11 @@ class BackTest:
             "pct_profit_mean": df.percent_profit.mean(),
             "pct_profit_min": df.percent_profit.min(),
             "pct_profit_max": df.percent_profit.max(),
-            "winning_trades": df[df.profit > 0].sum(),
-            "losing_trades": df[df.profit <= 0].sum(),
-            #"best_trade": df[df.profit].max(),
-            #"worst_trade": df[df.profit].min(),
-            #"win_percent": df[df.profit > 0].sum() / len(self.closed_positions)
+            "winning_trades": win_count,
+            "losing_trades": lose_count,
+            "win_percent": win_count / trade_count,
+            "best_trade": df.profit.max(),
+            "worst_trade": df.profit.min(),
         }
 
         # ratio between hold duration and gain

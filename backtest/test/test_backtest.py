@@ -59,13 +59,7 @@ class TestBackTest(TestCase):
             back_test.generate_signals()
             back_test.run(start_date, end_date)
 
-            print("\nStrategy Summary")
-            summary = back_test.summary()
-            for key, val in summary.items():
-                print(key, ":", val)
-            print(summary)
-
-            back_test.create_trades_csv("trades.csv")
+            back_test.create_report_csv("trades.csv")
 
             tests.append(back_test)
 
