@@ -78,13 +78,16 @@ def get_coins():
 
 class Ticker(ds.DataSource):
 
-    def __init__(self, coin_symbol):
+    def __init__(self, coin_symbol, coin_id, coin_name):
         token = config.stocktwits['token']
+        self.coin_id = coin_id
+        self.coin_name = coin_name
+        self.coin_symbol = coin_symbol
 
         super().__init__(
             "https://api.stocktwits.com/api/2/streams/symbols.json",
             {"access_token":token,
-             "symbols":coin_symbol
+             "symbols":self.coin_symbol
             }
         )
 
@@ -106,7 +109,9 @@ class Ticker(ds.DataSource):
                           'post':contents["messages"][post]["body"],
                           'sentiment': sentiment,
                           'date': contents['messages'][post]['created_at'],
-                          'user': contents['messages'][post]['user']['username']
+                          'symbol': str(self.coin_symbol[:len(self.coin_symbol)-2]),
+                          'name': str(self.coin_name),
+                          'coin_id': int(self.coin_id)
                           })
 
         return posts
