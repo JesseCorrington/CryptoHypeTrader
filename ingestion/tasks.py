@@ -234,7 +234,6 @@ class ImportPrices(mgr.IngestionTask):
         for coin in stored_coins:
             id_map[coin["cmc_id"]] = coin["_id"]
 
-        filter_out = set()
         for coin in data:
             cmc_id = coin["cmc_id"]
 
@@ -242,8 +241,7 @@ class ImportPrices(mgr.IngestionTask):
                 coin["coin_id"] = id_map[cmc_id]
                 del coin["cmc_id"]
             else:
-                self._error("Can't add price data to unknown coin {}", cmc_id)
-                filter_out.add(coin)
+                self._error("Can't add price data to unknown coin {}".format(cmc_id))
 
         # filter out coins we haven't seen yet
         # we'll pick them up after our ImportCoinList runs again
