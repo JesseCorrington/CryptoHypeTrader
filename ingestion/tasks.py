@@ -3,7 +3,7 @@ import datetime
 
 from ingestion import database as db
 from ingestion import util
-from ingestion.datasources import reddit, cryptocompare as cc, coinmarketcap as cmc
+from ingestion.datasources import reddit, cryptocompare as cc, coinmarketcap as cmc, stocktwits as st
 from ingestion import manager as mgr
 
 
@@ -287,6 +287,30 @@ class ImportRedditStats(mgr.IngestionTask):
 
                 processed += 1
                 self._progress(processed, len(coins))
+
+
+
+class ImportStockTwits(mgr.IngestionTask):
+# Task to import recent StockTwits posts
+
+    def __init__(self, collection):
+        super().__init__()
+
+        self.__collection = collection
+        # self.__get_stats = get_stats
+        self._name += "-" + collection
+
+    def _run(self):
+        coins = st.get_coins()
+
+        for coin in coins.symbol[:5]:
+            ticker = st.Ticker(coin + '.X')
+            text = ticker.get()
+            posts = ticker.parse(text)
+            self._db_insert(self.__collection, posts)
+
+
+
 
 
 # Helper function for task runs

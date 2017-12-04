@@ -1,3 +1,8 @@
+import sys
+sys.path.append('.\\')
+for path in sys.path:
+    print(path)
+
 import flask
 import os
 import json
