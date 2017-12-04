@@ -11,16 +11,16 @@ import numpy as np
 # coinlist = st.CoinList()
 # stocktwits_coins = coinlist.ScrapeCoins()
 # stocktwits_coins = coinlist.find_ids()
-coins = st.get_coins()
-coins.symbol[:5]
-for coin in coins.symbol:
-    print(coin+'.X')
+# coins = st.get_coins()
+# coins.symbol[:5]
+# for coin in coins.symbol:
+#     print(coin+'.X')
 
 
 
 # Grab most recent posts for a coin
-ticker = st.Ticker()
-posts = ticker.parse()
+# ticker = st.Ticker()
+# posts = ticker.parse()
 
 # Test out the entire process
 mgr.run_tasks(tasks.ImportStockTwits('stocktwits'))

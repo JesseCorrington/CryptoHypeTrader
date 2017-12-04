@@ -28,6 +28,9 @@ def import_all_data():
     import_historical_data()
     import_current_data()
 
+def test_stocktwits():
+    mgr.run_tasks(tasks.ImportStockTwits('stocktwits'))
+
 
 def main():
     from sys import argv
@@ -43,7 +46,8 @@ def main():
         "coin_list": import_coin_list,
         "historical": import_historical_data,
         "current": import_current_data,
-        "all": import_all_data
+        "all": import_all_data,
+        'stocktwits':test_stocktwits
     }
 
     if task_name not in task_map:

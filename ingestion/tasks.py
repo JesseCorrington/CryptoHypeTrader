@@ -302,11 +302,11 @@ class ImportStockTwits(mgr.IngestionTask):
 
     def _run(self):
         coins = st.get_coins()
-
+        print(coins)
         for coin in coins.symbol[:5]:
             ticker = st.Ticker(coin + '.X')
-            text = ticker.get()
-            posts = ticker.parse(text)
+            posts = ticker.get()
+            # posts = ticker.parse(text)
             self._db_insert(self.__collection, posts)
 
 
