@@ -98,7 +98,6 @@ class Ticker(ds.DataSource):
         #     Some currencies get tagged way less than 30 times per hour, so we need to come up with a smart way of using those 400 calls.
 
         contents = api_response
-        # print(contents)
         posts = []
         for post in range(lim):
             if contents['messages'][post]['entities']['sentiment']:
