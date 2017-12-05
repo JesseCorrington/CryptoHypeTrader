@@ -141,8 +141,6 @@ class IngestionTask:
 
         now = datetime.datetime.utcnow()
 
-        # TODO: consider saving all the error messages too
-
         status = {
             "name": self._name,
             "start_time": self.__start_time,
@@ -162,7 +160,7 @@ class IngestionTask:
 
         try:
             if self.__id is None:
-                self.__id = db.MONGO_DB.ingestion_tasks.insert_one(status)
+                self.__id = db.MONGO_DB.ingestion_tasks.insert(status)
             else:
                 db.MONGO_DB.ingestion_tasks.replace_one({'_id': self.__id}, status)
         except Exception as e:

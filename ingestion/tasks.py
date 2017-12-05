@@ -290,43 +290,53 @@ class ImportRedditStats(mgr.IngestionTask):
 
 
 class ImportCommentStats(mgr.IngestionTask):
-    def __init__(self, collection, comment_scanner):
+    def __init__(self, collection, comment_scanner, coin_filter):
         super().__init__()
         self.__comment_scanner = comment_scanner
         self.__collection = collection
+        self.__coin_filter = coin_filter
         self._name += "-" + collection
 
     def _run(self):
-        # TODO: for twitter filter out duplicate symbols, since we can't be sure which one we find
-        # make sure these aren't big name symbols, if they are we need to maybe just use
-        # the one with the bigger market cap
-
-        coins = db.get_coins()
+        coins = db.get_coins(self.__coin_filter)
+        hours = 1
         processed = 0
-        for coin in coins:
-            sym = coin["symbol"]
-            print("getting comments for {}".format(sym))
 
-            scanner = self.__comment_scanner(coin, 1)
-            scanner.find_comments()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_coin = {}
+            for coin in coins:
+                scanner = self.__comment_scanner(coin, hours)
+                fut = executor.submit(scanner.find_comments)
+                future_to_coin[fut] = (coin, scanner)
 
-            record = {
-                "date": datetime.datetime.utcnow(),
-                "coin_id": coin["_id"],
-                "count": scanner.count(),
-                "sum_score": scanner.sum_score(),
-                "avg_score": scanner.avg_score(),
-                "avg_sentiment": scanner.avg_sentiment(),
-                "strong_pos": scanner.count_strong_pos(),
-                "strong_neg" : scanner.count_strong_neg()
-            }
+            for future in concurrent.futures.as_completed(future_to_coin):
+                coin, scanner = future_to_coin[future]
 
-            print(record)
+                try:
+                    #stats = future.result()
 
-            self._db_insert(self.__collection, record)
+                    record = {
+                        "date": datetime.datetime.utcnow(),
+                        "coin_id": coin["_id"],
+                        "count": scanner.count(),
+                        "sum_score": scanner.sum_score(),
+                        "avg_score": scanner.avg_score(),
+                        "avg_sentiment": scanner.avg_sentiment(),
+                        "strong_pos": scanner.count_strong_pos(),
+                        "strong_neg": scanner.count_strong_neg()
+                    }
 
-            processed += 1
-            self._progress(processed, len(coins))
+                    self._db_insert(self.__collection, record)
+
+                except Exception as err:
+                    self._error("Failed to get future results for r/{}, {}".format(coin["subreddit"], err))
+
+                processed += 1
+                self._progress(processed, len(coins))
+
+
+
+
 
 
 # Helper function for task runs
@@ -344,10 +354,6 @@ def current_data_tasks():
     return [
         #ImportPrices(),
         #ImportRedditStats("reddit_stats", reddit.get_current_stats),
-        ImportCommentStats("twitter_comments", twitter.CommentScanner),
-        #ImportCommentStats("reddit_comments", reddit.CommentScanner)
+        ImportCommentStats("twitter_comments", twitter.CommentScanner, {"twitter": {"$exists": True}}),
+        ImportCommentStats("reddit_comments", reddit.CommentScanner, {"subreddit": {"$exists": True}})
     ]
-
-
-# TODO: add other twitter things for coin specific twitter
-# follower count, and look for hot posts with lots of retweets
