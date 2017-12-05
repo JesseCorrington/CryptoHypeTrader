@@ -17,20 +17,15 @@ data = data.iloc[:7000,:]
 features = model.features(data)
 Xtrain = features.Xtrain
 Xtest = features.Xtest
-test_meta = features.test_meta
-train_meta = features.train_meta
-
-
-Xtrain
-test_meta
-
 Ytrain = features.Ytrain.iloc[:,2]
 Ytest = features.Ytest.iloc[:,2]
+test_meta = features.test_meta
+train_meta = features.train_meta
 
 # Train model, display test metrics
 ensemble = model.ensemble(Xtrain, Ytrain, Xtest, Ytest, train_meta, test_meta)
 ensemble.train()
 print('Combiner score: %f' %(ensemble.score()))
 
-# Test Results:
+# Plot Results:
 ensemble.plot_test_prediction()
