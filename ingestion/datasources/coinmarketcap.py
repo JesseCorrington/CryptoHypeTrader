@@ -44,7 +44,7 @@ class Ticker(CoinList):
         for coin in all_coins:
             # This might not be the exact time cmc updated the ticker, but it's close enough
             # and prevents any potential issues with time zone issues screwing up our dates in the db
-            today = datetime.datetime.today()
+            today = datetime.datetime.utcnow()
 
             def to_float(s):
                 return float(s) if s else None
@@ -98,7 +98,7 @@ class CoinLinks(ds.DataSource):
 
 
 class HistoricalPrices(ds.DataSource):
-    def __init__(self, coin, start=datetime.datetime(2011, 1, 1), end=datetime.datetime.today()):
+    def __init__(self, coin, start=datetime.datetime(2011, 1, 1), end=datetime.datetime.utcnow()):
         date_format = "%Y%m%d"
         params = {
             "start": start.strftime(date_format),

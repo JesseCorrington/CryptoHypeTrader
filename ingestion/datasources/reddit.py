@@ -2,139 +2,80 @@ import datetime
 import re
 import praw
 import prawcore
-import textblob
-import numpy as np
-
 from ingestion import config
 from ingestion import datasource as ds
+from ingestion import comment
 
 
 # Provides access to reddit subscriber count numbers and average sentiment
 
-# TODO: seems that having this be global is causing thread shutdown issues
-
-# Use a single praw instance, so we get correct throttling per reddit's limits
-__reddit = praw.Reddit(client_id=config.reddit["client_id"],
-                       client_secret=config.reddit["client_secret"],
-                       user_agent=config.reddit["user_agent"])
+api = None
 
 
-def __comments_polarity(comments, comment_limit=20, depth=0):
-    # don't need to be too aggressive when weighting down nested comments,
-    # as they should already have a lower score
-    depth_weights = [1, .9, .8, .7]
+def init_api():
+    global api
 
-    if depth >= len(depth_weights):
-        return [], []
+    if api is not None:
+        return
 
-    comment_polarities = []
-    comment_scores = []
-
-    # exclude comments with negative scores and limit
-    comments = [x for x in comments if hasattr(x, "score") and x.score > 0]
-    comments = comments[:comment_limit]
-
-    if len(comments) == 0:
-        return [], []
-
-    for comment in comments:
-        comment_polarity = textblob.TextBlob(comment.body).polarity
-        comment_polarities.append(comment_polarity)
-
-        # Weight the comment by it's score and depth, so deeper ones count less
-        weighted_score = comment.score * depth_weights[depth]
-        comment_scores.append(weighted_score)
-
-        if len(comment.replies) > 0:
-            polarities, scores = __comments_polarity(comment.replies, int(comment_limit / 2), depth + 1)
-            if polarities is not None and scores is not None:
-                comment_polarities += polarities
-                comment_scores += scores
-
-    return comment_polarities, comment_scores
+    # Use a single praw instance, so we get correct throttling per reddit's limits
+    api = praw.Reddit(client_id=config.reddit["client_id"],
+                      client_secret=config.reddit["client_secret"],
+                      user_agent=config.reddit["user_agent"])
 
 
-def __submission_polarity(submission):
-    title_weight = 1
-    body_weight = 3
-    comments_weight = 3
+class CommentScanner(comment.CommentScanner):
+    def __init__(self, coin, hours):
+        super().__init__()
+        self.subreddit_name = coin["subreddit"]
+        self.hours = hours
+        # TODO: do we want to use hours to filter out old data?
 
-    title_polarity = textblob.TextBlob(submission.title).polarity
-    polarities_to_avg = [title_polarity]
-    weights = [title_weight]
+    def find_comments(self):
+        global api
 
-    if submission.selftext:
-        text_polarity = textblob.TextBlob(submission.selftext).polarity
-        polarities_to_avg.append(text_polarity)
-        weights.append(body_weight)
+        submission_limit = 20
+        subreddit = api.subreddit(self.subreddit_name)
 
-    comment_polarities, comment_scores = __comments_polarity(submission.comments)
-    if len(comment_polarities) > 0 and len(comment_scores) > 0:
-        avg_comments_polarity = np.average(comment_polarities, weights=comment_scores)
-        polarities_to_avg.append(avg_comments_polarity)
-        weights.append(comments_weight)
+        # Need to a bit to the submission limit here, because we'll likely get back some
+        # stickied submissions that we ignore below
+        limit = submission_limit + 5
+        submission_set = {
+            "hot": subreddit.hot(limit=limit),
+            "new": subreddit.new(limit=limit),
+            "rising": subreddit.rising(limit=limit)
+        }
 
-    # count strong negative and positives
-    pos = 0
-    neg = 0
-    threshold = 0.3
+        for name, submissions in submission_set.items():
+            # Ignore stickied posts and limit submissions
+            submissions = [x for x in submissions if not x.stickied and x.score > 0]
+            submissions = submissions[:submission_limit]
 
-    for p in polarities_to_avg:
-        if p > threshold:
-            pos += 1
-        if p < -threshold:
-            neg += 1
+            for submission in submissions:
+                self.scan_submission(submission)
 
-    return np.average(polarities_to_avg, weights=weights), pos, neg
+    def scan_submission(self, submission):
+        if submission.selftext:
+            # give 80 percent of the score to the body, and 20 percent to the title
+            self._add_comment(submission.title, submission.score * 0.2)
+            self._add_comment(submission.selftext, submission.score * 0.8)
+        else:
+            self._add_comment(submission.title, submission.score)
 
+        self.scan_comments(submission.comments)
 
-# TODO: this should be moved to a sentiment model,
-# data sources should just be generic ways to get the data
+    def scan_comments(self, comments):
+        # exclude comments with negative scores
+        comments = [x for x in comments if hasattr(x, "score") and x.score > 0]
+        for c in comments:
+            self._add_comment(c.body, c.score)
 
-def get_avg_sentiment(subreddit_name):
-    # Calculate the current average sentiment of the top reddit posts, defined as follows
-    # sentiment(subreddit) = avg(sentiment(s1), sentiment(s2), ... sentiment(sn), weights=submission_scores)
-    # sentiment(reddit_submission) = avg(sentiment(title), sentiment(body), sentiment(comments)
-    # sentiment(comments) = avg(sentiment(c1), sentiment(c2), ... sentiment(cn), weights=comment_scores)
-
-    submission_limit = 20
-    subreddit = __reddit.subreddit(subreddit_name)
-
-    # Need to a bit to the submission limit here, because we'll likely get back some
-    # stickied submissions that we ignore below
-    limit = submission_limit + 5
-    submission_set = {
-        "hot": subreddit.hot(limit=limit),
-        "new": subreddit.new(limit=limit),
-        "rising": subreddit.rising(limit=limit)
-    }
-
-    polarities = []
-    scores = []
-    avg_polarities = {}
-    counts = {name: {"pos": 0, "neg": 0} for name in submission_set}
-
-    for name, submissions in submission_set.items():
-        # Ignore stickied posts and limit submissions
-        submissions = [x for x in submissions if not x.stickied and x.score > 0]
-        submissions = submissions[:submission_limit]
-
-        for submission in submissions:
-            polarity, positive, negative = __submission_polarity(submission)
-            polarities.append(polarity)
-            scores.append(submission.score)
-            counts[name]["pos"] += positive
-            counts[name]["neg"] += negative
-
-        avg_polarities[name] = np.average(polarities, weights=scores)
-
-    avg_polarities["counts"] = counts
-
-    return avg_polarities
+            if len(c.replies) > 0:
+                self.scan_comments(c.replies)
 
 
 def get_current_stats(subreddit_name):
-    subreddit = __reddit.subreddit(subreddit_name)
+    subreddit = api.subreddit(subreddit_name)
     stats = {
         "subscribers": subreddit.subscribers,
         "active": subreddit.accounts_active

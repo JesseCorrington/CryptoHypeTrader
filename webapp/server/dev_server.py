@@ -2,9 +2,9 @@ import flask
 import os
 import json
 import pymongo
-from webapp.server import config
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
+from ingestion import util
 
 # TODO: prob want to move database out of ingestion module, maybe
 
@@ -30,7 +30,7 @@ def json_response(items, key_filter=None, filter_out=False):
     if not isinstance(items, list):
         items = list(items)
 
-    if key_filter == None:
+    if key_filter is None:
         return JSONEncoder().encode(items)
 
     filtered = []
@@ -49,20 +49,27 @@ def json_response(items, key_filter=None, filter_out=False):
     return JSONEncoder().encode(filtered)
 
 
-def time_series(items, key):
+def time_series(items, keys):
     if not isinstance(items, list):
         items = list(items)
 
+    if not isinstance(keys, list):
+        keys = [keys]
+
     series = []
     for item in items:
-        series.append([item["date"], item[key]])
+        entry = [item["date"]]
+        for key in keys:
+            entry.append(item[key])
+
+        series.append(entry)
 
     return series
 
 
 app = flask.Flask(__name__)
 
-cfg = config.dev
+cfg = config.prod
 
 username = None
 password = None
@@ -105,8 +112,19 @@ def get_tasks():
 
 @app.route('/api/coins')
 def get_coins():
-    coins = MONGO_DB.coins.find()
-    return json_response(coins, {"cmc_id"}, True)
+    coins = list(MONGO_DB.coins.find())
+
+    id_map = util.list_to_dict(coins, "_id")
+
+    growth_summaries = coin_growth_summaries()
+    for summary in growth_summaries:
+        coin = id_map[summary["coin_id"]]
+
+        for key, value in summary.items():
+            if key != "coin_id":
+                coin[key] = value
+
+    return json_response(coins)
 
 
 @app.route('/api/coin_summaries')
@@ -122,7 +140,7 @@ def get_historical_prices():
 
     prices = MONGO_DB.historical_prices.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
 
-    series = time_series(prices, "close")
+    series = time_series(prices, ["close", "volume"])
     return json_response(series)
 
 
@@ -154,6 +172,62 @@ def get_reddit_stats():
 
     series = time_series(prices, "subscribers")
     return json_response(series)
+
+
+# TODO: this is very slow and should be processed periodically and cached, not on demand
+def coin_growth_summaries():
+    now = datetime.utcnow()
+    oldest = now - timedelta(days=6)
+
+    stats = []
+    coins = list(MONGO_DB.coins.find({"subreddit": {"$exists": True}}))
+
+    all_stats = MONGO_DB.reddit_stats.find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING)
+    all_stats = list(all_stats)
+
+    time_ranges = {
+        "6h": timedelta(hours=6),
+        "1d": timedelta(days=1),
+        "3d": timedelta(days=3),
+        "5d": timedelta(days=5)
+    }
+
+    for coin in coins:
+        entries = [x for x in all_stats if x["coin_id"] == coin["_id"]]
+
+        if len(entries) == 0:
+            continue
+
+        coin_stats = {"coin_id": coin["_id"]}
+        stats.append(coin_stats)
+        for name, time_range in time_ranges.items():
+            from_date = now - time_range
+            amount, percent = growth(entries, "subscribers", from_date, now)
+            coin_stats["_" + name + "_g"] = amount
+            coin_stats["_" + name + "_p"] = percent
+
+    return stats
+
+
+def growth(records, field, from_date, to_date):
+    records = [x for x in records
+               if from_date <= x["date"] <= to_date]
+
+    if len(records) < 2:
+        return 0, 0
+
+    end = records[0][field]
+    start = records[-1][field]
+
+    growth_amount = end - start
+
+    # hack to prevent division by zero
+    if start == 0:
+        start = 1
+
+    growth_percent = growth_amount / start
+
+    return growth_amount, growth_percent
 
 
 app.run()
