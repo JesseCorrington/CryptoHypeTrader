@@ -39,9 +39,19 @@ class TestReddit(TestCase):
     def test_comment_scanner(self):
         reddit.init_api()
 
-        btc_scanner = reddit.RedditCommentScanner("bitcoin")
+        coin = {
+            "subreddit": "bitcoin"
+        }
+        hours = 1
+
+        btc_scanner = reddit.CommentScanner(coin, 1)
         btc_scanner.find_comments()
         self.assertTrue(btc_scanner.count() > 100)
         self.assertTrue(btc_scanner.sum_score() > 10000)
         self.assertTrue(btc_scanner.avg_score() > 10)
         self.assertTrue(-1 < btc_scanner.avg_sentiment() < 1)
+
+        p = btc_scanner.count_strong_pos()
+        n = btc_scanner.count_strong_pos()
+
+        print(p, n)

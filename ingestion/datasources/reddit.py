@@ -24,18 +24,15 @@ def init_api():
                       user_agent=config.reddit["user_agent"])
 
 
-class RedditCommentScanner(comment.CommentScanner):
-    def __init__(self, subreddit):
+class CommentScanner(comment.CommentScanner):
+    def __init__(self, coin, hours):
         super().__init__()
-        self.subreddit_name = subreddit
+        self.subreddit_name = coin["subreddit"]
+        self.hours = hours
+        # TODO: do we want to use hours to filter out old data?
 
     def find_comments(self):
         global api
-
-        # Calculate the current average sentiment of the top reddit posts, defined as follows
-        # sentiment(subreddit) = avg(sentiment(s1), sentiment(s2), ... sentiment(sn), weights=submission_scores)
-        # sentiment(reddit_submission) = avg(sentiment(title), sentiment(body), sentiment(comments)
-        # sentiment(comments) = avg(sentiment(c1), sentiment(c2), ... sentiment(cn), weights=comment_scores)
 
         submission_limit = 20
         subreddit = api.subreddit(self.subreddit_name)

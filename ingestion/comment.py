@@ -25,6 +25,7 @@ class Comment:
 class CommentScanner:
     def __init__(self):
         self.__comments = []
+        self.__strong_threshold = .5
 
     def _add_comment(self, text, score):
         self.__comments.append(Comment(text, score))
@@ -39,13 +40,19 @@ class CommentScanner:
         return sum(c.score for c in self.__comments)
 
     def avg_score(self):
+        if len(self.__comments) == 0:
+            return 0
+
         return self.sum_score() / len(self.__comments)
 
     def avg_sentiment(self):
+        if len(self.__comments) == 0:
+            return 0
+
         return sum(c.sentiment for c in self.__comments) / len(self.__comments)
 
     def count_strong_pos(self):
-        return sum(1 if c.sentiment > 0.5 else 0 for c in self.__comments)
+        return sum(1 if c.sentiment > self.__strong_threshold else 0 for c in self.__comments)
 
     def count_strong_neg(self):
-        return sum(1 if c.sentiment < -0.5 else 0 for c in self.__comments)
+        return sum(1 if c.sentiment < -self.__strong_threshold else 0 for c in self.__comments)

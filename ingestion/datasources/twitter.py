@@ -50,12 +50,9 @@ class CommentScanner(comment.CommentScanner):
                     break
 
                 # TODO: we should also factor in how many users a follower has into scoring
-                # TODO: do we need to check tweet.retweeted is True
 
                 # The base score value is 1, so add it here
                 score = tweet.retweet_count + 1
-
-                cc = comment.Comment(tweet.text, score)
                 self._add_comment(tweet.text, score)
 
             except tweepy.TweepError:
