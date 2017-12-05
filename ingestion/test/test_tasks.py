@@ -6,7 +6,7 @@ from ingestion import tasks
 class TestTwitter(TestCase):
     def test_import_twitter_comments(self):
         twitter.init_api()
-        tasks.ImportCommentStats("twitter_comments", twitter.CommentScanner, {"twitter": {"$exists": True}}).run()
+        tasks.ImportCommentStats("twitter_comments", twitter.CommentScanner, {"twitter": {"$exists": True}}, 1).run()
 
     def test_import_reddit_comments(self):
         reddit.init_api()

@@ -290,11 +290,13 @@ class ImportRedditStats(mgr.IngestionTask):
 
 
 class ImportCommentStats(mgr.IngestionTask):
-    def __init__(self, collection, comment_scanner, coin_filter):
+    def __init__(self, collection, comment_scanner, coin_filter, max_workers=5):
         super().__init__()
         self.__comment_scanner = comment_scanner
         self.__collection = collection
         self.__coin_filter = coin_filter
+        self.__max_workers = max_workers
+
         self._name += "-" + collection
 
     def _run(self):
@@ -302,7 +304,7 @@ class ImportCommentStats(mgr.IngestionTask):
         hours = 1
         processed = 0
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.__max_workers) as executor:
             future_to_coin = {}
             for coin in coins:
                 scanner = self.__comment_scanner(coin, hours)
@@ -313,8 +315,6 @@ class ImportCommentStats(mgr.IngestionTask):
                 coin, scanner = future_to_coin[future]
 
                 try:
-                    #stats = future.result()
-
                     record = {
                         "date": datetime.datetime.utcnow(),
                         "coin_id": coin["_id"],
@@ -335,10 +335,6 @@ class ImportCommentStats(mgr.IngestionTask):
                 self._progress(processed, len(coins))
 
 
-
-
-
-
 # Helper function for task runs
 def historical_data_tasks():
     return [
@@ -352,8 +348,18 @@ def current_data_tasks():
     twitter.init_api()
 
     return [
-        #ImportPrices(),
-        #ImportRedditStats("reddit_stats", reddit.get_current_stats),
-        ImportCommentStats("twitter_comments", twitter.CommentScanner, {"twitter": {"$exists": True}}),
+        ImportPrices(),
+        ImportRedditStats("reddit_stats", reddit.get_current_stats),
         ImportCommentStats("reddit_comments", reddit.CommentScanner, {"subreddit": {"$exists": True}})
+    ]
+
+
+def twitter_tasks():
+    # TODO: this has to be run separately because it takes much longer than the other tasks
+    # due to the low twitter API rate limit, which on average only allows us to process
+    # around 90 coins every 15 minutes, which means this takes 3+ hours
+    # look into distributing this across several server nodes with different API keys
+
+    return [
+        ImportCommentStats("twitter_comments", twitter.CommentScanner, {"twitter": {"$exists": True}}, 1),
     ]
