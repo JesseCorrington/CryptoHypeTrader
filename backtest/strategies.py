@@ -15,19 +15,24 @@ class BuyAndHoldStrategy(Strategy):
         if self.coin_ids == "all" or coin_id in self.coin_ids:
 
             # TODO: probably the engine should pass in it's start and end date, but good enough for now
-            self.buy_date = max(self.buy_date, df.index.min())
-            self.sell_date = min(self.sell_date, df.index.max())
+            print("index min, max", df.index.min(), df.index.max())
+            print("test range min, max", self.buy_date, self.sell_date)
+            buy_date = max(self.buy_date, df.index.min())
+            sell_date = min(self.sell_date, df.index.max())
 
-            df = pd.DataFrame(index=df.index)
-            df["signals"] = Signal.NONE
+            print(coin_id, self.buy_date, self.sell_date)
 
-            df.loc[self.buy_date:self.sell_date, "signals"] = Signal.HOLD
-            df.loc[self.buy_date, "signals"] = Signal.BUY
-            df.loc[self.sell_date, "signals"] = Signal.SELL
+            signals = pd.DataFrame(index=df.index)
+            signals["signals"] = Signal.NONE
+
+            signals.loc[buy_date : sell_date, "signals"] = Signal.HOLD
+            signals.loc[buy_date, "signals"] = Signal.BUY
+            signals.loc[sell_date, "signals"] = Signal.SELL
 
             self.hold_count += 1
+            print("HC", self.hold_count)
 
-            return df
+            return signals
 
     def allocation(self, available_cash):
         if not self.starting_cash:
@@ -46,7 +51,7 @@ class RedditGrowthStrategy(Strategy):
     def generate_signals(self, coin_id, df):
 
         # TODO: the base class should handle creating this for better abstraction
-        df_signals = pd.DataFrame(index=df.index)
+        signals = pd.DataFrame(index=df.index)
         df_change = df.pct_change(1)
 
         holding = False
@@ -56,22 +61,23 @@ class RedditGrowthStrategy(Strategy):
             market_cap = df.loc[index, "market_cap"]
             current_price = df.loc[index, "close"]
 
+            subs_added = df.loc[index, "reddit_subs"] * row["reddit_subs"]
+
             profit_percent = (current_price - buy_price) / buy_price
 
-            # TODO: consider stop losses, and add config for threshold, trailing stops too
-
-            if not holding and row["reddit_subs"] > self.sub_growth_threshold and market_cap > self.min_market_cap:
-                df_signals.loc[index, "signals"] = Signal.BUY
+            if not holding and row["reddit_subs"] > self.sub_growth_threshold and \
+                            market_cap > self.min_market_cap and subs_added > 50:
+                signals.loc[index, "signals"] = Signal.BUY
                 holding = True
                 buy_price = current_price
             elif holding and (row["reddit_subs"] < self.sub_growth_threshold or profit_percent > 5):
-                df_signals.loc[index, "signals"] = Signal.SELL
+                signals.loc[index, "signals"] = Signal.SELL
                 holding = False
 
-        return df_signals
+        return signals
 
     def allocation(self, current_cash):
-        size = current_cash / 8
+        size = current_cash / 4
         size = min(size, 10000)
         return size
 
@@ -79,17 +85,17 @@ class RedditGrowthStrategy(Strategy):
 class RandomStrategy(Strategy):
     def generate_signals(self, coin_id, df):
         holding = False
-        df_signals = pd.DataFrame(index=df.index)
+        signals = pd.DataFrame(index=df.index)
 
         for index, row in df.iterrows():
             if not holding and randint(1, 20) == 1:
-                df_signals.loc[index, "signals"] = Signal.BUY
+                signals.loc[index, "signals"] = Signal.BUY
                 holding = True
             elif holding and randint(1, 20) == 1:
-                df_signals.loc[index, "signals"] = Signal.SELL
+                signals.loc[index, "signals"] = Signal.SELL
                 holding = False
 
-        return df_signals
+        return signals
 
     def allocation(self, current_cash):
         size = current_cash / 8

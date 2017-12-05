@@ -122,6 +122,8 @@ class BackTest:
 
     def generate_signals(self):
         for coin_id, df in self.data_frames.items():
+            print("signals for", self.coins[coin_id]["symbol"])
+            print("date range", df.index.min(), df.index.max())
             signals = self.strategy.generate_signals(coin_id, df)
             self.signals[coin_id] = signals
 
@@ -300,9 +302,6 @@ class BackTest:
 
 def data_for_coin(data, coin):
     data = [x for x in data if x["coin_id"] == coin["_id"]]
-
-    # TODO: why doesn't db index take care of this already
-    # likely has to do with indexing on id and price
     data.sort(key=lambda x: x["date"])
     return data
 
@@ -337,6 +336,11 @@ def load_data():
             "reddit_subs": []
         }
 
+        # TODO: need to restrict time range to when there was actually social data
+        # otherwise we can't trade and it's not a fair comp to buy/hold
+
+        print("Creating data for", coin["symbol"])
+
         prev_date = None
         for price in prices:
             if prev_date and price["date"] - prev_date > timedelta(days=1):
@@ -355,7 +359,9 @@ def load_data():
 
         dfp = pd.DataFrame(price_data, columns=["date", "open", "close", "market_cap"])
         dfs = pd.DataFrame(social_data, columns=["date", "reddit_subs"])
-        df = pd.merge(dfp, dfs, on="date")
+
+        # Use an inner join for intersection, so only consider the range that has price and social data
+        df = pd.merge(dfp, dfs, on="date", how="inner")
 
         # make date the index
         df.index = df['date']
@@ -367,7 +373,7 @@ def load_data():
             continue
 
         # TODO: add a threshold for amount of missing data,
-        # and regect coins that are missing too much, as the result are invalid
+        # and reject coins that are missing too much, as the result are invalid
 
         datetime_index = [df.index.min(), df.index.max()]
         s2 = pd.Series(None, datetime_index)
@@ -393,7 +399,7 @@ def load_data():
         # TODO: this is very bad look ahead bias, because we're trading
         # the top coins as of today, but when we start the test a year ago they may not even exist
         # so this is a HUGE filtering out of failed coins
-        if progress >= 10:
+        if progress >= 200:
             break
 
     return coins, data_frames
