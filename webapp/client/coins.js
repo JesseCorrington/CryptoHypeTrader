@@ -51,14 +51,18 @@ var app = new Vue({
       headers: [
           {text: 'Name', value: 'name', align: "left"},
           {text: 'Symbol', value: 'symbol'},
+          {text: 'Price', value: 'price'},
+          {text: 'Market Cap', value: 'market_cap'},
+          {text: "Reddit h6", value: "reddit_growth.h6"},
+          {text: "Reddit d1", value: "reddit_growth.d1"},
+          {text: "Reddit d1_pct", value: "reddit_growth.d1_pct"},
+          {text: "Reddit d3_pct", value: "reddit_growth.d3_pct"},
+          {text: "Reddit d5_pct", value: "reddit_growth.d5_pct"},
           {text: "Coinmarketcap", value: "cmc_id"},
           {text: "CryptoCompare", value: "cc_id"},
           {text: "Subreddit", value: "subreddit"},
           {text: "Twitter", value: "twitter"},
           {text: "Bitcointalk-ANN", value: "btctalk_ann"},
-          {text: "1d", value: "_1d_p"},
-          {text: "3d", value: "_3d_p"},
-          {text: "5d", value: "_5d_p"}
         ],
       items: [],
       selected: [],
@@ -70,7 +74,13 @@ var app = new Vue({
 
   mounted: function() {
       var self = this
-      $.getJSON('/api/coins', function (json) {
+      $.getJSON('/api/coin_summaries', function (json) {
+          json.forEach(function(coin) {
+              if (coin.reddit_growth === undefined) {
+                  coin.reddit_growth = {}
+              }
+          });
+
           self.items = json;
       });
   },
@@ -81,8 +91,8 @@ var app = new Vue({
             var pending = 2
             var chartData = []
 
-            get_prices(coin._id, coin.symbol);
-            get_stats(coin._id, coin.symbol);
+            get_prices(coin.coin_id, coin.symbol);
+            get_stats(coin.coin_id, coin.symbol);
         }
     }
 });

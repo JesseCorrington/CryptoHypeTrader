@@ -6,7 +6,7 @@ import flask
 import pymongo
 from bson import ObjectId
 
-from common import util, database as db
+from common import database as db
 from webapp.server import config
 
 # TODO: prob want to move database out of ingestion module, maybe
@@ -72,7 +72,7 @@ def time_series(items, keys):
 
 app = flask.Flask(__name__)
 
-cfg = config.prod
+cfg = config.dev
 
 db.init(cfg["database"])
 
@@ -100,25 +100,13 @@ def get_tasks():
 @app.route('/api/coins')
 def get_coins():
     coins = list(db.mongo_db.coins.find())
-
-    id_map = util.list_to_dict(coins, "_id")
-
-    growth_summaries = coin_growth_summaries()
-    for summary in growth_summaries:
-        coin = id_map[summary["coin_id"]]
-
-        for key, value in summary.items():
-            if key != "coin_id":
-                coin[key] = value
-
     return json_response(coins)
 
 
 @app.route('/api/coin_summaries')
 def get_coin_summaries():
-    # coin list joined with latest price and stats table
-    # as well as 1, 3, and 7 day stats for growth of price and other stats
-    pass
+    summaries = list(db.mongo_db.coin_summaries.find())
+    return json_response(summaries)
 
 
 @app.route('/api/historical_prices')

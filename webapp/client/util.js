@@ -142,3 +142,9 @@ Vue.filter('percent', function (value) {
     value = value.toString();
     return numeral(value).format('0.00%')
 })
+
+Vue.filter('currency', function (value) {
+    if (value === undefined) return ''
+    value = value.toString();
+    return numeral(value).format('$0,0.00')
+})

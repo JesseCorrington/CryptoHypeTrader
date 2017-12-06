@@ -40,14 +40,18 @@
                                     </td>
                                     <td>{{ props.item.name }}</td>
                                     <td>{{ props.item.symbol }}</td>
+                                    <td>{{ props.item.price | currency}}</td>
+                                    <td>{{ props.item.market_cap | currency}}</td>
+                                    <td>{{ props.item.reddit_growth.h6}}</td>
+                                    <td>{{ props.item.reddit_growth.d1}}</td>
+                                    <td>{{ props.item.reddit_growth.d1_pct | percent}}</td>
+                                    <td>{{ props.item.reddit_growth.d3_pct | percent}}</td>
+                                    <td>{{ props.item.reddit_growth.d3_pct | percent}}</td>
                                     <td>{{ props.item.cmc_id }}</td>
                                     <td>{{ props.item.cc_id }}</td>
                                     <td>{{ props.item.subreddit }}</td>
                                     <td>{{ props.item.twitter }}</td>
                                     <td>{{ props.item.btctalk_ann }}</td>
-                                    <td>{{ props.item._1d_p | percent}}</td>
-                                    <td>{{ props.item._3d_p | percent}}</td>
-                                    <td>{{ props.item._5d_p | percent}}</td>
                                 </template>
                             </v-data-table>
                         </v-card>
