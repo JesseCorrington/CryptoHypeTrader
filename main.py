@@ -27,6 +27,10 @@ def import_twitter_data():
     mgr.run_tasks(tasks.twitter_tasks())
 
 
+def analysis_tasks():
+    mgr.run_tasks(tasks.analysis_tasks())
+
+
 def import_all_data():
     import_coin_list()
     import_historical_data()
@@ -48,6 +52,7 @@ def main():
         "historical": import_historical_data,
         "current": import_current_data,
         "twitter": import_twitter_data,
+        "analysis": analysis_tasks,
         "all": import_all_data
     }
 

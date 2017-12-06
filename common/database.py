@@ -36,8 +36,6 @@ def connected():
     return True
 
 
-# TODO: need error handling on db stuff
-
 def cursor_to_dict(cursor, key="_id"):
     l = list(cursor)
     output = {}

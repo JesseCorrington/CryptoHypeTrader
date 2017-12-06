@@ -1,10 +1,11 @@
 import concurrent.futures
 import datetime
+import pymongo
 
 from common import database as db, util
 from ingestion import config, manager as mgr
 from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmarketcap as cmc
-
+from ingestion import analysis
 
 def init():
     db.init(config.database)
@@ -339,6 +340,55 @@ class ImportCommentStats(mgr.IngestionTask):
                 self._progress(processed, len(coins))
 
 
+class CreateCoinSummaries(mgr.IngestionTask):
+    def _run(self):
+        coins = db.get_coins()
+
+        # TODO: look into getting all this info from a mongo query
+        prices = db.mongo_db["prices"].aggregate([
+            {"$sort": {"date": pymongo.DESCENDING}},
+            {"$group": {"_id": "$coin_id", "data": {'$first': '$$ROOT'}}}
+        ], allowDiskUse=True)
+
+        prices = db.cursor_to_dict(prices)
+
+        # TODO: should prob rename to social summaries
+        growth = analysis.coin_growth_summaries()
+        growth = util.list_to_dict(growth, "coin_id")
+
+        records = []
+        for coin in coins:
+            cid = coin["_id"]
+
+            # TODO: remove
+            if cid not in prices:
+                continue
+
+            p = prices[cid]["data"]
+
+            record = {
+                "coin_id": coin["_id"],
+                "symbol": coin["symbol"],
+                "name": coin["name"],
+                "market_cap": p["market_cap"],
+                "price": p["price"],
+                "volume": p["volume"]
+            }
+
+            # TODO: add current social counts
+
+            if cid in growth:
+                g = growth[cid]
+                for key, val in g.items():
+                    record[key] = val
+
+            records.append(record)
+
+        # TODO: is it better to use update many or something else?
+        db.mongo_db.coin_summaries.remove()
+        self._db_insert("coin_summaries", records)
+
+
 # Helper function for task runs
 def historical_data_tasks():
     return [
@@ -363,4 +413,10 @@ def twitter_tasks():
 
     return [
         ImportCommentStats("twitter_comments", twitter.CommentScanner, {"twitter": {"$exists": True}}, 1),
+    ]
+
+
+def analysis_tasks():
+    return [
+        CreateCoinSummaries()
     ]
