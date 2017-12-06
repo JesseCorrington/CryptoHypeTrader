@@ -340,6 +340,12 @@ class ImportCommentStats(mgr.IngestionTask):
                 self._progress(processed, len(coins))
 
 
+# TODO: implement and setup to run every few hours
+# see how often the data adjusts and adjust run timing
+class ImportCryptoCompareStats(mgr.IngestionTask):
+    pass
+
+
 class CreateCoinSummaries(mgr.IngestionTask):
     def _run(self):
         coins = db.get_coins()
@@ -351,17 +357,15 @@ class CreateCoinSummaries(mgr.IngestionTask):
         ], allowDiskUse=True)
 
         prices = db.cursor_to_dict(prices)
-
-        # TODO: should prob rename to social summaries
-        growth = analysis.coin_growth_summaries()
+        growth = analysis.social_growth()
         growth = util.list_to_dict(growth, "coin_id")
 
         records = []
         for coin in coins:
             cid = coin["_id"]
 
-            # TODO: remove
             if cid not in prices:
+                self._warn("No current price data for {}".format(cid))
                 continue
 
             p = prices[cid]["data"]
@@ -375,12 +379,9 @@ class CreateCoinSummaries(mgr.IngestionTask):
                 "volume": p["volume"]
             }
 
-            # TODO: add current social counts
-
             if cid in growth:
-                g = growth[cid]
-                for key, val in g.items():
-                    record[key] = val
+                del growth[cid]["coin_id"]
+                record["reddit_growth"] = growth[cid]
 
             records.append(record)
 

@@ -24,7 +24,8 @@ def growth(records, field, from_date, to_date):
     return growth_amount, growth_percent
 
 
-def coin_growth_summaries():
+# TODO: make this work for twitter too
+def social_growth():
     now = datetime.utcnow()
     oldest = now - timedelta(days=6)
 
@@ -35,10 +36,16 @@ def coin_growth_summaries():
     all_stats = list(all_stats)
 
     time_ranges = {
-        "6h": timedelta(hours=6),
-        "1d": timedelta(days=1),
-        "3d": timedelta(days=3),
-        "5d": timedelta(days=5)
+        "h1": timedelta(hours=1),
+        "h6": timedelta(hours=6),
+        "h12": timedelta(hours=12),
+        "d1": timedelta(days=1),
+        "d2": timedelta(days=2),
+        "d3": timedelta(days=3),
+        "d4": timedelta(days=4),
+        "d5": timedelta(days=5),
+        "d6": timedelta(days=6),
+        "d7": timedelta(days=7)
     }
 
     for coin in coins:
@@ -52,7 +59,7 @@ def coin_growth_summaries():
         for name, time_range in time_ranges.items():
             from_date = now - time_range
             amount, percent = growth(entries, "subscribers", from_date, now)
-            coin_stats["_" + name + "_g"] = amount
-            coin_stats["_" + name + "_p"] = percent
+            coin_stats[name] = amount
+            coin_stats[name + "_pct"] = percent
 
     return stats
