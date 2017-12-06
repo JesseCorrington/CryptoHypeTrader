@@ -11,16 +11,14 @@ def init(config):
 
     username = None
     password = None
-    auth_source = None
-    auth_mechanism = None
+    auth_source = config["name"]
 
     if "username" in config and "password" in config:
         username = config["username"]
         password = config["password"]
 
-    if "auth_source" in config and "auth_mechanism" in config:
+    if "auth_source" in config:
         auth_source = config["auth_source"]
-        auth_mechanism = config["auth_mechanism"]
 
     mongo_client = MongoClient(
         config["host"],
@@ -28,8 +26,7 @@ def init(config):
         username=username,
         password=password,
         serverSelectionTimeoutMS=3,
-        authSource=auth_source,
-        authMechanism=auth_mechanism
+        authSource=auth_source
     )
 
     mongo_db = mongo_client[config["name"]]
