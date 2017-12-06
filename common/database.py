@@ -21,8 +21,9 @@ def init(config):
         username=username,
         password=password,
         serverSelectionTimeoutMS=3,
-        authSource='hype-db',
-        authMechanism='SCRAM-SHA-1')
+        #authSource='hype-db',
+        #authMechanism='SCRAM-SHA-1'
+        )
 
     mongo_db = mongo_client[config["name"]]
 
