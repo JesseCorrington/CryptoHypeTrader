@@ -5,6 +5,7 @@ import pymongo
 from bson import ObjectId
 from datetime import datetime, timedelta
 from ingestion import util
+from webapp.server import config
 
 # TODO: prob want to move database out of ingestion module, maybe
 

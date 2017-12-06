@@ -55,6 +55,8 @@ def main():
         print("Error: task {} should be one of {}".format(task_name, list(task_map.keys())))
         return
 
+    tasks.init()
+
     task_map[task_name]()
 
 

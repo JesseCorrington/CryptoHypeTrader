@@ -7,6 +7,11 @@ from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmark
 from ingestion import manager as mgr
 
 
+def init():
+    reddit.init_api()
+    twitter.init_api()
+
+
 class ImportCoinList(mgr.IngestionTask):
     """ Task to import the list of coins from coinmarketcap.com and cryptocompare.com
     This checks all coins on every run, and only makes updates to new/changed items in the db
@@ -342,8 +347,6 @@ def historical_data_tasks():
 
 
 def current_data_tasks():
-    reddit.init_api()
-
     return [
         ImportPrices(),
         ImportRedditStats("reddit_stats", reddit.get_current_stats),
@@ -356,8 +359,6 @@ def twitter_tasks():
     # due to the low twitter API rate limit, which on average only allows us to process
     # around 90 coins every 15 minutes, which means this takes 3+ hours
     # look into distributing this across several server nodes with different API keys
-
-    twitter.init_api()
 
     return [
         ImportCommentStats("twitter_comments", twitter.CommentScanner, {"twitter": {"$exists": True}}, 1),
