@@ -72,7 +72,7 @@ def time_series(items, keys):
 
 app = flask.Flask(__name__)
 
-cfg = config.dev
+cfg = config.prod
 
 db.init(cfg["database"])
 
@@ -93,7 +93,8 @@ def get_tasks():
     if running:
         query["running"] = to_bool(running)
 
-    tasks = db.mongo_db.ingestion_tasks.find(query).sort("date", pymongo.DESCENDING).limit(100)
+    tasks = db.mongo_db.ingestion_tasks.find(query).sort("start_time", pymongo.DESCENDING).limit(100)
+
     return json_response(tasks)
 
 

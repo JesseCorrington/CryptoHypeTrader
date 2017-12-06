@@ -348,6 +348,7 @@ class ImportCryptoCompareStats(mgr.IngestionTask):
 
 
 # TODO: add price growth too
+# TODO: add price predictions from ML model
 class CreateCoinSummaries(mgr.IngestionTask):
     def _run(self):
         coins = db.get_coins()

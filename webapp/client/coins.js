@@ -56,6 +56,7 @@ var app = new Vue({
           {text: "Reddit h6", value: "reddit_growth.h6"},
           {text: "Reddit d1", value: "reddit_growth.d1"},
           {text: "Reddit d3", value: "reddit_growth.d3"},
+          {text: "Reddit d5", value: "reddit_growth.d5"},
           {text: "Reddit d1_pct", value: "reddit_growth.d1_pct"},
           {text: "Reddit d3_pct", value: "reddit_growth.d3_pct"},
           {text: "Reddit d5_pct", value: "reddit_growth.d5_pct"},
@@ -69,7 +70,7 @@ var app = new Vue({
       selected: [],
       search: "",
       pagination: {
-          sortBy: 'start_time'
+          sortBy: 'date'
       }
   },
 
@@ -78,7 +79,24 @@ var app = new Vue({
       $.getJSON('/api/coin_summaries', function (json) {
           json.forEach(function(coin) {
               if (coin.reddit_growth === undefined) {
-                  coin.reddit_growth = {}
+                  coin.reddit_growth = {
+                      "h1": 0,
+                      "h6": 0,
+                      "d1": 0,
+                      "d2": 0,
+                      "d3": 0,
+                      "d4": 0,
+                      "d5": 0,
+                      "d6": 0,
+                      "h1_pct": 0,
+                      "h6_pct": 0,
+                      "d1_pct": 0,
+                      "d2_pct": 0,
+                      "d3_pct": 0,
+                      "d4_pct": 0,
+                      "d5_pct": 0,
+                      "d6_pct": 0
+                  }
               }
           });
 
