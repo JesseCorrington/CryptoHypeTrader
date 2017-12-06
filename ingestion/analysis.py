@@ -27,7 +27,7 @@ def growth(records, field, from_date, to_date):
 # TODO: make this work for twitter too
 def social_growth():
     now = datetime.utcnow()
-    oldest = now - timedelta(days=6)
+    oldest = now - timedelta(days=10)
 
     stats = []
     coins = list(db.mongo_db.coins.find({"subreddit": {"$exists": True}}))

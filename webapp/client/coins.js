@@ -55,6 +55,7 @@ var app = new Vue({
           {text: 'Market Cap', value: 'market_cap'},
           {text: "Reddit h6", value: "reddit_growth.h6"},
           {text: "Reddit d1", value: "reddit_growth.d1"},
+          {text: "Reddit d3", value: "reddit_growth.d3"},
           {text: "Reddit d1_pct", value: "reddit_growth.d1_pct"},
           {text: "Reddit d3_pct", value: "reddit_growth.d3_pct"},
           {text: "Reddit d5_pct", value: "reddit_growth.d5_pct"},
