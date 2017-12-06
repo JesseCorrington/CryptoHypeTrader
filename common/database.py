@@ -11,9 +11,16 @@ def init(config):
 
     username = None
     password = None
+    auth_source = None
+    auth_mechanism = None
+
     if "username" in config and "password" in config:
         username = config["username"]
         password = config["password"]
+
+    if "auth_source" in config and "auth_mechanism" in config:
+        auth_source = config["auth_source"]
+        auth_mechanism = config["auth_mechanism"]
 
     mongo_client = MongoClient(
         config["host"],
@@ -21,9 +28,9 @@ def init(config):
         username=username,
         password=password,
         serverSelectionTimeoutMS=3,
-        #authSource='hype-db',
-        #authMechanism='SCRAM-SHA-1'
-        )
+        authSource=auth_source,
+        authMechanism=auth_mechanism
+    )
 
     mongo_db = mongo_client[config["name"]]
 
@@ -80,4 +87,4 @@ def create_indexes():
     mongo_db.coins.create_index([("cmc_id", pymongo.ASCENDING)], unique=True)
     mongo_db.historical_prices.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
     mongo_db.historical_social_stats.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
-    mongo_db.ingestion_tasks.create_index([("date", pymongo.DESCENDING)])
+    mongo_db.ingestion_tasks.create_index([("start_time", pymongo.DESCENDING)])
