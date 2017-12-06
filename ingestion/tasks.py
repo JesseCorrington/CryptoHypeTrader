@@ -1,13 +1,14 @@
 import concurrent.futures
 import datetime
 
-from ingestion import database as db
-from ingestion import util
+from common import database as db, util
+from ingestion import config, manager as mgr
 from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmarketcap as cmc
-from ingestion import manager as mgr
 
 
 def init():
+    db.init(config.database)
+    db.create_indexes()
     reddit.init_api()
     twitter.init_api()
 

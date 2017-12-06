@@ -42,11 +42,16 @@
                                     <td class="text-xs-right">{{ props.item.start_time | dateTime }}</td>
                                     <td class="text-xs-right">{{ props.item.end_time | dateTime}}</td>
                                     <td class="text-xs-right">{{ props.item.running | capitalize }}</td>
+                                    <td class="text-xs-right">{{ props.item.last_update | dateTime }}</td>
+                                    <td class="text-xs-right">{{ props.item.percent_done | percent }}</td>
                                     <td class="text-xs-right">{{ props.item.failed | capitalize}}</td>
                                     <td class="text-xs-right">{{ props.item.canceled | capitalize}}</td>
                                     <td class="text-xs-right">{{ props.item.errors.length }}</td>
                                     <td class="text-xs-right">{{ props.item.warnings.length }}</td>
                                     <td class="text-xs-right">{{ props.item.errors_http.length }}</td>
+                                    <td class="text-xs-right">{{ props.item.http_requests }}</td>
+                                    <td class="text-xs-right">{{ props.item.db_inserts }}</td>
+                                    <td class="text-xs-right">{{ props.item.db_updates }}</td>
                                 </template>
                             </v-data-table>
                         </v-card>

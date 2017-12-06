@@ -1,8 +1,9 @@
 import datetime
 import sys
-from ingestion import database as db
-from ingestion import datasource as ds
+
+from common import database as db
 from ingestion import config
+from ingestion import datasource as ds
 
 
 class FatalError(Exception):
@@ -105,7 +106,7 @@ class IngestionTask:
     def _db_update_one(self, collection, doc_id, updates):
         """Derived classes call to update a single database record"""
         try:
-            db.MONGO_DB[collection].update_one({
+            db.mongo_db[collection].update_one({
                 '_id': doc_id
             }, {
                 '$set': updates
@@ -160,9 +161,9 @@ class IngestionTask:
 
         try:
             if self.__id is None:
-                self.__id = db.MONGO_DB.ingestion_tasks.insert(status)
+                self.__id = db.mongo_db.ingestion_tasks.insert(status)
             else:
-                db.MONGO_DB.ingestion_tasks.replace_one({'_id': self.__id}, status)
+                db.mongo_db.ingestion_tasks.replace_one({'_id': self.__id}, status)
         except Exception as e:
             self._error("Failed to update db status for ingestion tasks: " + str(e))
 
@@ -236,9 +237,6 @@ def run_tasks(tasks):
         return
 
     start_time = datetime.datetime.utcnow()
-
-    # TODO: where does this belong
-    db.create_indexes()
 
     for task in tasks:
         try:

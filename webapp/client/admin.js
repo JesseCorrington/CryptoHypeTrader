@@ -3,6 +3,7 @@
 
 Vue.use(Vuetify)
 
+
 var app = new Vue({
   el: '#vueApp',
   data: {
@@ -12,11 +13,16 @@ var app = new Vue({
           { text: 'Start Time', value: 'start_time' },
           { text: 'End Time', value: 'end_time' },
           { text: 'Running', value: 'running' },
+          { text: 'Last Update', value: 'last_update' },
+          { text: 'Percent Complete', value: 'percent_done' },
           { text: 'Failed', value: 'failed' },
           { text: 'Canceled', value: 'canceled' },
           { text: 'Errors', value: 'errors' },
           { text: 'Warnings', value: 'warnings' },
           { text: 'HTTP Errors', value: 'errors_http' },
+          { text: 'HTTP Requests', value: 'http_requests' },
+          { text: 'DB Inserts', value: 'db_inserts' },
+          { text: 'DB Updates', value: 'db_updates' },
         ],
       items: [],
       selected: [],

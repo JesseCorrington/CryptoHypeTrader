@@ -1,13 +1,14 @@
+import csv
 from datetime import timedelta
 from enum import Enum
+
 import pandas as pd
 import plotly
 from plotly.graph_objs import Scatter
-import csv
 
+from common import database as db, util
 
 # TODO: database/util should be moved to a common/util package
-from ingestion import util, database as db
 
 TRADE_FEE = .0025
 TRADE_SLIPPAGE = .02
@@ -312,8 +313,8 @@ def load_data():
     # TODO: would be cleaner if the frames were stored in each coin maybe
     data_frames = {}
 
-    all_prices = db.MONGO_DB.historical_prices.find()
-    all_reddit_subs = db.MONGO_DB.historical_social_stats.find()
+    all_prices = db.mongo_db.historical_prices.find()
+    all_reddit_subs = db.mongo_db.historical_social_stats.find()
 
     all_prices = list(all_prices)
     all_reddit_subs = list(all_reddit_subs)
