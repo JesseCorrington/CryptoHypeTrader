@@ -360,14 +360,18 @@ class ImportCryptoCompareStats(mgr.IngestionTask):
             self._progress(processed, len(coins))
 
 
+class SaveDBStats(mgr.IngestionTask):
+    def _run(self):
+        stats = db.mongo_db.command("dbstats")
+        stats["date"] = datetime.datetime.utcnow()
+        self._db_insert("db_stats", stats)
 
-# TODO: add price growth too
+
 # TODO: add price predictions from ML model
 class CreateCoinSummaries(mgr.IngestionTask):
     def _run(self):
         coins = db.get_coins()
 
-        # TODO: look into getting all this info from a mongo query
         prices = db.mongo_db["prices"].aggregate([
             {"$sort": {"date": pymongo.DESCENDING}},
             {"$group": {"_id": "$coin_id", "data": {'$first': '$$ROOT'}}}

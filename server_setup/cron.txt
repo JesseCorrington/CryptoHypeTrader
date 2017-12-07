@@ -1,3 +1,4 @@
+0 0 * * *  /usr/bin/python3 ~/cryptohypetrader/main.py -t db_stats
 30 0,11 * * *  /usr/bin/python3 ~/cryptohypetrader/main.py -t coin_list >> ~/cryptohypetrader/ingestion_coin_list.log
 30 1,12 * * *  /usr/bin/python3 ~/cryptohypetrader/main.py -t historical >> ~/cryptohypetrader/ingestion_historical.log
 0 * * * * /usr/bin/python3 ~/cryptohypetrader/main.py -t current >> ~/cryptohypetrader/ingestion_current.log

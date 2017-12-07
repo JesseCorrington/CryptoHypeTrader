@@ -35,6 +35,10 @@ def cc_stats_task():
     mgr.run_tasks(tasks.ImportCryptoCompareStats())
 
 
+def db_stats():
+    mgr.run_tasks(tasks.SaveDBStats())
+
+
 def main():
     from sys import argv
     opts = getopts(argv)
@@ -51,7 +55,8 @@ def main():
         "current": import_current_data,
         "twitter": import_twitter_data,
         "analysis": analysis_tasks,
-        "cc_stats": cc_stats_task
+        "cc_stats": cc_stats_task,
+        "db_stats": db_stats
     }
 
     if task_name not in task_map:
