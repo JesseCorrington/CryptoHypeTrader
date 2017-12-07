@@ -22,13 +22,12 @@ class TestCryptoCompare(TestCase):
         self.assertTrue(links["twitter"] == "ethereumproject")
 
     def test_get_social_stats(self):
-        print("testing")
-
         coins = cc.CoinList().get()
 
         btc = next(coin for coin in coins if coin["symbol"] == "BTC")
         stats = cc.SocialStats(btc["cc_id"]).get()
-        self.assertTrue(stats["subreddit"] == "bitcoin")
-
-        eth = next(coin for coin in coins if coin["symbol"] == "ETH")
-        stats = cc.SocialStats(eth["cc_id"]).get()
+        self.assertTrue(stats["total_points"] > 0)
+        self.assertTrue(stats["crypto_compare"]["points"] > 0)
+        self.assertTrue(stats["twitter"]["points"] > 0)
+        self.assertTrue(stats["reddit"]["points"] > 0)
+        self.assertTrue(stats["facebook"]["points"] > 0)
