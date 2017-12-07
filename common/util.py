@@ -30,4 +30,4 @@ def safe_assign(dest, dest_key, source, source_key, converter=None):
         dest[dest_key] = source[source_key]
 
         if converter:
-            dest_key[dest_key] = converter(dest_key[dest_key])
+            dest[dest_key] = converter(dest[dest_key])

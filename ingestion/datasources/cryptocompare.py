@@ -51,6 +51,7 @@ class CoinLinks(CryptoCompareDataSource):
 
         return links
 
+
 class SocialStats(CryptoCompareDataSource):
     def __init__(self, cc_id):
         super().__init__("https://www.cryptocompare.com/api/data/socialstats/", {"id": cc_id})
@@ -63,35 +64,35 @@ class SocialStats(CryptoCompareDataSource):
         if "CryptoCompare" in data:
             cc_stats = data["CryptoCompare"]
             stats["crypto_compare"] = {}
-            safe_assign(stats["crypto_compare"], "comments", cc_stats, "Comments")
-            safe_assign(stats["crypto_compare"], "followers", cc_stats, "Followers")
-            safe_assign(stats["crypto_compare"], "posts", cc_stats, "Posts")
-            safe_assign(stats["crypto_compare"], "points", cc_stats, "Points")
-            safe_assign(stats["crypto_compare"], "page_views", cc_stats, "PageViews")
+            safe_assign(stats["crypto_compare"], "comments", cc_stats, "Comments", int)
+            safe_assign(stats["crypto_compare"], "followers", cc_stats, "Followers", int)
+            safe_assign(stats["crypto_compare"], "posts", cc_stats, "Posts", int)
+            safe_assign(stats["crypto_compare"], "points", cc_stats, "Points", int)
+            safe_assign(stats["crypto_compare"], "page_views", cc_stats, "PageViews", int)
 
         if "Twitter" in data:
             twitter_stats = data["Twitter"]
             stats["twitter"] = {}
-            safe_assign(stats["twitter"], "followers", twitter_stats, "followers")
-            safe_assign(stats["twitter"], "points", twitter_stats, "Points")
+            safe_assign(stats["twitter"], "followers", twitter_stats, "followers", int)
+            safe_assign(stats["twitter"], "points", twitter_stats, "Points", int)
 
         if "Reddit" in data:
             reddit_stats = data["Reddit"]
             stats["reddit"] = {}
-            safe_assign(stats["reddit"], "comments_per_hour", reddit_stats, "comments_per_hour")
-            safe_assign(stats["reddit"], "comments_per_day", reddit_stats, "comments_per_day")
-            safe_assign(stats["reddit"], "posts_per_hour", reddit_stats, "posts_per_hour")
-            safe_assign(stats["reddit"], "posts_per_day", reddit_stats, "posts_per_day")
-            safe_assign(stats["reddit"], "points", reddit_stats, "points")
+            safe_assign(stats["reddit"], "comments_per_hour", reddit_stats, "comments_per_hour", float)
+            safe_assign(stats["reddit"], "comments_per_day", reddit_stats, "comments_per_day", float)
+            safe_assign(stats["reddit"], "posts_per_hour", reddit_stats, "posts_per_hour", float)
+            safe_assign(stats["reddit"], "posts_per_day", reddit_stats, "posts_per_day", float)
+            safe_assign(stats["reddit"], "points", reddit_stats, "Points", int)
 
         if "Facebook" in data:
             fb = data["Facebook"]
             stats["facebook"] = {}
-            safe_assign(stats["facebook"], "likes", fb, "likes")
-            safe_assign(stats["facebook"], "points", fb, "points")
+            safe_assign(stats["facebook"], "likes", fb, "likes", int)
+            safe_assign(stats["facebook"], "points", fb, "Points", int)
 
         if "CodeRepository" in data:
             stats["code_repo"] = {}
-            safe_assign(stats["code_repo"], "points", data["CodeRepository"], "Points")
+            safe_assign(stats["code_repo"], "points", data["CodeRepository"], "Points", int)
 
         return stats
