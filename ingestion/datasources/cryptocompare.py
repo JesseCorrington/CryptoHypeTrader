@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 from ingestion import datasource as ds
+from common.util import safe_assign
 
 
 class CryptoCompareDataSource(ds.DataSource):
@@ -55,44 +56,42 @@ class SocialStats(CryptoCompareDataSource):
         super().__init__("https://www.cryptocompare.com/api/data/socialstats/", {"id": cc_id})
 
     def parse(self, data):
-
-        cc_stats = data["CryptoCompare"]
-        twitter_stats = data["Twitter"]
-        reddit_stats = data["Reddit"]
-        fb = data["Facebook"]
-
         stats = {
             "total_points": data["General"]["Points"],
-            "crypto_compare": {
-                "followers": cc_stats["Followers"],
-                "posts": cc_stats["Posts"],
-                "comments": cc_stats["Comments"],
-                "points": cc_stats["Points"],
-                "page_view": cc_stats["PageViews"]
-            },
-
-            "twitter": {
-                "followers": twitter_stats["followers"],
-                "points": twitter_stats["Points"]
-            },
-
-            "reddit": {
-                "comments_per_hour": reddit_stats["comments_per_hour"],
-                "comments_per_day": reddit_stats["comments_per_day"],
-                "posts_per_hour": reddit_stats["posts_per_hour"],
-                "posts_per_day": reddit_stats["posts_per_day"],
-                "points": reddit_stats["Points"]
-            },
-
-            "facebook": {
-                "likes": fb["likes"],
-                "points": fb["Points"]
-            },
-
-            "code_repo": {
-                "points": data["CodeRepository"]["Points"]
-            }
         }
 
-        print(stats)
+        if "CryptoCompare" in data:
+            cc_stats = data["CryptoCompare"]
+            stats["crypto_compare"] = {}
+            safe_assign(stats["crypto_compare"], "comments", cc_stats, "Comments")
+            safe_assign(stats["crypto_compare"], "followers", cc_stats, "Followers")
+            safe_assign(stats["crypto_compare"], "posts", cc_stats, "Posts")
+            safe_assign(stats["crypto_compare"], "points", cc_stats, "Points")
+            safe_assign(stats["crypto_compare"], "page_views", cc_stats, "PageViews")
+
+        if "Twitter" in data:
+            twitter_stats = data["Twitter"]
+            stats["twitter"] = {}
+            safe_assign(stats["twitter"], "followers", twitter_stats, "followers")
+            safe_assign(stats["twitter"], "points", twitter_stats, "Points")
+
+        if "Reddit" in data:
+            reddit_stats = data["Reddit"]
+            stats["reddit"] = {}
+            safe_assign(stats["reddit"], "comments_per_hour", reddit_stats, "comments_per_hour")
+            safe_assign(stats["reddit"], "comments_per_day", reddit_stats, "comments_per_day")
+            safe_assign(stats["reddit"], "posts_per_hour", reddit_stats, "posts_per_hour")
+            safe_assign(stats["reddit"], "posts_per_day", reddit_stats, "posts_per_day")
+            safe_assign(stats["reddit"], "points", reddit_stats, "points")
+
+        if "Facebook" in data:
+            fb = data["Facebook"]
+            stats["facebook"] = {}
+            safe_assign(stats["facebook"], "likes", fb, "likes")
+            safe_assign(stats["facebook"], "points", fb, "points")
+
+        if "CodeRepository" in data:
+            stats["code_repo"] = {}
+            safe_assign(stats["code_repo"], "points", data["CodeRepository"], "Points")
+
         return stats

@@ -11,3 +11,7 @@ class TestTwitter(TestCase):
     def test_import_reddit_comments(self):
         reddit.init_api()
         tasks.ImportCommentStats("reddit_comments", reddit.CommentScanner, {"subreddit": {"$exists": True}}).run()
+
+    def test_import_cc_stats(self):
+        tasks.init()
+        tasks.ImportCryptoCompareStats().run()

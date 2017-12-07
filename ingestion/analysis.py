@@ -36,7 +36,7 @@ def social_growth():
     all_stats = list(all_stats)
 
     time_ranges = {
-        "h1": timedelta(hours=1),
+        "h2": timedelta(hours=2),
         "h6": timedelta(hours=6),
         "h12": timedelta(hours=12),
         "d1": timedelta(days=1),

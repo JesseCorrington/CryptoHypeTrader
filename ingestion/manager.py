@@ -130,7 +130,9 @@ class IngestionTask:
         data = None
         try:
             data = datasource(arg) if callable(datasource) else datasource.get()
-        except (ds.HTTPError, ds.ParseError, ds.ValidationError) as err:
+        except ds.ParseError as err:
+            self._error("DataSource Parse error - {} - {}".format(datasource.url, err))
+        except (ds.HTTPError, ds.ValidationError) as err:
             self.__error_http("{} - {}".format(datasource.url, err))
         except Exception as err:
             self._error("Unknown get_data error {}".format(err))

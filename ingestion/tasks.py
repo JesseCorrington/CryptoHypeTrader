@@ -343,7 +343,21 @@ class ImportCommentStats(mgr.IngestionTask):
 # TODO: implement and setup to run every few hours
 # see how often the data adjusts and adjust run timing
 class ImportCryptoCompareStats(mgr.IngestionTask):
-    pass
+    def _run(self):
+        coins = db.get_coins({"cc_id": {"$exists": True}})
+        processed = 0
+
+        for coin in coins:
+            stats = self._get_data(cc.SocialStats(coin["cc_id"]))
+            if stats:
+                stats["date"] = datetime.datetime.utcnow()
+                stats["coin_id"] = coin["_id"]
+                self._db_insert("cryptocompare_stats", stats)
+            else:
+                self._warn("No stats for coin {}".format(coin["symbol"]))
+
+            processed += 1
+            self._progress(processed, len(coins))
 
 
 

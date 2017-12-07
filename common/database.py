@@ -78,10 +78,17 @@ def next_sequence_id(name):
     return ret["seq"]
 
 
-def create_indexes():
-    # TODO: add indexes for all colletions
+def create_date_index(collection, key="date", direction=pymongo.DESCENDING):
+    mongo_db[collection].create_index([(key, direction)])
 
+def create_indexes():
     mongo_db.coins.create_index([("cmc_id", pymongo.ASCENDING)], unique=True)
     mongo_db.historical_prices.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
     mongo_db.historical_social_stats.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
-    mongo_db.ingestion_tasks.create_index([("start_time", pymongo.DESCENDING)])
+
+    create_date_index("ingestion_tasks", "start_time")
+    create_date_index("prices")
+    create_date_index("reddit_comments")
+    create_date_index("reddit_stats")
+    create_date_index("twitter_comments")
+    create_date_index("cryptocompare_stats")
