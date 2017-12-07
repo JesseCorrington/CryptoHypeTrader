@@ -121,7 +121,7 @@ Vue.filter('dateTime', function (dt) {
         dt = new Date(dt);
     }
 
-    var m = dt.getMonth();
+    var m = dt.getMonth() + 1;
     var d = dt.getDate();
     var y = dt.getFullYear();
     var hr = dt.getHours();

@@ -24,17 +24,7 @@ def growth(records, field, from_date, to_date):
     return growth_amount, growth_percent
 
 
-# TODO: make this work for twitter too
-def social_growth():
-    now = datetime.utcnow()
-    oldest = now - timedelta(days=10)
-
-    stats = []
-    coins = list(db.mongo_db.coins.find({"subreddit": {"$exists": True}}))
-
-    all_stats = db.mongo_db.reddit_stats.find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING)
-    all_stats = list(all_stats)
-
+def growth_stats(coin, stats, key, end_time):
     time_ranges = {
         "h2": timedelta(hours=2),
         "h6": timedelta(hours=6),
@@ -48,18 +38,45 @@ def social_growth():
         "d7": timedelta(days=7)
     }
 
+    entries = [x for x in stats if x["coin_id"] == coin["_id"]]
+
+    if len(entries) == 0:
+        return None
+
+    coin_stats = {}
+    for name, time_range in time_ranges.items():
+        from_date = end_time - time_range
+        amount, percent = growth(entries, key, from_date, end_time)
+        coin_stats[name] = amount
+        coin_stats[name + "_pct"] = percent
+
+    return coin_stats
+
+
+def social_growth():
+    now = datetime.utcnow()
+    oldest = now - timedelta(days=10)
+
+    all_stats = []
+    coins = list(db.mongo_db.coins.find({"subreddit": {"$exists": True}}))
+
+    reddit_stats = list(db.mongo_db.reddit_stats.find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING))
+    twitter_stats = list(db.mongo_db.twitter_comments.find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING))
+    prices = list(db.mongo_db.prices.find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING))
+
+    stats_to_calc = [
+        ("price", prices, "price"),
+        ("reddit", reddit_stats, "subscribers"),
+        ("twitter", twitter_stats, "count")
+    ]
+
     for coin in coins:
-        entries = [x for x in all_stats if x["coin_id"] == coin["_id"]]
-
-        if len(entries) == 0:
-            continue
-
         coin_stats = {"coin_id": coin["_id"]}
-        stats.append(coin_stats)
-        for name, time_range in time_ranges.items():
-            from_date = now - time_range
-            amount, percent = growth(entries, "subscribers", from_date, now)
-            coin_stats[name] = amount
-            coin_stats[name + "_pct"] = percent
+        all_stats.append(coin_stats)
 
-    return stats
+        for name, value, key in stats_to_calc:
+            stats = growth_stats(coin, value, key, now)
+            if stats:
+                coin_stats[name] = stats
+
+    return all_stats

@@ -87,6 +87,11 @@ var app = new Vue({
       var self = this
       $.getJSON('/api/coin_summaries', function (json) {
           json.forEach(function(coin) {
+              for (var key in coin) {
+                  if (coin[key] === null)
+                      coin[key] = 0
+              }
+
               if (coin.reddit_growth === undefined) {
                   coin.reddit_growth = {
                       "h2": 0,

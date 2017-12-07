@@ -11,7 +11,7 @@ var app = new Vue({
       headers: [
           { text: 'Name', value: 'name', align: "left"},
           { text: 'Start Time', value: 'start_time' },
-          { text: 'End Time', value: 'end_time' },
+          { text: 'Elapsed Time', value: 'elapsed_time' },
           { text: 'Running', value: 'running' },
           { text: 'Last Update', value: 'last_update' },
           { text: 'Percent Complete', value: 'percent_done' },
@@ -36,6 +36,10 @@ var app = new Vue({
       var self = this
       $.getJSON('/api/ingestion_tasks', function (json) {
           self.items = json;
+
+          json.forEach(function(task) {
+             task.elapsed_time = task.start_time - task.a_time;
+          });
       });
   }
 });
