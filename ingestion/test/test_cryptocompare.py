@@ -20,3 +20,15 @@ class TestCryptoCompare(TestCase):
         links = cc.CoinLinks(eth["cc_id"]).get()
         self.assertTrue(links["subreddit"] == "ethereum")
         self.assertTrue(links["twitter"] == "ethereumproject")
+
+    def test_get_social_stats(self):
+        print("testing")
+
+        coins = cc.CoinList().get()
+
+        btc = next(coin for coin in coins if coin["symbol"] == "BTC")
+        stats = cc.SocialStats(btc["cc_id"]).get()
+        self.assertTrue(stats["subreddit"] == "bitcoin")
+
+        eth = next(coin for coin in coins if coin["symbol"] == "ETH")
+        stats = cc.SocialStats(eth["cc_id"]).get()

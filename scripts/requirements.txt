@@ -9,3 +9,5 @@ textblob==0.13.1
 tweepy==3.5.0
 pandas==0.21.0
 plotly==2.2.2
+sklearn==0.0
+scipy==1.0.0

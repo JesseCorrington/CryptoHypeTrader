@@ -49,3 +49,50 @@ class CoinLinks(CryptoCompareDataSource):
             links["twitter"] = urlparse(twitter_url).path.replace("/", "")
 
         return links
+
+class SocialStats(CryptoCompareDataSource):
+    def __init__(self, cc_id):
+        super().__init__("https://www.cryptocompare.com/api/data/socialstats/", {"id": cc_id})
+
+    def parse(self, data):
+
+        cc_stats = data["CryptoCompare"]
+        twitter_stats = data["Twitter"]
+        reddit_stats = data["Reddit"]
+        fb = data["Facebook"]
+
+        stats = {
+            "total_points": data["General"]["Points"],
+            "crypto_compare": {
+                "followers": cc_stats["Followers"],
+                "posts": cc_stats["Posts"],
+                "comments": cc_stats["Comments"],
+                "points": cc_stats["Points"],
+                "page_view": cc_stats["PageViews"]
+            },
+
+            "twitter": {
+                "followers": twitter_stats["followers"],
+                "points": twitter_stats["Points"]
+            },
+
+            "reddit": {
+                "comments_per_hour": reddit_stats["comments_per_hour"],
+                "comments_per_day": reddit_stats["comments_per_day"],
+                "posts_per_hour": reddit_stats["posts_per_hour"],
+                "posts_per_day": reddit_stats["posts_per_day"],
+                "points": reddit_stats["Points"]
+            },
+
+            "facebook": {
+                "likes": fb["likes"],
+                "points": fb["Points"]
+            },
+
+            "code_repo": {
+                "points": data["CodeRepository"]["Points"]
+            }
+        }
+
+        print(stats)
+        return stats
