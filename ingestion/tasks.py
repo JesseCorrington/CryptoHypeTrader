@@ -398,7 +398,7 @@ class CreateCoinSummaries(mgr.IngestionTask):
 
             if cid in growth:
                 del growth[cid]["coin_id"]
-                record["reddit_growth"] = growth[cid]
+                record["growth"] = growth[cid]
 
             records.append(record)
 
