@@ -32,6 +32,7 @@
                                           v-bind:items="items"
                                           v-model="selected"
                                           class="elevation-1"
+                                          item-key="_id"
                                           select-all>
 
                                 <template slot="items" slot-scope="props">
@@ -59,7 +60,7 @@
                     <v-tabs-content id="detailTab">
                         <template v-for="item in selected">
                             <label> {{ item.name }} </label>
-                            <label> {{ item.start_time | formatDateTime }} </label>
+                            <label> {{ item.start_time | dateTime }} </label>
                             <label>Errors({{item.errors.length}}):</label>
                             <ul>
                                 <li v-for="msg in item.errors">{{msg}}</li>
