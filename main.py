@@ -31,10 +31,8 @@ def analysis_tasks():
     mgr.run_tasks(tasks.analysis_tasks())
 
 
-def import_all_data():
-    import_coin_list()
-    import_historical_data()
-    import_current_data()
+def cc_stats_task():
+    mgr.run_tasks(tasks.ImportCryptoCompareStats())
 
 
 def main():
@@ -53,7 +51,7 @@ def main():
         "current": import_current_data,
         "twitter": import_twitter_data,
         "analysis": analysis_tasks,
-        "all": import_all_data
+        "cc_stats": cc_stats_task
     }
 
     if task_name not in task_map:
