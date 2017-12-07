@@ -53,13 +53,22 @@ var app = new Vue({
           {text: 'Symbol', value: 'symbol'},
           {text: 'Price', value: 'price'},
           {text: 'Market Cap', value: 'market_cap'},
+
+          {text: "Reddit h2", value: "reddit_growth.h2"},
+          {text: "Reddit h2_pct", value: "reddit_growth.h2_pct"},
+
           {text: "Reddit h6", value: "reddit_growth.h6"},
+          {text: "Reddit h6_pct", value: "reddit_growth.h6_pct"},
+
           {text: "Reddit d1", value: "reddit_growth.d1"},
-          {text: "Reddit d3", value: "reddit_growth.d3"},
-          {text: "Reddit d5", value: "reddit_growth.d5"},
           {text: "Reddit d1_pct", value: "reddit_growth.d1_pct"},
+
+          {text: "Reddit d3", value: "reddit_growth.d3"},
           {text: "Reddit d3_pct", value: "reddit_growth.d3_pct"},
+
+          {text: "Reddit d5", value: "reddit_growth.d5"},
           {text: "Reddit d5_pct", value: "reddit_growth.d5_pct"},
+
           {text: "Coinmarketcap", value: "cmc_id"},
           {text: "CryptoCompare", value: "cc_id"},
           {text: "Subreddit", value: "subreddit"},
@@ -80,7 +89,7 @@ var app = new Vue({
           json.forEach(function(coin) {
               if (coin.reddit_growth === undefined) {
                   coin.reddit_growth = {
-                      "h1": 0,
+                      "h2": 0,
                       "h6": 0,
                       "d1": 0,
                       "d2": 0,
@@ -88,7 +97,7 @@ var app = new Vue({
                       "d4": 0,
                       "d5": 0,
                       "d6": 0,
-                      "h1_pct": 0,
+                      "h2_pct": 0,
                       "h6_pct": 0,
                       "d1_pct": 0,
                       "d2_pct": 0,
