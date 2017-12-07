@@ -60,14 +60,19 @@ def social_growth():
     all_stats = []
     coins = list(db.mongo_db.coins.find({"subreddit": {"$exists": True}}))
 
-    reddit_stats = list(db.mongo_db.reddit_stats.find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING))
-    twitter_stats = list(db.mongo_db.twitter_comments.find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING))
-    prices = list(db.mongo_db.prices.find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING))
+    def get_stats(collection):
+        return list(db.mongo_db[collection].find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING))
+
+    reddit_stats = get_stats("reddit_stats")
+    twitter_stats = get_stats("twitter_comments")
+    prices = get_stats("prices")
+    cc_stats = get_stats("cryptocompare_stats")
 
     stats_to_calc = [
         ("price", prices, "price"),
         ("reddit", reddit_stats, "subscribers"),
-        ("twitter", twitter_stats, "count")
+        ("twitter", twitter_stats, "count"),
+        ("crypto_compare", cc_stats, "total_points")
     ]
 
     for coin in coins:

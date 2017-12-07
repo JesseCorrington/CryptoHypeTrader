@@ -64,6 +64,9 @@ var app = new Vue({
           {text: "Reddit d3_pct", value: "growth.reddit.d3_pct"},
           {text: "Reddit d5", value: "growth.reddit.d5"},
           {text: "Reddit d5_pct", value: "growth.reddit.d5_pct"},
+
+          {text: "Twitter d1", value: "growth.twitter.d1"},
+          {text: "Twitter d1_pct", value: "growth.twitter.d1_pct"},
         ],
       items: [],
       selected: [],
@@ -82,8 +85,13 @@ var app = new Vue({
                       coin[key] = 0
               }
 
+              // TODO: we should fix the server so we don't need this
+              // since this table doesn't grow, we can just make each record full with 0s
               if (coin.growth === undefined)
                   coin.growth = {}
+
+              if (coin.growth.twitter === undefined)
+                  coin.growth.twitter = {}
 
               if (coin.growth.reddit === undefined) {
                   coin.growth.reddit = {
