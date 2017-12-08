@@ -7,6 +7,7 @@ import sklearn as sk
 from os.path import dirname
 import time
 import random
+import pickle
 # Machine Learning
 from sklearn.neural_network import MLPRegressor
 from sklearn.linear_model import BayesianRidge, SGDRegressor, LinearRegression
@@ -282,6 +283,14 @@ class ensemble(object):
             symbol = self.test_meta.symbol[self.test_meta.coin_id == ID].iloc[0]
             plt(ID, symbol, f_name, auto_open, custom_tag)
 
+    def save_model(self, path = '.\model\saved_model.sav'):
+        pickle.dump(self, open(path, 'wb'))
+
+
+
+def load_model(path = '.\model\saved_model.sav'):
+    loaded_model = pickle.load(open(path, 'rb'))
+    return loaded_model
 
 
 class features(object):

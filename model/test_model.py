@@ -1,6 +1,7 @@
 # Basics
 import pandas as pd
 import numpy as np
+import pickle
 
 # Custom
 from model import model
@@ -27,5 +28,21 @@ ensemble = model.ensemble(Xtrain, Ytrain, Xtest, Ytest, train_meta, test_meta)
 ensemble.train()
 print('Combiner score: %f' %(ensemble.score()))
 
+
+'''
+Default save/load path is '.\model\saved_model.sav', but you can save/load to a custom path
+with ensemble.save_model(path) and model.load_model(path)
+'''
+
+# Save model:
+ensemble.save_model()
+
+# Load model and test
+unpickled_ensemble = model.load_model()
+print('Score from unpickled model: ' %(unpickled_ensemble.score()))
+unpickled_predictions = unpickled_ensemble.predict(Xtest)
+
+
+
 # Plot Results:
-ensemble.plot_test_prediction()
+# ensemble.plot_test_prediction()
