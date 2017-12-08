@@ -295,14 +295,14 @@ class ImportStockTwits(mgr.IngestionTask):
         super().__init__()
 
         self.__collection = collection
-        # self.__get_stats = get_stats
-        self._name += "-" + collection
 
     def _run(self):
-        coins = st.CoinList().get()
-        for coin in range(len(coins.iloc[:5,:])): # Remove the '5' to obtain posts for all coins
+        coins = st.CoinList()
+        coins = self._get_data(coins)
+
+        for coin in range(len(coins.iloc[:2,:])): # Remove the '5' to obtain posts for all coins
             posts = st.recentPosts(coins.loc[coin, 'symbol'] + '.X', coins.loc[coin, 'coin_id'], coins.loc[coin, 'name'])
-            posts = posts.get()
+            posts = self._get_data(posts)
             self._db_insert(self.__collection, posts)
 
 
