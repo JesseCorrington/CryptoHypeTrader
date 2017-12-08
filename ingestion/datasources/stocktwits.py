@@ -13,22 +13,24 @@ from ingestion import database as db
 
 
 ''' Because I'm just scraping a coin list from a web page, I
- Don't see an obvious way to impliment coinlist as a DataSource.
+ Don't see an obvious way to implement coinlist as a DataSource.
  Going with a hacky method for now '''
 
-class CoinList:
+class CoinList(ds.DataSource):
 
     def __init__(self):
         self.stocktwits_coin_meta = []
+        super().__init__(
+            "https://stocktwits.com/cryptocurrency_token_directory",
+            params = {},
+            response_format = 'soup'
+            )
 
-
-    def ScrapeCoins(self):
+    def parse(self, data):
     # Scrape the stocktwits cryptocurrency directory for a current list of supported currencies
 
-        url = config.stocktwits["coinlist_url"]
-        page = req.get(url)
-        soup = bs(page.content, 'html.parser')
-        data = soup.find_all('li', class_ = 'clearfix')
+        # Scrape stocktwits for a list of cryptocurrency names, symbols, and stocktwits ids
+        data = data.find_all('li', class_ = 'clearfix')
 
         coin_meta = []
         for item in range(len(data)):
@@ -40,15 +42,11 @@ class CoinList:
             'symbol': contents[ind+1:len(contents)-4]
             })
 
+        # Save the coin list, with stocktwits-specific coin ids
         self.stocktwits_coin_meta = coin_meta
-        return coin_meta
 
 
-
-    def find_ids(self):
-    # Find the correct ids for each scraped currency from our existing collection, based on coin symbols.
-    # If there are no matching symbols, discard the data for now
-
+        # Swap out the stocktwits coin ids for our own internal id system
         hype_coins = db.get_coins()
 
         stocktwits_columns = ['coin_id', 'name', 'symbol']
@@ -66,23 +64,15 @@ class CoinList:
         return stocktwits_coins
 
 
-def get_coins():
-# Helper function to return list of coins for the stocktwits task
 
-    coinlist = CoinList()
-    stocktwits_coins = coinlist.ScrapeCoins()
-    stocktwits_coins = coinlist.find_ids()
-    return stocktwits_coins
-
-
-
-class Ticker(ds.DataSource):
+class recentPosts(ds.DataSource):
 
     def __init__(self, coin_symbol, coin_id, coin_name):
         token = config.stocktwits['token']
         self.coin_id = coin_id
         self.coin_name = coin_name
         self.coin_symbol = coin_symbol
+        self.lim = 30
 
         super().__init__(
             "https://api.stocktwits.com/api/2/streams/symbols.json",
@@ -91,7 +81,7 @@ class Ticker(ds.DataSource):
             }
         )
 
-    def parse(self, api_response, lim = 30):
+    def parse(self, api_response):
     # query server for JSON data for the most recent 30 posts for up to 10 currencies
 
         #TODO The API limits calls to 400 per hour, which means that we can almost get data for every currency twice and hour, but not quite.
@@ -99,7 +89,7 @@ class Ticker(ds.DataSource):
 
         contents = api_response
         posts = []
-        for post in range(lim):
+        for post in range(self.lim):
             if contents['messages'][post]['entities']['sentiment']:
                 sentiment = contents['messages'][post]['entities']['sentiment']['basic']
             else:

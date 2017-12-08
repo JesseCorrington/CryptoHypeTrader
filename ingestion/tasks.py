@@ -299,11 +299,10 @@ class ImportStockTwits(mgr.IngestionTask):
         self._name += "-" + collection
 
     def _run(self):
-        coins = st.get_coins()
-        for coin in range(len(coins.iloc[:5,:])):
-            print(coin)
-            ticker = st.Ticker(coins.loc[coin, 'symbol'] + '.X', coins.loc[coin, 'coin_id'], coins.loc[coin, 'name'])
-            posts = ticker.get()
+        coins = st.CoinList().get()
+        for coin in range(len(coins.iloc[:5,:])): # Remove the '5' to obtain posts for all coins
+            posts = st.recentPosts(coins.loc[coin, 'symbol'] + '.X', coins.loc[coin, 'coin_id'], coins.loc[coin, 'name'])
+            posts = posts.get()
             self._db_insert(self.__collection, posts)
 
 

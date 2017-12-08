@@ -7,20 +7,15 @@ import pandas as pd
 import numpy as np
 
 
-# Initialize coinlist object and grab a sweet list of coins
-# coinlist = st.CoinList()
-# stocktwits_coins = coinlist.ScrapeCoins()
-# stocktwits_coins = coinlist.find_ids()
-# coins = st.get_coins()
-# coins.symbol[:5]
-# for coin in coins.symbol:
-#     print(coin+'.X')
-
+# Initialize coinlist object and grab a list of coins
+coinlist = st.CoinList()
+stocktwits_coins = coinlist.get()
+stocktwits_coins
 
 
 # Grab most recent posts for a coin
-# ticker = st.Ticker()
-# posts = ticker.parse()
+# recentPosts = st.recentPosts()
+
 
 # Test out the entire process
-mgr.run_tasks(tasks.ImportStockTwits('stocktwits'))
+# mgr.run_tasks(tasks.ImportStockTwits('stocktwits'))
