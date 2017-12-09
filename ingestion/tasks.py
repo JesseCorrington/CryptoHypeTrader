@@ -400,7 +400,10 @@ class CreateCoinSummaries(mgr.IngestionTask):
         growth = analysis.social_growth()
         growth = util.list_to_dict(growth, "coin_id")
 
-        records = []
+        # TODO: need to use replace below, instead of removing all
+        db.mongo_db.coin_summaries.remove()
+
+        processed = 0
         for coin in coins:
             cid = coin["_id"]
 
@@ -423,11 +426,11 @@ class CreateCoinSummaries(mgr.IngestionTask):
                 del growth[cid]["coin_id"]
                 record["growth"] = growth[cid]
 
-            records.append(record)
+            self._db_insert("coin_summaries", record)
 
-        # TODO: is it better to use update many or something else?
-        db.mongo_db.coin_summaries.remove()
-        self._db_insert("coin_summaries", records)
+            processed += 1
+            if processed % 50 == 0:
+                self._progress(processed, len(coins))
 
 
 # Helper function for task runs

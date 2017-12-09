@@ -55,33 +55,33 @@ def growth_stats(coin, stats, key, end_time):
 
 def social_growth():
     now = datetime.utcnow()
-    oldest = now - timedelta(days=10)
+    oldest = now - timedelta(days=8)
 
     all_stats = []
-    coins = list(db.mongo_db.coins.find({"subreddit": {"$exists": True}}))
+    coins = list(db.mongo_db.coins.find())
 
-    def get_stats(collection):
-        return list(db.mongo_db[collection].find({"date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING))
-
-    reddit_stats = get_stats("reddit_stats")
-    twitter_stats = get_stats("twitter_comments")
-    prices = get_stats("prices")
-    cc_stats = get_stats("cryptocompare_stats")
+    def get_stats(collection, coin_id):
+        return list(db.mongo_db[collection].find({"coin_id": coin_id,
+                                                  "date": {"$gte": oldest}}).sort('date', pymongo.DESCENDING))
 
     stats_to_calc = [
-        ("price", prices, "price"),
-        ("reddit", reddit_stats, "subscribers"),
-        ("twitter", twitter_stats, "count"),
-        ("crypto_compare", cc_stats, "total_points")
+        ("price", "prices", "price"),
+        ("reddit", "reddit_stats", "subscribers"),
+        ("twitter", "twitter_comments", "count"),
+        ("crypto_compare", "cryptocompare_stats", "total_points")
     ]
 
     for coin in coins:
-        coin_stats = {"coin_id": coin["_id"]}
+        cid = coin["_id"]
+        coin_stats = {"coin_id": cid}
         all_stats.append(coin_stats)
 
-        for name, value, key in stats_to_calc:
-            stats = growth_stats(coin, value, key, now)
+        for name, collection, key in stats_to_calc:
+            entries = get_stats(collection, cid)
+            stats = growth_stats(coin, entries, key, now)
             if stats:
                 coin_stats[name] = stats
+            else:
+                coin_stats[name] = {}
 
     return all_stats

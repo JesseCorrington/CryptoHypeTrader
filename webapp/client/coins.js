@@ -53,7 +53,6 @@ var app = new Vue({
           {text: 'Symbol', value: 'symbol'},
           {text: 'Price', value: 'price'},
           {text: 'Market Cap', value: 'market_cap'},
-
           {text: "Reddit h2", value: "growth.reddit.h2"},
           {text: "Reddit h2_pct", value: "growth.reddit.h2_pct"},
           {text: "Reddit h6", value: "growth.reddit.h6"},
@@ -64,9 +63,10 @@ var app = new Vue({
           {text: "Reddit d3_pct", value: "growth.reddit.d3_pct"},
           {text: "Reddit d5", value: "growth.reddit.d5"},
           {text: "Reddit d5_pct", value: "growth.reddit.d5_pct"},
-
           {text: "Twitter d1", value: "growth.twitter.d1"},
           {text: "Twitter d1_pct", value: "growth.twitter.d1_pct"},
+          {text: "CryptoCompare d1", value: "growth.crypto_compare.d1"},
+          {text: "CryptoCompare d1_pct", value: "growth.crypto_compare.d1_pct"},
         ],
       items: [],
       selected: [],
@@ -83,35 +83,6 @@ var app = new Vue({
               for (var key in coin) {
                   if (coin[key] === null)
                       coin[key] = 0
-              }
-
-              // TODO: we should fix the server so we don't need this
-              // since this table doesn't grow, we can just make each record full with 0s
-              if (coin.growth === undefined)
-                  coin.growth = {}
-
-              if (coin.growth.twitter === undefined)
-                  coin.growth.twitter = {}
-
-              if (coin.growth.reddit === undefined) {
-                  coin.growth.reddit = {
-                      "h2": 0,
-                      "h6": 0,
-                      "d1": 0,
-                      "d2": 0,
-                      "d3": 0,
-                      "d4": 0,
-                      "d5": 0,
-                      "d6": 0,
-                      "h2_pct": 0,
-                      "h6_pct": 0,
-                      "d1_pct": 0,
-                      "d2_pct": 0,
-                      "d3_pct": 0,
-                      "d4_pct": 0,
-                      "d5_pct": 0,
-                      "d6_pct": 0
-                  }
               }
           });
 
