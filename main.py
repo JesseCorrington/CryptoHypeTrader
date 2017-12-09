@@ -38,7 +38,7 @@ def cc_stats_task():
 def db_stats():
     mgr.run_tasks(tasks.SaveDBStats())
 
-def test_stocktwits():
+def import_stocktwits():
     mgr.run_tasks(tasks.ImportStockTwits('stocktwits'))
 
 
@@ -56,15 +56,11 @@ def main():
         "coin_list": import_coin_list,
         "historical": import_historical_data,
         "current": import_current_data,
-<<<<<<< HEAD
-        "all": import_all_data,
-        'stocktwits':test_stocktwits
-=======
         "twitter": import_twitter_data,
         "analysis": analysis_tasks,
         "cc_stats": cc_stats_task,
-        "db_stats": db_stats
->>>>>>> master
+        "db_stats": db_stats,
+        "stocktwits": import_stocktwits
     }
 
     if task_name not in task_map:

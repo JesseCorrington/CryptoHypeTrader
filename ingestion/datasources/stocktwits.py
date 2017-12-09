@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup as bs
 # Custom
 from ingestion import datasource as ds
 from ingestion import config
-from ingestion import database as db
+from common import database as db
 
 
 class CoinList(ds.DataSource):

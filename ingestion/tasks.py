@@ -2,15 +2,15 @@ import concurrent.futures
 import datetime
 import pymongo
 
-<<<<<<< HEAD
-from ingestion import database as db
-from ingestion import util
-from ingestion.datasources import reddit, cryptocompare as cc, coinmarketcap as cmc, stocktwits as st
-from ingestion import manager as mgr
-=======
+# <<<<<<< HEAD
+# from ingestion import database as db
+# from ingestion import util
+# from ingestion.datasources import reddit, cryptocompare as cc, coinmarketcap as cmc, stocktwits as st
+# from ingestion import manager as mgr
+# =======
 from common import database as db, util
 from ingestion import config, manager as mgr
-from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmarketcap as cmc
+from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmarketcap as cmc, stocktwits as st
 from ingestion import analysis
 
 def init():
@@ -18,7 +18,7 @@ def init():
     db.create_indexes()
     reddit.init_api()
     twitter.init_api()
->>>>>>> master
+# >>>>>>> master
 
 
 class ImportCoinList(mgr.IngestionTask):
