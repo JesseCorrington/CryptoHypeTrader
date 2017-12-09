@@ -16,7 +16,8 @@ class CoinList(ds.DataSource):
 
     def __init__(self):
         self.stocktwits_coin_meta = []
-        self.failed_matches = []
+        self.initial_failed_matches = []
+        self.final_failed_matches = []
         super().__init__(
             "https://stocktwits.com/cryptocurrency_token_directory",
             params = {},
@@ -87,22 +88,22 @@ class CoinList(ds.DataSource):
 
             # Make mask with matching full_ids between stocktwit metadata and internal metadata
             mask = np.isin(stocktwits_coins.full_id, hype_coins.full_id)
-            mask2 = np.isin(stocktwits_coins.full_id, hype_coins.full_id)
 
             # Save items that didn't match with the 'full_id' scheme
-            self.failed_matches = stocktwits_coins[[not i for i in mask]]
+            self.initial_failed_matches = stocktwits_coins[[not i for i in mask]]
             stocktwits_coins = stocktwits_coins.drop('full_id', axis = 1)
 
             # Find duplicates in hype_coin symbols
             hype_coin_duplicates = duplicate_symbols(hype_coins)
 
             # If there are no duplicates of a given symbol in hype_coins, base id match on symbol only
-            for i in range(len(self.failed_matches.symbol)):
-                symbol = self.failed_matches.iloc[i, 2]
+            for i in range(len(self.initial_failed_matches.symbol)):
+                symbol = self.initial_failed_matches.iloc[i, 2]
                 if (symbol not in hype_coin_duplicates) and (np.isin(symbol.strip(), hype_coins.symbol).any()):
-                    mask[self.failed_matches.index[i]] = True
+                    mask[self.initial_failed_matches.index[i]] = True
 
             # Apply mask to stocktwits_coins and add swap the stocktwits-specific ids out for our internal id system
+            self.final_failed_matches = stocktwits_coins[[not i for i in mask]]
             stocktwits_coins = stocktwits_coins[mask]
             for i in stocktwits_coins.index:
                 stocktwits_coins.loc[i, 'coin_id'] = hype_coins[hype_coins.symbol == stocktwits_coins.loc[i, 'symbol']]._id.base[0][0]
@@ -131,6 +132,7 @@ class recentPosts(ds.DataSource):
              "symbols":self.coin_symbol
             }
         )
+
 
     def parse(self, api_response):
     # query server for JSON data for the most recent 30 posts for up to 10 currencies
