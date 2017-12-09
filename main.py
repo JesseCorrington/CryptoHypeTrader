@@ -38,6 +38,9 @@ def cc_stats_task():
 def db_stats():
     mgr.run_tasks(tasks.SaveDBStats())
 
+def import_stocktwits():
+    mgr.run_tasks(tasks.ImportStockTwits('stocktwits'))
+
 
 def main():
     from sys import argv
@@ -56,7 +59,8 @@ def main():
         "twitter": import_twitter_data,
         "analysis": analysis_tasks,
         "cc_stats": cc_stats_task,
-        "db_stats": db_stats
+        "db_stats": db_stats,
+        "stocktwits": import_stocktwits
     }
 
     if task_name not in task_map:
