@@ -43,3 +43,5 @@ tmtagsHistory
 mongodb_data
 *config.py
 ingestion/config.py
+
+.spyproject/

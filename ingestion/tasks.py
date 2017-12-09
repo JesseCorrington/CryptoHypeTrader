@@ -4,7 +4,7 @@ import pymongo
 
 from common import database as db, util
 from ingestion import config, manager as mgr
-from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmarketcap as cmc
+from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmarketcap as cmc, stocktwits as st
 from ingestion import analysis
 
 def init():
@@ -292,6 +292,25 @@ class ImportRedditStats(mgr.IngestionTask):
 
                 processed += 1
                 self._progress(processed, len(coins))
+
+
+class ImportStockTwits(mgr.IngestionTask):
+# Task to import recent StockTwits posts
+
+    def __init__(self, collection):
+        super().__init__()
+
+        self.__collection = collection
+
+    def _run(self):
+        coins = st.CoinList()
+        coins = self._get_data(coins)
+
+        for coin in range(len(coins.iloc[:2,:])): # Remove the '5' to obtain posts for all coins
+            posts = st.recentPosts(coins.loc[coin, 'symbol'] + '.X', coins.loc[coin, 'coin_id'], coins.loc[coin, 'name'])
+            posts = self._get_data(posts)
+            self._db_insert(self.__collection, posts)
+
 
 
 class ImportCommentStats(mgr.IngestionTask):
