@@ -1,67 +1,49 @@
-var DISPLAY_FORMATS = {
-    start_time: 'DateTime',
-    end_time: 'DateTime',
-    percent_done: '(0.00 %)',
-}
+"use strict"
 
 
-class RunningTaskTable extends Table {
-    constructor(cointainer, width, height) {
-        super(cointainer, width, height);
+Vue.use(Vuetify)
 
-        super.setColumns([
-            // TODO: we could set cols in the ctor
-            {header: "Name", key: "name"},
-            {header: "Start Time", key: "start_time"},
-            {header: "Elapsed", key: "elapsed_time"},
-            {header: "Errors", key: "errors"},
-            {header: "HTTP Errors", key: "errors_http"},
-            {header: "Warnings", key: "warnings"},
-            {header: "% Complete", key: "percent_done"},
-            {header: "HTTP requests", key: "http_requests"},
-            {header: "DB inserts", key: "db_inserts"},
-        ]);
-    }
 
-    setData(stats) {
-        super.setData(stats, DISPLAY_FORMATS);
-    }
-}
+var app = new Vue({
+  el: '#vueApp',
+  data: {
+      // TODO: what's the proper way to deal with lazy loading?
+      headers: [
+          { text: 'Name', value: 'name', align: "left"},
+          { text: 'Start Time', value: 'start_time' },
+          { text: 'Elapsed Time', value: 'elapsed_time' },
+          { text: 'Running', value: 'running' },
+          { text: 'Last Update', value: 'last_update' },
+          { text: 'Percent Complete', value: 'percent_done' },
+          { text: 'Failed', value: 'failed' },
+          { text: 'Canceled', value: 'canceled' },
+          { text: 'Errors', value: 'errors' },
+          { text: 'Warnings', value: 'warnings' },
+          { text: 'HTTP Errors', value: 'errors_http' },
+          { text: 'HTTP Requests', value: 'http_requests' },
+          { text: 'DB Inserts', value: 'db_inserts' },
+          { text: 'DB Updates', value: 'db_updates' },
+        ],
+      items: [],
+      selected: [],
+      search: "",
+      pagination: {
+          sortBy: 'start_time'
+      }
+  },
 
-class CompletedTaskTable extends Table {
-    constructor(cointainer, width, height) {
-        super(cointainer, width, height);
+  mounted: function() {
+      var self = this
+      $.getJSON('/api/ingestion_tasks', function (json) {
+          self.items = json;
 
-        super.setColumns([
-            // TODO: we could set cols in the ctor
-            {header: "Name", key: "name"},
-            {header: "Start Time", key: "start_time"},
-            {header: "Elapsed", key: "elapsed_time"},
-            {header: "Failed", key: "failed"},
-            {header: "Canceled", key: "canceled"},
-            {header: "Errors", key: "errors"},
-            {header: "HTTP Errors", key: "errors_http"},
-            {header: "Warnings", key: "warnings"},
-            {header: "% Complete", key: "percent_done"},
-            {header: "HTTP requests", key: "http_requests"},
-            {header: "DB inserts", key: "db_inserts"},
-        ]);
-    }
-
-    setData(stats) {
-        super.setData(stats, DISPLAY_FORMATS);
-    }
-}
-
-var runningTaksTable = undefined;
-var completedTasksTable = undefined;
-
-$(document).ready(function () {
-    runningTaksTable = new RunningTaskTable("runningTasksTable")
-    completedTasksTable = new CompletedTaskTable("completedTasksTable")
-
-    updateTasks()
+          json.forEach(function(task) {
+             task.elapsed_time = task.start_time - task.a_time;
+          });
+      });
+  }
 });
+
 
 function processTasks(tasks) {
     tasks.forEach(
@@ -75,61 +57,11 @@ function processTasks(tasks) {
 }
 
 
-function updateRunningTasks() {
-    $.getJSON('/api/ingestion_tasks?running=true', function (tasks) {
-        processTasks(tasks);
-        runningTaksTable.setData(tasks);
-    });
-}
-
-
-function updateCompletedTasks() {
-    $.getJSON('/api/ingestion_tasks?running=false', function (tasks) {
-        processTasks(tasks);
-        completedTasksTable.setData(tasks);
-
-        taskNames = {}
-        tasks.forEach(function(task) {
-            taskNames[task.name] = 1;
-        });
-
-        var select = $("#taskSelect");
-        for (name in taskNames) {
-            var op = $("<option>", {value: name});
-            op.html(name);
-
-            select.append(op);
-        }
-
-        function showFor(name) {
-            var coinlistTasks = tasks.filter(function(task){
-                return task.name == name;
-            });
-            buildChart(name, coinlistTasks);
-        }
-
-        select.change(function(val) {
-            name = select.val();
-            showFor(name);
-        });
-
-        showFor("ImportCoinList")
-    });
-}
-
-
-function updateTasks() {
-    updateRunningTasks();
-    setInterval(updateRunningTasks, 5000);
-
-    updateCompletedTasks();
-}
-
 
 
 function buildChart(name, tasks) {
     function toSeries(key) {
-        points = [];
+        var points = [];
         tasks.forEach(function (task) {
             points.push([task.start_time, task[key]]);
         });
@@ -137,9 +69,9 @@ function buildChart(name, tasks) {
         return points;
     }
 
-    errors = toSeries("errors");
-    httpErrors = toSeries("errors_http");
-    warnings = toSeries("warnings");
+    var errors = toSeries("errors");
+    var httpErrors = toSeries("errors_http");
+    var warnings = toSeries("warnings");
 
 
     Highcharts.chart('chart', {

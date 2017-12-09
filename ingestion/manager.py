@@ -1,8 +1,9 @@
 import datetime
 import sys
-from ingestion import database as db
-from ingestion import datasource as ds
+
+from common import database as db
 from ingestion import config
+from ingestion import datasource as ds
 
 
 class FatalError(Exception):
@@ -79,7 +80,7 @@ class IngestionTask:
         """Derived classes call to signal status updates"""
         self.__percent_done = completed / total
 
-        now = datetime.datetime.today()
+        now = datetime.datetime.utcnow()
         elapsed = now - self.__start_time
         avg_time_per = elapsed / completed
         est_time_left = (avg_time_per * (total - completed))
@@ -105,7 +106,7 @@ class IngestionTask:
     def _db_update_one(self, collection, doc_id, updates):
         """Derived classes call to update a single database record"""
         try:
-            db.MONGO_DB[collection].update_one({
+            db.mongo_db[collection].update_one({
                 '_id': doc_id
             }, {
                 '$set': updates
@@ -129,7 +130,9 @@ class IngestionTask:
         data = None
         try:
             data = datasource(arg) if callable(datasource) else datasource.get()
-        except (ds.HTTPError, ds.ParseError, ds.ValidationError) as err:
+        except ds.ParseError as err:
+            self._error("DataSource Parse error - {} - {}".format(datasource.url, err))
+        except (ds.HTTPError, ds.ValidationError) as err:
             self.__error_http("{} - {}".format(datasource.url, err))
         except Exception as err:
             self._error("Unknown get_data error {}".format(err))
@@ -139,7 +142,7 @@ class IngestionTask:
     def __update_db_status(self):
         """Updates the current status of the task in the database"""
 
-        now = datetime.datetime.today()
+        now = datetime.datetime.utcnow()
 
         status = {
             "name": self._name,
@@ -160,9 +163,9 @@ class IngestionTask:
 
         try:
             if self.__id is None:
-                self.__id = db.MONGO_DB.ingestion_tasks.insert(status)
+                self.__id = db.mongo_db.ingestion_tasks.insert(status)
             else:
-                db.MONGO_DB.ingestion_tasks.replace_one({'_id': self.__id}, status)
+                db.mongo_db.ingestion_tasks.replace_one({'_id': self.__id}, status)
         except Exception as e:
             self._error("Failed to update db status for ingestion tasks: " + str(e))
 
@@ -174,7 +177,7 @@ class IngestionTask:
 
         self.__running = False
         self.__canceled = True
-        self.__end_time = datetime.datetime.today()
+        self.__end_time = datetime.datetime.utcnow()
 
         self.__update_db_status()
 
@@ -182,7 +185,7 @@ class IngestionTask:
         """Run the task"""
 
         self.__running = True
-        self.__start_time = datetime.datetime.today()
+        self.__start_time = datetime.datetime.utcnow()
 
         print("Running ingestion task:", self._name)
         self.__update_db_status()
@@ -199,7 +202,7 @@ class IngestionTask:
             if config.dev:
                 raise err
 
-        self.__end_time = datetime.datetime.today()
+        self.__end_time = datetime.datetime.utcnow()
         self.__running = False
         self.__percent_done = 1.0
         self.__update_db_status()
@@ -235,10 +238,7 @@ def run_tasks(tasks):
         print("Database not connected, exiting")
         return
 
-    start_time = datetime.datetime.today()
-
-    # TODO: where does this belong
-    db.create_indexes()
+    start_time = datetime.datetime.utcnow()
 
     for task in tasks:
         try:
@@ -250,7 +250,7 @@ def run_tasks(tasks):
             task.cancel()
             sys.exit()
 
-    end_time = datetime.datetime.today()
+    end_time = datetime.datetime.utcnow()
     elapsed_time = end_time - start_time
 
     print("Ingestion complete, elapsed time:", elapsed_time)

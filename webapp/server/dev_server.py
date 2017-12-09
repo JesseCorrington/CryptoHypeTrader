@@ -1,15 +1,13 @@
-import sys
-sys.path.append('.\\')
-for path in sys.path:
-    print(path)
+import json
+import os
+from datetime import datetime, timedelta
 
 import flask
-import os
-import json
 import pymongo
-from webapp.server import config
 from bson import ObjectId
-from datetime import datetime
+
+from common import database as db
+from webapp.server import config
 
 # TODO: prob want to move database out of ingestion module, maybe
 
@@ -35,7 +33,7 @@ def json_response(items, key_filter=None, filter_out=False):
     if not isinstance(items, list):
         items = list(items)
 
-    if key_filter == None:
+    if key_filter is None:
         return JSONEncoder().encode(items)
 
     filtered = []
@@ -54,38 +52,29 @@ def json_response(items, key_filter=None, filter_out=False):
     return JSONEncoder().encode(filtered)
 
 
-def time_series(items, key):
+def time_series(items, keys):
     if not isinstance(items, list):
         items = list(items)
 
+    if not isinstance(keys, list):
+        keys = [keys]
+
     series = []
     for item in items:
-        series.append([item["date"], item[key]])
+        entry = [item["date"]]
+        for key in keys:
+            entry.append(item[key])
+
+        series.append(entry)
 
     return series
 
 
 app = flask.Flask(__name__)
 
-cfg = config.dev
+cfg = config.prod
 
-username = None
-password = None
-if "username" in cfg["database"] and "password" in cfg["database"]:
-    username = cfg["database"]["username"]
-    password = cfg["database"]["password"]
-
-
-MONGO_CLIENT = pymongo.MongoClient(
-    cfg["database"]["host"],
-    cfg["database"]["port"],
-    username=username,
-    password=password,
-    authSource='hype-db',
-    authMechanism='SCRAM-SHA-1',
-    serverSelectionTimeoutMS=3)
-
-MONGO_DB = MONGO_CLIENT[cfg["database"]["name"]]
+db.init(cfg["database"])
 
 
 @app.route('/<path:path>')
@@ -104,30 +93,30 @@ def get_tasks():
     if running:
         query["running"] = to_bool(running)
 
-    tasks = MONGO_DB.ingestion_tasks.find(query)
+    tasks = db.mongo_db.ingestion_tasks.find(query).sort("start_time", pymongo.DESCENDING).limit(100)
+
     return json_response(tasks)
 
 
 @app.route('/api/coins')
 def get_coins():
-    coins = MONGO_DB.coins.find()
-    return json_response(coins, {"cmc_id"}, True)
+    coins = list(db.mongo_db.coins.find())
+    return json_response(coins)
 
 
 @app.route('/api/coin_summaries')
 def get_coin_summaries():
-    # coin list joined with latest price and stats table
-    # as well as 1, 3, and 7 day stats for growth of price and other stats
-    pass
+    summaries = list(db.mongo_db.coin_summaries.find())
+    return json_response(summaries)
 
 
 @app.route('/api/historical_prices')
 def get_historical_prices():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    prices = MONGO_DB.historical_prices.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
+    prices = db.mongo_db.historical_prices.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
 
-    series = time_series(prices, "close")
+    series = time_series(prices, ["close", "volume"])
     return json_response(series)
 
 
@@ -135,7 +124,7 @@ def get_historical_prices():
 def get_historical_social_stats():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    stats = MONGO_DB.historical_social_stats.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
+    stats = db.mongo_db.historical_social_stats.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
 
     series = time_series(stats, "reddit_subscribers")
     return json_response(series)
@@ -145,7 +134,7 @@ def get_historical_social_stats():
 def get_prices():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    prices = MONGO_DB.prices.find({"coin_id": coin_id})
+    prices = db.mongo_db.prices.find({"coin_id": coin_id})
 
     series = time_series(prices, "price")
     return json_response(series)
@@ -155,7 +144,7 @@ def get_prices():
 def get_reddit_stats():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    prices = MONGO_DB.reddit_stats.find({"coin_id": coin_id})
+    prices = db.mongo_db.reddit_stats.find({"coin_id": coin_id})
 
     series = time_series(prices, "subscribers")
     return json_response(series)

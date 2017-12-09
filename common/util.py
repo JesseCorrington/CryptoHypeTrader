@@ -21,3 +21,13 @@ def list_to_dict(l, key):
         ret[i[key]] = i
 
     return ret
+
+
+
+def safe_assign(dest, dest_key, source, source_key, converter=None):
+    ''' Assign dest[dest_key] = source[source_key] only if source[source_key] exists'''
+    if source and source_key in source:
+        dest[dest_key] = source[source_key]
+
+        if converter:
+            dest[dest_key] = converter(dest[dest_key])

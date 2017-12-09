@@ -1,10 +1,24 @@
 import concurrent.futures
 import datetime
+import pymongo
 
+<<<<<<< HEAD
 from ingestion import database as db
 from ingestion import util
 from ingestion.datasources import reddit, cryptocompare as cc, coinmarketcap as cmc, stocktwits as st
 from ingestion import manager as mgr
+=======
+from common import database as db, util
+from ingestion import config, manager as mgr
+from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmarketcap as cmc
+from ingestion import analysis
+
+def init():
+    db.init(config.database)
+    db.create_indexes()
+    reddit.init_api()
+    twitter.init_api()
+>>>>>>> master
 
 
 class ImportCoinList(mgr.IngestionTask):
@@ -179,7 +193,7 @@ class ImportHistoricalData(mgr.IngestionTask):
 
             if coin_id in latest_updates:
                 most_recent = latest_updates[coin_id]["date"]
-                today = datetime.datetime.today()
+                today = datetime.datetime.utcnow()
 
                 if today.day - most_recent.day <= 1:
                     continue
@@ -272,7 +286,7 @@ class ImportRedditStats(mgr.IngestionTask):
                 coin = future_to_coin[future]
 
                 try:
-                    today = datetime.datetime.today()
+                    today = datetime.datetime.utcnow()
                     stats = future.result()
                     if stats:
                         stats["date"] = today
@@ -285,7 +299,6 @@ class ImportRedditStats(mgr.IngestionTask):
 
                 processed += 1
                 self._progress(processed, len(coins))
-
 
 
 class ImportStockTwits(mgr.IngestionTask):
@@ -307,6 +320,121 @@ class ImportStockTwits(mgr.IngestionTask):
 
 
 
+class ImportCommentStats(mgr.IngestionTask):
+    def __init__(self, collection, comment_scanner, coin_filter, max_workers=5):
+        super().__init__()
+        self.__comment_scanner = comment_scanner
+        self.__collection = collection
+        self.__coin_filter = coin_filter
+        self.__max_workers = max_workers
+
+        self._name += "-" + collection
+
+    def _run(self):
+        coins = db.get_coins(self.__coin_filter)
+        hours = 1
+        processed = 0
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.__max_workers) as executor:
+            future_to_coin = {}
+            for coin in coins:
+                scanner = self.__comment_scanner(coin, hours)
+                fut = executor.submit(scanner.find_comments)
+                future_to_coin[fut] = (coin, scanner)
+
+            for future in concurrent.futures.as_completed(future_to_coin):
+                coin, scanner = future_to_coin[future]
+
+                try:
+                    record = {
+                        "date": datetime.datetime.utcnow(),
+                        "coin_id": coin["_id"],
+                        "count": scanner.count(),
+                        "sum_score": scanner.sum_score(),
+                        "avg_score": scanner.avg_score(),
+                        "avg_sentiment": scanner.avg_sentiment(),
+                        "strong_pos": scanner.count_strong_pos(),
+                        "strong_neg": scanner.count_strong_neg()
+                    }
+
+                    self._db_insert(self.__collection, record)
+
+                except Exception as err:
+                    self._error("Failed to get future results for r/{}, {}".format(coin["subreddit"], err))
+
+                processed += 1
+                self._progress(processed, len(coins))
+
+
+# TODO: implement and setup to run every few hours
+# see how often the data adjusts and adjust run timing
+class ImportCryptoCompareStats(mgr.IngestionTask):
+    def _run(self):
+        coins = db.get_coins({"cc_id": {"$exists": True}})
+        processed = 0
+
+        for coin in coins:
+            stats = self._get_data(cc.SocialStats(coin["cc_id"]))
+            if stats:
+                stats["date"] = datetime.datetime.utcnow()
+                stats["coin_id"] = coin["_id"]
+                self._db_insert("cryptocompare_stats", stats)
+            else:
+                self._warn("No stats for coin {}".format(coin["symbol"]))
+
+            processed += 1
+            self._progress(processed, len(coins))
+
+
+class SaveDBStats(mgr.IngestionTask):
+    def _run(self):
+        stats = db.mongo_db.command("dbstats")
+        stats["date"] = datetime.datetime.utcnow()
+        self._db_insert("db_stats", stats)
+
+
+# TODO: add price predictions from ML model
+class CreateCoinSummaries(mgr.IngestionTask):
+    def _run(self):
+        coins = db.get_coins()
+
+        prices = db.mongo_db["prices"].aggregate([
+            {"$sort": {"date": pymongo.DESCENDING}},
+            {"$group": {"_id": "$coin_id", "data": {'$first': '$$ROOT'}}}
+        ], allowDiskUse=True)
+
+        prices = db.cursor_to_dict(prices)
+        growth = analysis.social_growth()
+        growth = util.list_to_dict(growth, "coin_id")
+
+        records = []
+        for coin in coins:
+            cid = coin["_id"]
+
+            if cid not in prices:
+                self._warn("No current price data for {}".format(cid))
+                continue
+
+            p = prices[cid]["data"]
+
+            record = {
+                "coin_id": coin["_id"],
+                "symbol": coin["symbol"],
+                "name": coin["name"],
+                "market_cap": p["market_cap"],
+                "price": p["price"],
+                "volume": p["volume"]
+            }
+
+            if cid in growth:
+                del growth[cid]["coin_id"]
+                record["growth"] = growth[cid]
+
+            records.append(record)
+
+        # TODO: is it better to use update many or something else?
+        db.mongo_db.coin_summaries.remove()
+        self._db_insert("coin_summaries", records)
 
 
 # Helper function for task runs
@@ -321,5 +449,22 @@ def current_data_tasks():
     return [
         ImportPrices(),
         ImportRedditStats("reddit_stats", reddit.get_current_stats),
-        ImportRedditStats("reddit_sentiment", reddit.get_avg_sentiment)
+        ImportCommentStats("reddit_comments", reddit.CommentScanner, {"subreddit": {"$exists": True}})
+    ]
+
+
+def twitter_tasks():
+    # TODO: this has to be run separately because it takes much longer than the other tasks
+    # due to the low twitter API rate limit, which on average only allows us to process
+    # around 90 coins every 15 minutes, which means this takes 3+ hours
+    # look into distributing this across several server nodes with different API keys
+
+    return [
+        ImportCommentStats("twitter_comments", twitter.CommentScanner, {"twitter": {"$exists": True}}, 1),
+    ]
+
+
+def analysis_tasks():
+    return [
+        CreateCoinSummaries()
     ]

@@ -23,10 +23,20 @@ def import_current_data():
     mgr.run_tasks(tasks.current_data_tasks())
 
 
-def import_all_data():
-    import_coin_list()
-    import_historical_data()
-    import_current_data()
+def import_twitter_data():
+    mgr.run_tasks(tasks.twitter_tasks())
+
+
+def analysis_tasks():
+    mgr.run_tasks(tasks.analysis_tasks())
+
+
+def cc_stats_task():
+    mgr.run_tasks(tasks.ImportCryptoCompareStats())
+
+
+def db_stats():
+    mgr.run_tasks(tasks.SaveDBStats())
 
 def test_stocktwits():
     mgr.run_tasks(tasks.ImportStockTwits('stocktwits'))
@@ -46,13 +56,22 @@ def main():
         "coin_list": import_coin_list,
         "historical": import_historical_data,
         "current": import_current_data,
+<<<<<<< HEAD
         "all": import_all_data,
         'stocktwits':test_stocktwits
+=======
+        "twitter": import_twitter_data,
+        "analysis": analysis_tasks,
+        "cc_stats": cc_stats_task,
+        "db_stats": db_stats
+>>>>>>> master
     }
 
     if task_name not in task_map:
         print("Error: task {} should be one of {}".format(task_name, list(task_map.keys())))
         return
+
+    tasks.init()
 
     task_map[task_name]()
 

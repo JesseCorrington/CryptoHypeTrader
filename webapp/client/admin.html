@@ -1,45 +1,94 @@
+<!DOCTYPE html>
+<html>
 <head>
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/series-label.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-
-    <script src = "util.js"></script>
-    <script src = "components.js"></script>
-    <script src = "admin.js"></script>
-
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
+    <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 
 <body>
+<div id="vueApp">
+    <v-app>
+        <v-content>
+            <v-tabs>
+                <v-tabs-bar class="cyan" dark>
+                    <v-tabs-item href="#tableTab" ripple>Task Table</v-tabs-item>
+                    <v-tabs-item href="#detailTab" ripple>Task Detail</v-tabs-item>
+                    <v-tabs-slider color="yellow"></v-tabs-slider>
+                </v-tabs-bar>
 
+                <v-tabs-items>
+                    <v-tabs-content id="tableTab">
+                        <v-card flat>
+                            <v-card-title>
+                                <v-spacer></v-spacer>
+                                <v-text-field append-icon="search" label="Search" single-line hide-details
+                                              v-model="search"></v-text-field>
+                            </v-card-title>
 
-<div><h1>
-    Admin Page
-</div></h1>
+                            <v-data-table v-bind:headers="headers"
+                                          v-bind:search="search"
+                                          v-bind:pagination.sync="pagination"
+                                          v-bind:items="items"
+                                          v-model="selected"
+                                          class="elevation-1"
+                                          item-key="_id"
+                                          select-all>
 
-
-<div>
-    Running Tasks
-    <table id="runningTasksTable" class="tableclass"}></table>
+                                <template slot="items" slot-scope="props">
+                                    <td>
+                                        <v-checkbox primary hide-details v-model="props.selected"></v-checkbox>
+                                    </td>
+                                    <td>{{ props.item.name }}</td>
+                                    <td class="text-xs-right">{{ props.item.start_time | dateTime }}</td>
+                                    <td class="text-xs-right">{{ props.item.elapsed_time}}</td>
+                                    <td class="text-xs-right">{{ props.item.running | capitalize }}</td>
+                                    <td class="text-xs-right">{{ props.item.last_update | dateTime }}</td>
+                                    <td class="text-xs-right">{{ props.item.percent_done | percent }}</td>
+                                    <td class="text-xs-right">{{ props.item.failed | capitalize}}</td>
+                                    <td class="text-xs-right">{{ props.item.canceled | capitalize}}</td>
+                                    <td class="text-xs-right">{{ props.item.errors.length }}</td>
+                                    <td class="text-xs-right">{{ props.item.warnings.length }}</td>
+                                    <td class="text-xs-right">{{ props.item.errors_http.length }}</td>
+                                    <td class="text-xs-right">{{ props.item.http_requests }}</td>
+                                    <td class="text-xs-right">{{ props.item.db_inserts }}</td>
+                                    <td class="text-xs-right">{{ props.item.db_updates }}</td>
+                                </template>
+                            </v-data-table>
+                        </v-card>
+                    </v-tabs-content>
+                    <v-tabs-content id="detailTab">
+                        <template v-for="item in selected">
+                            <label> {{ item.name }} </label>
+                            <label> {{ item.start_time | dateTime }} </label>
+                            <label>Errors({{item.errors.length}}):</label>
+                            <ul>
+                                <li v-for="msg in item.errors">{{msg}}</li>
+                            </ul>
+                            <label>Warnings({{item.warnings.length}}):</label>
+                            <ul>
+                                <li v-for="msg in item.warnings">{{msg}}</li>
+                            </ul>
+                            <label>HTTP Errors({{item.errors_http.length}}):</label>
+                            <ul>
+                                <li v-for="msg in item.errors_http">{{msg}}</li>
+                            </ul>
+                        </template>
+                    </v-tabs-content>
+                </v-tabs-items>
+            </v-tabs>
+        </v-content>
+    </v-app>
 </div>
 
-
-
-<div>
-    Completed Tasks
-    <table id="completedTasksTable" class="tableclass"}></table>
-</div>
-
-
-<div>
-    Select Tasks
-<select id="taskSelect">
-</select>
-
-<div id="chart"></div>
-</div>
-
-
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/series-label.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="util.js"></script>
+<script src="admin.js"></script>
 </body>
+</html>
