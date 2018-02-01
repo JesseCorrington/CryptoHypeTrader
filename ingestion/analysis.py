@@ -15,7 +15,7 @@ def growth(records, field, from_date, to_date):
 
     growth_amount = 0
     if end is not None and start is not None:
-        growth_amount = end - start
+        return 0, 0
 
     # hack to prevent division by zero
     if start == 0:
