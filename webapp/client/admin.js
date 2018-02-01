@@ -38,7 +38,7 @@ var app = new Vue({
           self.items = json;
 
           json.forEach(function(task) {
-             task.elapsed_time = task.start_time - task.a_time;
+             task.elapsed_time = task.last_update - task.start_time;
           });
       });
   }
