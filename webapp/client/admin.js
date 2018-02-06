@@ -49,23 +49,24 @@ var app = new Vue({
 
           self.taskTypes = Object.keys(tasksByType);
 
-          buildChart(self.selectedSeries, tasksByType[self.selectedSeries])
+          buildTaskChart(self.selectedSeries, tasksByType[self.selectedSeries])
       });
 
       $.getJSON('/api/db_stats', function (json) {
           console.log(json);
+          buildDBStatsChart(json);
       })
   },
 
     watch: {
       selectedSeries: function() {
-          buildChart(this.selectedSeries, tasksByType[this.selectedSeries])
+          buildTaskChart(this.selectedSeries, tasksByType[this.selectedSeries])
       }
     }
 });
 
 
-var chart = undefined;
+var charts = {};
 
 function toSeries(objs, key) {
         var series = [];
@@ -79,13 +80,13 @@ function toSeries(objs, key) {
         });
 
         return series;
-    }
+}
 
-function buildChart(name, data) {
-    if (!chart) {
-        chart = Highcharts.chart('chartContainer', {
+function buildChart(container, name, data, series) {
+    if (!charts[name]) {
+        charts[name] = Highcharts.chart(container, {
             chart: {
-                type: 'spline'
+                type: 'line'
             },
             title: {
                 text: 'Errors over time'
@@ -113,50 +114,46 @@ function buildChart(name, data) {
 
     // remove all existing series
     for (var i = 0; i < 6; i++) {
-        var s = chart.get(i);
+        var s = charts[name].get(i);
         if (s) {
             s.remove();
         }
     }
 
-    chart.addSeries({
-        id: 0,
-        name: "Errors",
-        data: toSeries(data, "errors")
-    });
+    // TODO: turn off charts update before and force render after, for single render
 
-    chart.addSeries({
-        id: 1,
-        name: "HTTP Errors",
-        data: toSeries(data, "errors_http")
-    });
-
-    chart.addSeries({
-        id: 2,
-        name: "Warnings",
-        data: toSeries(data, "warnings")
-    });
-
-    chart.addSeries({
-        id: 3,
-        name: "HTTP Requests",
-        data: toSeries(data, "http_requests")
-    });
-
-    chart.addSeries({
-        id: 4,
-        name: "DB Inserts",
-        data: toSeries(data, "db_inserts")
-    });
-
-    chart.addSeries({
-        id: 5,
-        name: "DB Updates",
-        data: toSeries(data, "db_updates")
-    });
+    var currId = 0;
+    for (var dispName in series) {
+        var key = series[dispName];
+        charts[name].addSeries({
+            id: currId++,
+            name: dispName,
+            data: toSeries(data, key)
+        });
+    }
 }
 
 
-function buildDBStatsChart() {
+function buildTaskChart(name, data) {
+    var series = {
+        "Errors": "errors",
+        "HTTP Errors": "errors_http",
+        "Warnings": "warnings",
+        "HTTP Requests": "http_requests",
+        "DB Inserts": "db_inserts",
+        "DB_Updates": "db_updates"
+    };
 
+    buildChart("taskChart", name, data, series);
+}
+
+
+function buildDBStatsChart(data) {
+        var series = {
+            "Objects": "objects",
+            "Storage Size": "storageSize",
+            "indexSize": "indexSize"
+        };
+
+    buildChart("dbStatsChart", "Database Stats", data, series);
 }
