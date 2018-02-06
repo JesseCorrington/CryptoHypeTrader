@@ -197,49 +197,16 @@ function buildCompareChart() {
 
 
 function get_reddit_stats(coinId, symbol, onSuccess) {
-    var url = '/api/historical_social_stats?coin_id=' + coinId;
+    var url = '/api/reddit_stats?coin_id=' + coinId;
 
     $.getJSON(url, function (data) {
         var series = data;
-
-        var growth = [series[0][0], 0]
-        for (var i = 1; i < series.length; i++) {
-            var n = [series[i][0], series[i][1] - series[i - 1][1]]
-
-            //n[1] *= 1000000
-
-            if (n[1] <= 0)
-                n[1] = 1
-
-            console.log(`${new Date(n[0])}, ${n[1]}`)
-
-            growth.push(n)
-        }
-
         normalize(series);
 
         chartData.push({
             name: symbol + " reddit subs",
             yAxis: 0,
             data: series
-        });
-
-        var groupingUnits = [[
-            'week',                         // unit name
-            [1]                             // allowed multiples
-        ], [
-            'month',
-            [1, 2, 3, 4, 6]
-        ]]
-
-        chartData.push({
-            type: 'column',
-            name: 'Volume',
-            data: growth,
-            yAxis: 1,
-            dataGrouping: {
-                units: groupingUnits
-            }
         });
 
         onSuccess()
@@ -269,7 +236,7 @@ function get_twitter_stats(coinId, symbol, onSuccess) {
 
 
 function get_prices(coinId, symbol, onSuccess) {
-    var url = '/api/historical_prices?coin_id=' + coinId;
+    var url = '/api/prices?coin_id=' + coinId;
 
     $.getJSON(url, function (data) {
         var series = data;
