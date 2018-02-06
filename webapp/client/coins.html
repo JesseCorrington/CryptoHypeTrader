@@ -13,7 +13,7 @@
             <v-tabs>
                 <v-tabs-bar class="cyan" dark>
                     <v-tabs-item href="#tableTab" ripple>Coin List</v-tabs-item>
-                    <v-tabs-item href="#detailTab" ripple @click="tabClicked()">Coin Detail</v-tabs-item>
+                    <v-tabs-item href="#detailTab" ripple @click="tabClicked()">Charts</v-tabs-item>
                     <v-tabs-slider color="yellow"></v-tabs-slider>
                 </v-tabs-bar>
 
@@ -44,6 +44,7 @@
                                     <td>{{ props.item.symbol }}</td>
                                     <td>{{ props.item.price | currency}}</td>
                                     <td>{{ props.item.market_cap | currency}}</td>
+                                    <td>{{ props.item.subredditUrl() }}</td>
                                     <td>{{ props.item.growth.reddit.h2}}</td>
                                     <td>{{ props.item.growth.reddit.h2_pct | percent}}</td>
                                     <td>{{ props.item.growth.reddit.h6}}</td>

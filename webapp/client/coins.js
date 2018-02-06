@@ -16,6 +16,9 @@ class Coin {
         return ""
     }
 
+    loadStats() {
+
+    }
 
     subredditUrl() {
         return this._makeUrl("https://www.reddit.com/r/", "subreddit");
@@ -34,15 +37,14 @@ class Coin {
     }
 }
 
+var coins = []
+
 Vue.use(Vuetify)
 
 Vue.component('price-chart', {
   template: '<h1>Price Chart</h1><div id="priceChart"></div>'
 });
 
-function foo() {
-    console.log("Tab clicked")
-}
 
 
 var app = new Vue({
@@ -53,6 +55,7 @@ var app = new Vue({
           {text: 'Symbol', value: 'symbol'},
           {text: 'Price', value: 'price'},
           {text: 'Market Cap', value: 'market_cap'},
+          {text: 'Reddit', value: 'subredditUrl()'},
           {text: "Reddit h2", value: "growth.reddit.h2"},
           {text: "Reddit h2_pct", value: "growth.reddit.h2_pct"},
           {text: "Reddit h6", value: "growth.reddit.h6"},
@@ -81,20 +84,35 @@ var app = new Vue({
       $.getJSON('/api/coin_summaries', function (json) {
           json.forEach(function(coin) {
               for (var key in coin) {
+
+                  // TODO: move this into Coin class
                   if (coin[key] === null)
                       coin[key] = 0
               }
+              coins.push(new Coin(coin))
           });
 
-          self.items = json;
+          self.items = coins;
       });
   },
+        watch: {
+        selected: 'coinSelectionUpdate'
+    },
     methods: {
-        tabClicked: function () {
+        coinSelectionUpdate: function() {
+            console.log("Coin check clicked");
+            console.log(this.selected);
+        },
+
+        tabClicked: function() {
             console.log("clicked tab");
+
             var coin = this.selected[0];
+
+            // TODO: differentiate between list and chart tab
+
             var pending = 3
-            var chartData = []
+            chartData = []
 
             get_prices(coin.coin_id, coin.symbol, function() {
                 pending--;
@@ -143,9 +161,13 @@ function normalize(arr) {
 }
 
 
+var chart = undefined;
 function buildCompareChart() {
-    Highcharts.stockChart('priceChart', {
+    if (chart) {
+        chart.destroy();
+    }
 
+    chart = Highcharts.stockChart('priceChart', {
         yAxis: [{
             labels: {
                 align: 'right',

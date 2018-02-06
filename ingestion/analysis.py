@@ -28,15 +28,10 @@ def growth(records, field, from_date, to_date):
 
 def growth_stats(coin, stats, key, end_time):
     time_ranges = {
-        "h2": timedelta(hours=2),
         "h6": timedelta(hours=6),
-        "h12": timedelta(hours=12),
         "d1": timedelta(days=1),
-        "d2": timedelta(days=2),
         "d3": timedelta(days=3),
-        "d4": timedelta(days=4),
         "d5": timedelta(days=5),
-        "d6": timedelta(days=6),
         "d7": timedelta(days=7)
     }
 
