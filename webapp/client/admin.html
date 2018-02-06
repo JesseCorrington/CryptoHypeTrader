@@ -56,6 +56,9 @@
                                     <td class="text-xs-right">{{ props.item.db_updates }}</td>
                                 </template>
                             </v-data-table>
+                            <v-select v-bind:items="taskTypes" v-model="selectedSeries" overflow label="Select"></v-select>
+                            <div id="taskChart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                            <div id="dbStatsChart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
                         </v-card>
                     </v-tabs-content>
                     <v-tabs-content id="detailTab">
@@ -78,12 +81,6 @@
                     </v-tabs-content>
                 </v-tabs-items>
             </v-tabs>
-
-            <v-select v-bind:items="taskTypes" v-model="selectedSeries" overflow label="Select"></v-select>
-
-            <div id="taskChart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-            <div id="dbStatsChart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-
         </v-content>
     </v-app>
 </div>
