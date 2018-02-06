@@ -144,9 +144,19 @@ def get_prices():
 def get_reddit_stats():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    prices = db.mongo_db.reddit_stats.find({"coin_id": coin_id})
+    stats = db.mongo_db.reddit_stats.find({"coin_id": coin_id})
 
-    series = time_series(prices, "subscribers")
+    series = time_series(stats, "subscribers")
+    return json_response(series)
+
+
+@app.route('/api/twitter_counts')
+def get_twitter_counts():
+    coin_id = int(flask.request.args.get("coin_id"))
+
+    stats = db.mongo_db.twitter_comments.find({"coin_id": coin_id})
+
+    series = time_series(stats, "count")
     return json_response(series)
 
 
