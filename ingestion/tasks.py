@@ -426,6 +426,11 @@ class CreateCoinSummaries(mgr.IngestionTask):
                 "volume": p["volume"]
             }
 
+            # Add in optional vals
+            for key in ["subreddit", "twitter", "cmc_id", "cc_id"]:
+                if key in coin:
+                    record[key] = coin[key]
+
             if cid in growth:
                 del growth[cid]["coin_id"]
                 record["growth"] = growth[cid]
