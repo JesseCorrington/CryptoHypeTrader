@@ -39,6 +39,11 @@ class Coin {
     coinmarketcapUrl() {
         return this._makeUrl("https://coinmarketcap.com/currencies/", "cmc_id");
     }
+
+    cryptoCompareUrl() {
+        return "TODO";
+        //return this._makeUrl("https://www.cryptocompare.com/coins/" btc "/overview/USD", "cmc_id");
+    }
 }
 
 var coins = []
@@ -60,8 +65,10 @@ var app = new Vue({
           {text: 'Price', value: 'price'},
           {text: 'Market Cap', value: 'market_cap'},
           {text: 'Reddit', value: 'subredditUrl()'},
-          {text: "Reddit h2", value: "growth.reddit.h2"},
-          {text: "Reddit h2_pct", value: "growth.reddit.h2_pct"},
+          {text: 'Twitter', value: 'twitterUrl()'},
+          {text: 'CMC', value: 'coinmarketcapUrl()'},
+          {text: 'BTC Talk', value: 'bitcointalkUrl()'},
+          {text: 'CC', value: 'cryptoCompareUrl()'},
           {text: "Reddit h6", value: "growth.reddit.h6"},
           {text: "Reddit h6_pct", value: "growth.reddit.h6_pct"},
           {text: "Reddit d1", value: "growth.reddit.d1"},

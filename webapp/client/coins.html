@@ -45,9 +45,11 @@
                                     <td>{{ props.item.symbol }}</td>
                                     <td>{{ props.item.price | currency}}</td>
                                     <td>{{ props.item.market_cap | currency}}</td>
-                                    <td>{{ props.item.subredditUrl() }}</td>
-                                    <td>{{ props.item.growth.reddit.h2}}</td>
-                                    <td>{{ props.item.growth.reddit.h2_pct | percent}}</td>
+                                    <td><span v-html="props.item.subredditUrl()"></span></td>
+                                    <td><span v-html="props.item.coinmarketcapUrl()"></span></td>
+                                    <td><span v-html="props.item.bitcointalkUrl()"></span></td>
+                                    <td><span v-html="props.item.twitterUrl()"></span></td>
+                                    <td><span v-html="props.item.cryptoCompareUrl()"></span></td>
                                     <td>{{ props.item.growth.reddit.h6}}</td>
                                     <td>{{ props.item.growth.reddit.h6_pct | percent}}</td>
                                     <td>{{ props.item.growth.reddit.d1}}</td>
