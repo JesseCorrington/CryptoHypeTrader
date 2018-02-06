@@ -106,7 +106,7 @@ var app = new Vue({
           self.items = coins;
       });
   },
-        watch: {
+    watch: {
         selected: 'coinSelectionUpdate'
     },
     methods: {

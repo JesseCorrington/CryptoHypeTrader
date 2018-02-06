@@ -29,7 +29,9 @@ var app = new Vue({
       search: "",
       pagination: {
           sortBy: 'start_time'
-      }
+      },
+      taskTypes: [],
+      selectedSeries: "ImportPrices"
   },
 
   mounted: function() {
@@ -45,9 +47,17 @@ var app = new Vue({
               tasksByType[task.name].push(task);
           });
 
-          buildChart("CreateCoinSummaries", "errors")
+          self.taskTypes = Object.keys(tasksByType);
+
+          buildChart("CreateCoinSummaries")
       });
-  }
+  },
+
+    watch: {
+      selectedSeries: function() {
+          console.log("on chnage " + this.selectedSeries);
+      }
+    }
 });
 
 
