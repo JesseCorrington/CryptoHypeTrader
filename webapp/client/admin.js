@@ -3,11 +3,11 @@
 
 Vue.use(Vuetify)
 
+var tasksByType = {}
 
 var app = new Vue({
   el: '#vueApp',
   data: {
-      // TODO: what's the proper way to deal with lazy loading?
       headers: [
           { text: 'Name', value: 'name', align: "left"},
           { text: 'Start Time', value: 'start_time' },
@@ -38,35 +38,32 @@ var app = new Vue({
           self.items = json;
 
           json.forEach(function(task) {
-             task.elapsed_time = task.last_update - task.start_time;
+              task.elapsed_time = task.last_update - task.start_time;
+              if (!tasksByType[task.name]) {
+                  tasksByType[task.name] = []
+              }
+              tasksByType[task.name].push(task);
           });
+
+          buildChart("CreateCoinSummaries", "errors")
       });
   }
 });
 
 
-function processTasks(tasks) {
-    tasks.forEach(
-        function(task) {
-            task.elapsed_time = task.end_time? task.end_time - task.start_time :
-                task.last_update - task.start_time;
-
-            // Convert to seconds
-            task.elapsed_time = Math.round(task.elapsed_time / 1000);
-    });
-}
-
-
-
-
-function buildChart(name, tasks) {
+function buildChart(name) {
     function toSeries(key) {
-        var points = [];
-        tasks.forEach(function (task) {
-            points.push([task.start_time, task[key]]);
+        var series = [];
+        tasksByType[name].forEach(function (task) {
+            var val = task[key];
+            if (val.length !== undefined) {
+                val = val.length;
+            }
+
+            series.push([task.start_time, val]);
         });
 
-        return points;
+        return series;
     }
 
     var errors = toSeries("errors");
@@ -74,7 +71,7 @@ function buildChart(name, tasks) {
     var warnings = toSeries("warnings");
 
 
-    Highcharts.chart('chart', {
+    Highcharts.chart('chartContainer', {
     chart: {
         type: 'spline'
     },
