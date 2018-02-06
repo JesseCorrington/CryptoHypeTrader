@@ -417,10 +417,6 @@ class CreateCoinSummaries(mgr.IngestionTask):
                 "coin_id": coin["_id"],
                 "symbol": coin["symbol"],
                 "name": coin["name"],
-                "subreddit": coin["subreddit"],
-                "twitter": coin["twitter"],
-                "cmc_id": coin["cmc_id"],
-                "cc_id": coin["cc_id"],
                 "market_cap": p["market_cap"],
                 "price": p["price"],
                 "volume": p["volume"]
