@@ -7,6 +7,7 @@
 </head>
 
 <body>
+
 <div id="vueApp">
     <v-app>
         <v-content>
@@ -40,7 +41,7 @@
                                     <td>
                                         <v-checkbox primary hide-details v-model="props.selected"></v-checkbox>
                                     </td>
-                                    <td>{{ props.item.name }}</td>
+                                    <td><span v-html="props.item.detailLink()"></span></td>
                                     <td>{{ props.item.symbol }}</td>
                                     <td>{{ props.item.price | currency}}</td>
                                     <td>{{ props.item.market_cap | currency}}</td>

@@ -20,6 +20,10 @@ class Coin {
 
     }
 
+    detailLink() {
+        return '<a href ="coin.html?id=' + this.coin_id + '">' + this.name + '</a>';
+    }
+
     subredditUrl() {
         return this._makeUrl("https://www.reddit.com/r/", "subreddit");
     }
@@ -51,7 +55,7 @@ var app = new Vue({
   el: '#vueApp',
   data: {
       headers: [
-          {text: 'Name', value: 'name', align: "left"},
+          {text: 'Name', value: 'detailLink()', align: "left"},
           {text: 'Symbol', value: 'symbol'},
           {text: 'Price', value: 'price'},
           {text: 'Market Cap', value: 'market_cap'},
