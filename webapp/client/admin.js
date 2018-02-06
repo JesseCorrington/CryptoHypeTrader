@@ -49,17 +49,20 @@ var app = new Vue({
 
           self.taskTypes = Object.keys(tasksByType);
 
-          buildChart("CreateCoinSummaries")
+          buildChart(self.selectedSeries)
       });
   },
 
     watch: {
       selectedSeries: function() {
           console.log("on chnage " + this.selectedSeries);
+          buildChart(this.selectedSeries)
       }
     }
 });
 
+
+var chart = undefined;
 
 function buildChart(name) {
     function toSeries(key) {
@@ -79,56 +82,94 @@ function buildChart(name) {
     var errors = toSeries("errors");
     var httpErrors = toSeries("errors_http");
     var warnings = toSeries("warnings");
+    var http_requests = toSeries("http_requests");
+    var db_inserts = toSeries("db_inserts");
+    var db_updates = toSeries("db_updates");
 
 
-    Highcharts.chart('chartContainer', {
-    chart: {
-        type: 'spline'
-    },
-    title: {
-        text: 'Errors over time'
-    },
-    subtitle: {
-        text: 'task ' + name
-    },
-    xAxis: {
-        type: 'datetime',
-        dateTimeLabelFormats: { // don't display the dummy year
-            month: '%e. %b',
-            year: '%b'
-        },
-        title: {
-            text: 'Date'
-        }
-    },
-    yAxis: {
-        title: {
-            text: 'Count'
-        },
-        min: 0
-    },
-    tooltip: {
-        headerFormat: '<b>{series.name}</b><br>',
-        pointFormat: '{point.x:%e. %b}: {point.y:.2f} m'
-    },
+    if (!chart) {
+        chart = Highcharts.chart('chartContainer', {
+            chart: {
+                type: 'spline'
+            },
+            title: {
+                text: 'Errors over time'
+            },
+            subtitle: {
+                text: 'task ' + name
+            },
+            xAxis: {
+                type: 'datetime',
+                dateTimeLabelFormats: { // don't display the dummy year
+                    month: '%e. %b',
+                    year: '%b'
+                },
+                title: {
+                    text: 'Date'
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Count'
+                },
+                min: 0
+            },
+            tooltip: {
+                headerFormat: '<b>{series.name}</b><br>',
+                pointFormat: '{point.x:%e. %b}: {point.y:.2f} m'
+            },
 
-    plotOptions: {
-        spline: {
-            marker: {
-                enabled: true
+            plotOptions: {
+                spline: {
+                    marker: {
+                        enabled: true
+                    }
+                }
             }
-        }
-    },
+        });
+    }
 
-    series: [{
-            name: "Errors",
-            data: errors
-        }, {
-            name: "HTTP Errors",
-            data: httpErrors
-        }, {
-            name: "Warnings",
-            data: warnings
-        }]
-});
+    // remove all existing series
+    for (var i = 0; i < 6; i++) {
+        var s = chart.get(i);
+        if (s) {
+            s.remove();
+        }
+    }
+
+    chart.addSeries({
+        id: 0,
+        name: "Errors",
+        data: errors
+    });
+
+    chart.addSeries({
+        id: 1,
+        name: "HTTP Errors",
+        data: httpErrors
+    });
+
+    chart.addSeries({
+        id: 2,
+        name: "Warnings",
+        data: warnings
+    });
+
+    chart.addSeries({
+        id: 3,
+        name: "HTTP Requests",
+        data: http_requests
+    });
+
+    chart.addSeries({
+        id: 4,
+        name: "DB Inserts",
+        data: db_inserts
+    });
+
+    chart.addSeries({
+        id: 5,
+        name: "DB Updates",
+        data: db_updates
+    });
 }
