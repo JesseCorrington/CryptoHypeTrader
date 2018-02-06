@@ -49,14 +49,17 @@ var app = new Vue({
 
           self.taskTypes = Object.keys(tasksByType);
 
-          buildChart(self.selectedSeries)
+          buildChart(self.selectedSeries, tasksByType[self.selectedSeries])
       });
+
+      $.getJSON('/api/db_stats', function (json) {
+          console.log(json);
+      })
   },
 
     watch: {
       selectedSeries: function() {
-          console.log("on chnage " + this.selectedSeries);
-          buildChart(this.selectedSeries)
+          buildChart(this.selectedSeries, tasksByType[this.selectedSeries])
       }
     }
 });
@@ -64,10 +67,9 @@ var app = new Vue({
 
 var chart = undefined;
 
-function buildChart(name) {
-    function toSeries(key) {
+function toSeries(objs, key) {
         var series = [];
-        tasksByType[name].forEach(function (task) {
+        objs.forEach(function (task) {
             var val = task[key];
             if (val.length !== undefined) {
                 val = val.length;
@@ -79,14 +81,7 @@ function buildChart(name) {
         return series;
     }
 
-    var errors = toSeries("errors");
-    var httpErrors = toSeries("errors_http");
-    var warnings = toSeries("warnings");
-    var http_requests = toSeries("http_requests");
-    var db_inserts = toSeries("db_inserts");
-    var db_updates = toSeries("db_updates");
-
-
+function buildChart(name, data) {
     if (!chart) {
         chart = Highcharts.chart('chartContainer', {
             chart: {
@@ -100,7 +95,7 @@ function buildChart(name) {
             },
             xAxis: {
                 type: 'datetime',
-                dateTimeLabelFormats: { // don't display the dummy year
+                dateTimeLabelFormats: {
                     month: '%e. %b',
                     year: '%b'
                 },
@@ -112,19 +107,6 @@ function buildChart(name) {
                 title: {
                     text: 'Count'
                 },
-                min: 0
-            },
-            tooltip: {
-                headerFormat: '<b>{series.name}</b><br>',
-                pointFormat: '{point.x:%e. %b}: {point.y:.2f} m'
-            },
-
-            plotOptions: {
-                spline: {
-                    marker: {
-                        enabled: true
-                    }
-                }
             }
         });
     }
@@ -140,36 +122,41 @@ function buildChart(name) {
     chart.addSeries({
         id: 0,
         name: "Errors",
-        data: errors
+        data: toSeries(data, "errors")
     });
 
     chart.addSeries({
         id: 1,
         name: "HTTP Errors",
-        data: httpErrors
+        data: toSeries(data, "errors_http")
     });
 
     chart.addSeries({
         id: 2,
         name: "Warnings",
-        data: warnings
+        data: toSeries(data, "warnings")
     });
 
     chart.addSeries({
         id: 3,
         name: "HTTP Requests",
-        data: http_requests
+        data: toSeries(data, "http_requests")
     });
 
     chart.addSeries({
         id: 4,
         name: "DB Inserts",
-        data: db_inserts
+        data: toSeries(data, "db_inserts")
     });
 
     chart.addSeries({
         id: 5,
         name: "DB Updates",
-        data: db_updates
+        data: toSeries(data, "db_updates")
     });
+}
+
+
+function buildDBStatsChart() {
+
 }

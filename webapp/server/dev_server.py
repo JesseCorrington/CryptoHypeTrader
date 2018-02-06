@@ -159,5 +159,9 @@ def get_twitter_counts():
     series = time_series(stats, "count")
     return json_response(series)
 
+@app.route('/api/db_stats')
+def get_db_stats():
+    return json_response(db.mongo_db.db_stats.find())
+
 
 app.run()
