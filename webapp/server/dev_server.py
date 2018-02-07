@@ -156,7 +156,8 @@ def get_twitter_counts():
 
     stats = db.mongo_db.twitter_comments.find({"coin_id": coin_id})
 
-    series = time_series(stats, "count")
+    series = time_series(stats, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
+
     return json_response(series)
 
 @app.route('/api/db_stats')

@@ -16,7 +16,26 @@ class Coin {
             return '<a href="' + base + this[key] + '">' + this[key] + "</a>";
         }
 
-        return ""
+        return "";
+    }
+
+    splitSeries(data, names) {
+        var split = {};
+
+        names.forEach(name => {
+            split[name] = [];
+        });
+
+        data.forEach(entry => {
+            var time = entry[0]
+
+            for (var i = 0; i < names.length; i++) {
+                var val = entry[i + 1];
+                split[names[i]].push([time, val]);
+            }
+        });
+
+        return split;
     }
 
     loadTimeSeries() {
@@ -33,8 +52,14 @@ class Coin {
         });
 
         $.getJSON('/api/twitter_counts?coin_id=' + this.coin_id, function (data) {
-            self.timeSeries.twitter_counts = data;
-            addSeriesToChart(self.symbol + "Twitter Counts", data);
+            var names = ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"];
+
+            var series = self.splitSeries(data, names);
+            for (var name in series) {
+                var s = series[name];
+                //self.timeSeries.twitter_counts = data;
+                addSeriesToChart(self.symbol + "Twitter " + name, s);
+            }
         });
 
         this.seriesLoaded = true;
@@ -203,6 +228,10 @@ function buildChart() {
             lineWidth: 2
         }
         ],
+        legend: {
+            enabled: true,
+            layout: 'horizontal'
+        },
 
         rangeSelector: {
             selected: 4
