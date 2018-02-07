@@ -1,23 +1,44 @@
 "use strict"
 
-
 class Coin {
     constructor(data) {
         for (var key in data) {
             this[key] = data[key]
         }
+
+        this.timeSeries = {}
+        this.seriesLoaded = false;
+        this.onChart = false
     }
 
     _makeUrl(base, key) {
         if (this[key]) {
-            return base + this[key]
+            return '<a href="' + base + this[key] + '">' + this[key] + "</a>";
         }
 
         return ""
     }
 
-    loadStats() {
+    loadTimeSeries() {
+        var self = this;
 
+        $.getJSON('/api/prices?coin_id=' + this.coin_id, function (data) {
+            self.timeSeries.prices = data;
+            addSeriesToChart(self.symbol + " Price", data);
+        });
+
+        $.getJSON('/api/reddit_stats?coin_id=' + this.coin_id, function (data) {
+            self.timeSeries.reddit_stats = data;
+            addSeriesToChart(self.symbol + "Reddit Subs", data);
+        });
+
+        $.getJSON('/api/twitter_counts?coin_id=' + this.coin_id, function (data) {
+            self.timeSeries.twitter_counts = data;
+            addSeriesToChart(self.symbol + "Twitter Counts", data);
+        });
+
+        this.seriesLoaded = true;
+        this.onChart = true;
     }
 
     detailLink() {
@@ -51,7 +72,7 @@ var coins = []
 Vue.use(Vuetify)
 
 Vue.component('price-chart', {
-  template: '<h1>Price Chart</h1><div id="priceChart"></div>'
+    template: '<h1>Price Chart</h1><div id="priceChart"></div>'
 });
 
 
@@ -104,55 +125,22 @@ var app = new Vue({
           });
 
           self.items = coins;
+
+          buildChart();
       });
   },
+
     watch: {
-        selected: 'coinSelectionUpdate'
-    },
-    methods: {
-        coinSelectionUpdate: function() {
-            console.log("Coin check clicked");
-            console.log(this.selected);
-        },
-
-        tabClicked: function() {
-            console.log("clicked tab");
-
-            var coin = this.selected[0];
-
-            // TODO: differentiate between list and chart tab
-
-            var pending = 3
-            chartData = []
-
-            get_prices(coin.coin_id, coin.symbol, function() {
-                pending--;
-                if (pending == 0) {
-                    buildCompareChart()
-                }
-            });
-
-            get_reddit_stats(coin.coin_id, coin.symbol, function() {
-                pending--;
-                if (pending == 0) {
-                    buildCompareChart()
-                }
-            });
-
-            get_twitter_stats(coin.coin_id, coin.symbol, function() {
-                pending--;
-                if (pending == 0) {
-                    buildCompareChart()
+        selected: function() {
+            this.selected.forEach(coin => {
+                if (!coin.onChart && !coin.seriesLoaded) {
+                    coin.loadTimeSeries();
                 }
             });
         }
     }
 });
 
-
-
-var pending = 2
-var chartData = []
 
 
 function normalize(arr) {
@@ -173,11 +161,20 @@ function normalize(arr) {
 
 
 var chart = undefined;
-function buildCompareChart() {
-    if (chart) {
-        chart.destroy();
-    }
+function addSeriesToChart(name, series) {
 
+    // TODO: this is doing normalize in place, so won't allow turning on/off via UI
+    normalize(series);
+
+    chart.addSeries({
+        id: 0,
+        name: name,
+        data: series
+    });
+}
+
+
+function buildChart() {
     chart = Highcharts.stockChart('priceChart', {
         yAxis: [{
             labels: {
@@ -221,66 +218,7 @@ function buildCompareChart() {
             pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> ({point.change}%)<br/>',
             valueDecimals: 2,
             split: true
-        },
-
-
-        series: chartData
+        }
     });
 }
 
-
-function get_reddit_stats(coinId, symbol, onSuccess) {
-    var url = '/api/reddit_stats?coin_id=' + coinId;
-
-    $.getJSON(url, function (data) {
-        var series = data;
-        normalize(series);
-
-        chartData.push({
-            name: symbol + " reddit subs",
-            yAxis: 0,
-            data: series
-        });
-
-        onSuccess()
-    });
-}
-
-
-function get_twitter_stats(coinId, symbol, onSuccess) {
-    var url = '/api/twitter_counts?coin_id=' + coinId;
-
-    $.getJSON(url, function (data) {
-        var series = data;
-        normalize(series);
-
-        console.log("Twitter time series");
-        console.log(series);
-
-        chartData.push({
-            name: symbol + " twitter comments",
-            yAxis: 0,
-            data: series
-        });
-
-        onSuccess()
-    });
-}
-
-
-function get_prices(coinId, symbol, onSuccess) {
-    var url = '/api/prices?coin_id=' + coinId;
-
-    $.getJSON(url, function (data) {
-        var series = data;
-
-        normalize(series);
-        chartData.push({
-            name: symbol + " price",
-            yAxis: 0,
-            data: series
-        });
-
-        onSuccess()
-    });
-}
