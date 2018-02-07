@@ -146,15 +146,25 @@ def get_reddit_stats():
 
     stats = db.mongo_db.reddit_stats.find({"coin_id": coin_id})
 
-    series = time_series(stats, "subscribers")
+    series = time_series(stats, ["subscribers", "active"])
     return json_response(series)
 
 
-@app.route('/api/twitter_counts')
-def get_twitter_counts():
+@app.route('/api/twitter_comments')
+def get_twitter_comments():
     coin_id = int(flask.request.args.get("coin_id"))
 
     stats = db.mongo_db.twitter_comments.find({"coin_id": coin_id})
+
+    series = time_series(stats, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
+
+    return json_response(series)
+
+@app.route('/api/reddit_comments')
+def get_reddit_comments():
+    coin_id = int(flask.request.args.get("coin_id"))
+
+    stats = db.mongo_db.reddit_comments.find({"coin_id": coin_id})
 
     series = time_series(stats, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
 

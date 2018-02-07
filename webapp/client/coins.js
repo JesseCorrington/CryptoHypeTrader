@@ -47,18 +47,45 @@ class Coin {
         });
 
         $.getJSON('/api/reddit_stats?coin_id=' + this.coin_id, function (data) {
-            self.timeSeries.reddit_stats = data;
-            addSeriesToChart(self.symbol + "Reddit Subs", data);
+            var names = ["subs growth", "active"];
+            var series = self.splitSeries(data, names);
+
+            // convert subs to subs growth
+            var subs = series["subs growth"];
+            var growth = [[subs[0][0], 0]]
+
+            for (var i = 1; i < subs.length; i++) {
+                growth.push([subs[i][0], subs[i][1] - subs[i - 1][1]]);
+            }
+
+            series["subs growth"] = growth;
+
+            for (var name in series) {
+                var s = series[name];
+                //self.timeSeries.twitter_counts = data;
+                addSeriesToChart(self.symbol + " Reddit " + name, s);
+            }
         });
 
-        $.getJSON('/api/twitter_counts?coin_id=' + this.coin_id, function (data) {
+        $.getJSON('/api/twitter_comments?coin_id=' + this.coin_id, function (data) {
             var names = ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"];
 
             var series = self.splitSeries(data, names);
             for (var name in series) {
                 var s = series[name];
                 //self.timeSeries.twitter_counts = data;
-                addSeriesToChart(self.symbol + "Twitter " + name, s);
+                addSeriesToChart(self.symbol + " Twitter " + name, s);
+            }
+        });
+
+        $.getJSON('/api/reddit_comments?coin_id=' + this.coin_id, function (data) {
+            var names = ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"];
+
+            var series = self.splitSeries(data, names);
+            for (var name in series) {
+                var s = series[name];
+                //self.timeSeries.twitter_counts = data;
+                addSeriesToChart(self.symbol + " Reddit " + name, s);
             }
         });
 
@@ -201,33 +228,16 @@ function addSeriesToChart(name, series) {
 
 function buildChart() {
     chart = Highcharts.stockChart('priceChart', {
-        yAxis: [{
+        yAxis: {
             labels: {
                 align: 'right',
                 x: -3
             },
-            title: {
-                text: 'Close Price'
-            },
-            height: '60%',
             lineWidth: 2,
             resize: {
                 enabled: true
             }
-        }, {
-            labels: {
-                align: 'right',
-                x: -3
-            },
-            title: {
-                text: 'Reddit Growth'
-            },
-            top: '65%',
-            height: '35%',
-            offset: 0,
-            lineWidth: 2
-        }
-        ],
+        },
         legend: {
             enabled: true,
             layout: 'horizontal'
