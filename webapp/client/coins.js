@@ -88,7 +88,7 @@ class Coin {
         });
 
         $.getJSON('/api/twitter_comments?coin_id=' + this.coin_id, function (data) {
-            var names = ["avg sentiment", "count", "strong pos", "strong neg", "avg score", "sum score"];
+            var names = ["avg sentiment", "post count", "strong pos", "strong neg", "avg score", "sum score"];
 
             var series = self.splitSeries(data, names);
             for (var name in series) {
@@ -98,7 +98,7 @@ class Coin {
         });
 
         $.getJSON('/api/reddit_comments?coin_id=' + this.coin_id, function (data) {
-            var names = ["avg sentiment", "count", "strong pos", "strong neg", "avg score", "sum score"];
+            var names = ["avg sentiment", "post count", "strong pos", "strong neg", "avg score", "sum score"];
 
             var series = self.splitSeries(data, names);
             for (var name in series) {
@@ -215,26 +215,19 @@ var app = new Vue({
         selectedChartFeatures: function() {
             var deselected = arrayDiff(this.prevSelectedChartFeatures, this.selectedChartFeatures);
             var selected = arrayDiff(this.selectedChartFeatures, this.prevSelectedChartFeatures);
-
-            console.log(this.prevSelectedChartFeatures);
-            console.log(this.selectedChartFeatures);
-
-            console.log("Removing");
-            console.log(deselected);
-
-            console.log("Adding");
-            console.log(selected);
-
-            removeSeriesFromChart(deselected);
-
             this.prevSelectedChartFeatures = this.selectedChartFeatures;
 
-            selected.forEach(feature => {
-                var coin = this.selected[0];
-                var seriesKey = feature.toLowerCase();
-                var series = coin.timeSeries[seriesKey];
+            // TODO: need to handle adding and removing selected coins too
 
-                addSeriesToChart(coin.symbol + feature, series);
+            this.selected.forEach(coin => {
+                removeSeriesFromChart(coin.symbol, deselected);
+
+                selected.forEach(feature => {
+                    var seriesKey = feature.toLowerCase();
+                    var series = coin.timeSeries[seriesKey];
+
+                    addSeriesToChart(coin.symbol + " " + feature, series);
+                });
             });
         }
     }
@@ -270,15 +263,15 @@ function addSeriesToChart(name, series) {
     normalize(series);
 
     chart.addSeries({
-        id: 0,
+        id: name,
         name: name,
         data: series
     });
 }
 
-function removeSeriesFromChart(names) {
+function removeSeriesFromChart(symbol, names) {
     names.forEach(name => {
-        var series = chart.get(name);
+        var series = chart.get(symbol + " " + name);
         if (series) {
             series.remove();
         }
