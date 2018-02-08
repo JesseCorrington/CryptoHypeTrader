@@ -102,7 +102,7 @@ def get_coins():
 
 @app.route('/api/coin_summaries')
 def get_coin_summaries():
-    summaries = list(db.mongo_db.coin_summaries.find())
+    summaries = list(db.mongo_db.coin_summaries.find().limit(20))
     return json_response(summaries)
 
 
@@ -156,6 +156,7 @@ def get_twitter_comments():
 
     return json_response(series)
 
+
 @app.route('/api/reddit_comments')
 def get_reddit_comments():
     coin_id = int(flask.request.args.get("coin_id"))
@@ -165,6 +166,7 @@ def get_reddit_comments():
     series = time_series(stats, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
 
     return json_response(series)
+
 
 @app.route('/api/recent_comments')
 def get_recent_comments():
