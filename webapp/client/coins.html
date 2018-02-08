@@ -14,7 +14,8 @@
             <v-tabs>
                 <v-tabs-bar class="cyan" dark>
                     <v-tabs-item href="#tableTab" ripple>Coin List</v-tabs-item>
-                    <v-tabs-item href="#detailTab" ripple>Charts</v-tabs-item>
+                    <v-tabs-item href="#chartsTab" ripple>Charts</v-tabs-item>
+                    <v-tabs-item href="#commentsTab" ripple>Comments</v-tabs-item>
                     <v-tabs-slider color="yellow"></v-tabs-slider>
                 </v-tabs-bar>
 
@@ -66,7 +67,7 @@
                             </v-data-table>
                         </v-card>
                     </v-tabs-content>
-                    <v-tabs-content id="detailTab">
+                    <v-tabs-content id="chartsTab">
                         <template>
                             <div id="priceChart"></div>
                         </template>
@@ -90,6 +91,10 @@
                           ></v-select>
 
                     </v-tabs-content>
+
+                    <v-tabs-conent id="commentsTab">
+                        comment list
+                    </v-tabs-conent>
                 </v-tabs-items>
             </v-tabs>
         </v-content>

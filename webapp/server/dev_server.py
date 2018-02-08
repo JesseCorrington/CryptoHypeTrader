@@ -170,6 +170,14 @@ def get_reddit_comments():
 
     return json_response(series)
 
+@app.route('/api/recent_comments')
+def get_recent_comments():
+    coin_id = int(flask.request.args.get("coin_id"))
+
+    comments = db.mongo_db.recent_comments.find({"coin_id": coin_id, "platform": "twitter_comments"}).limit(100)
+
+    return json_response(comments)
+
 @app.route('/api/db_stats')
 def get_db_stats():
     return json_response(db.mongo_db.db_stats.find())

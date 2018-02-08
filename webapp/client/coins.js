@@ -30,6 +30,7 @@ class Coin {
         }
 
         this.timeSeries = {};
+        this.comments = [];
         this.seriesLoaded = false;
         this.onChart = false;
     }
@@ -115,6 +116,10 @@ class Coin {
                 var s = series[name];
                 self.timeSeries["reddit " + name] = s;
             }
+        });
+
+        $.getJSON('/api/recent_comments?coin_id=' + this.coin_id, data => {
+            this.comments = data;
         });
 
         this.seriesLoaded = true;
