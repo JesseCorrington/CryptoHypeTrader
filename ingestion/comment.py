@@ -56,3 +56,9 @@ class CommentScanner:
 
     def count_strong_neg(self):
         return sum(1 if c.sentiment < -self.__strong_threshold else 0 for c in self.__comments)
+
+    def strong_pos(self):
+        return [c for c in self.__comments if c.sentiment > self.__strong_threshold]
+
+    def strong_neg(self):
+        return [c for c in self.__comments if c.sentiment < -self.__strong_threshold]

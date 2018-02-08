@@ -86,9 +86,12 @@ def create_indexes():
     mongo_db.historical_prices.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
     mongo_db.historical_social_stats.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
 
+    # TODO: we need more things to be indexed by coin_id, since we tend to do lookups that way
+
     create_date_index("ingestion_tasks", "start_time")
     create_date_index("prices")
     create_date_index("reddit_comments")
     create_date_index("reddit_stats")
     create_date_index("twitter_comments")
     create_date_index("cryptocompare_stats")
+    create_date_index("recent_comments")

@@ -339,8 +339,10 @@ class ImportCommentStats(mgr.IngestionTask):
                 coin, scanner = future_to_coin[future]
 
                 try:
+                    now = datetime.datetime.utcnow()
+
                     record = {
-                        "date": datetime.datetime.utcnow(),
+                        "date": now,
                         "coin_id": coin["_id"],
                         "count": scanner.count(),
                         "sum_score": scanner.sum_score(),
@@ -351,6 +353,20 @@ class ImportCommentStats(mgr.IngestionTask):
                     }
 
                     self._db_insert(self.__collection, record)
+
+                    strong_pos = scanner.strong_pos()
+                    strong_neg = scanner.strong_neg()
+
+                    for comment in strong_pos + strong_neg:
+                        r = {
+                            "date": now,
+                            "coin_id": coin["_id"],
+                            "text": comment.text,
+                            "score": comment.score,
+                            "sentiment": comment.sentiment,
+                            "platform": self.__collection
+                        }
+                        self._db_insert("recent_comments", r)
 
                 except Exception as err:
                     self._error("Failed to get future results for r/{}, {}".format(coin["subreddit"], err))
