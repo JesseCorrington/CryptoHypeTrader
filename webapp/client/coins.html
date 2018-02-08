@@ -14,7 +14,7 @@
             <v-tabs>
                 <v-tabs-bar class="cyan" dark>
                     <v-tabs-item href="#tableTab" ripple>Coin List</v-tabs-item>
-                    <v-tabs-item href="#detailTab" ripple @click="tabClicked()">Charts</v-tabs-item>
+                    <v-tabs-item href="#detailTab" ripple>Charts</v-tabs-item>
                     <v-tabs-slider color="yellow"></v-tabs-slider>
                 </v-tabs-bar>
 
@@ -76,8 +76,16 @@
                             v-bind:items="chartFeatures"
                             v-model="selectedChartFeatures"
                             multiple
-                            chips
                             hint="Select Chart Features"
+                            persistent-hint
+                          ></v-select>
+
+                        <v-select
+                            label="Select Coins"
+                            v-bind:items="selected"
+                            v-model="selected"
+                            multiple
+                            hint="Select Coins"
                             persistent-hint
                           ></v-select>
 

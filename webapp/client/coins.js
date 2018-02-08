@@ -28,9 +28,9 @@ class Coin {
             this[key] = data[key]
         }
 
-        this.timeSeries = {}
+        this.timeSeries = {};
         this.seriesLoaded = false;
-        this.onChart = false
+        this.onChart = false;
     }
 
     _makeUrl(base, key) {
@@ -138,9 +138,13 @@ class Coin {
     }
 }
 
-var coins = []
+Coin.prototype.toString = function() {
+    return this.name;
+};
 
-Vue.use(Vuetify)
+var coins = [];
+
+Vue.use(Vuetify);
 
 Vue.component('price-chart', {
     template: '<h1>Price Chart</h1><div id="priceChart"></div>'
