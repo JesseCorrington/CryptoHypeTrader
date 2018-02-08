@@ -75,6 +75,9 @@ db.init(cfg["database"])
 
 @app.route('/<path:path>')
 def static_proxy(path):
+    if path.find(".") == -1:
+        path = path + ".html"
+
     return flask.send_from_directory(public_dir, path)
 
 
