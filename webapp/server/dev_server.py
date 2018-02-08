@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import flask
 import pymongo
@@ -8,8 +8,6 @@ from bson import ObjectId
 
 from common import database as db
 from webapp.server import config
-
-# TODO: prob want to move database out of ingestion module, maybe
 
 # This is just a basic dev server for easy internal testing
 # Basic REST API access is provided to the database with Eve,
@@ -71,9 +69,7 @@ def time_series(items, keys):
 
 
 app = flask.Flask(__name__)
-
 cfg = config.prod
-
 db.init(cfg["database"])
 
 
@@ -182,5 +178,3 @@ def get_recent_comments():
 def get_db_stats():
     return json_response(db.mongo_db.db_stats.find())
 
-
-app.run()
