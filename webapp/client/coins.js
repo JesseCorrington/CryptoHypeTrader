@@ -35,9 +35,9 @@ class Coin {
         this.onChart = false;
     }
 
-    _makeUrl(base, key) {
+    _makeUrl(base, key, namePrefix) {
         if (this[key]) {
-            return '<a href="' + base + this[key] + '">' + this[key] + "</a>";
+            return '<a href="' + base + this[key] + '">' + namePrefix + this[key] + "</a>";
         }
 
         return "";
@@ -131,24 +131,11 @@ class Coin {
     }
 
     subredditUrl() {
-        return this._makeUrl("https://www.reddit.com/r/", "subreddit");
+        return this._makeUrl("https://www.reddit.com/r/", "subreddit", "r/");
     }
 
     twitterUrl() {
-        return this._makeUrl("https://www.twitter.com/", "twitter");
-    }
-
-    bitcointalkUrl() {
-        return this._makeUrl("https://www.bitcointalk.org/?topic=", "btctalk_ann");
-    }
-
-    coinmarketcapUrl() {
-        return this._makeUrl("https://coinmarketcap.com/currencies/", "cmc_id");
-    }
-
-    cryptoCompareUrl() {
-        return "TODO";
-        //return this._makeUrl("https://www.cryptocompare.com/coins/" btc "/overview/USD", "cmc_id");
+        return this._makeUrl("https://www.twitter.com/", "twitter", "@");
     }
 }
 
@@ -176,9 +163,6 @@ var app = new Vue({
           {text: 'Market Cap', value: 'market_cap'},
           {text: 'Reddit', value: 'subredditUrl()'},
           {text: 'Twitter', value: 'twitterUrl()'},
-          {text: 'CMC', value: 'coinmarketcapUrl()'},
-          {text: 'BTC Talk', value: 'bitcointalkUrl()'},
-          {text: 'CC', value: 'cryptoCompareUrl()'},
           {text: "Reddit h6", value: "growth.reddit.h6"},
           {text: "Reddit h6_pct", value: "growth.reddit.h6_pct"},
           {text: "Reddit d1", value: "growth.reddit.d1"},
@@ -197,7 +181,8 @@ var app = new Vue({
       prevSelected: [],
       search: "",
       pagination: {
-          sortBy: 'date'
+          sortBy: 'market_cap',
+          descending: true
       },
       chartFeatures: CHART_FEATURES,
       selectedChartFeatures: ["Price"],
