@@ -18,6 +18,10 @@ const CHART_FEATURES = [
     "Twitter Sum Score",
 ];
 
+function arrayDiff(a, b) {
+    return a.filter(function(i) {return b.indexOf(i) < 0;});
+};
+
 class Coin {
     constructor(data) {
         for (var key in data) {
@@ -64,7 +68,7 @@ class Coin {
         });
 
         $.getJSON('/api/reddit_stats?coin_id=' + this.coin_id, function (data) {
-            var names = ["subs growth", "active"];
+            var names = ["subs growth", "subs active"];
             var series = self.splitSeries(data, names);
 
             // convert subs to subs growth
@@ -79,7 +83,7 @@ class Coin {
 
             for (var name in series) {
                 var s = series[name];
-                self.timeSeries["reddit" + name] = s;
+                self.timeSeries["reddit " + name] = s;
             }
         });
 
@@ -176,7 +180,8 @@ var app = new Vue({
           sortBy: 'date'
       },
       chartFeatures: CHART_FEATURES,
-      selectedChartFeatures: ["Price"]
+      selectedChartFeatures: ["Price"],
+      prevSelectedChartFeatures: []
   },
 
   mounted: function() {
@@ -208,7 +213,23 @@ var app = new Vue({
         },
 
         selectedChartFeatures: function() {
-            this.selectedChartFeatures.forEach(feature => {
+            var deselected = arrayDiff(this.prevSelectedChartFeatures, this.selectedChartFeatures);
+            var selected = arrayDiff(this.selectedChartFeatures, this.prevSelectedChartFeatures);
+
+            console.log(this.prevSelectedChartFeatures);
+            console.log(this.selectedChartFeatures);
+
+            console.log("Removing");
+            console.log(deselected);
+
+            console.log("Adding");
+            console.log(selected);
+
+            removeSeriesFromChart(deselected);
+
+            this.prevSelectedChartFeatures = this.selectedChartFeatures;
+
+            selected.forEach(feature => {
                 var coin = this.selected[0];
                 var seriesKey = feature.toLowerCase();
                 var series = coin.timeSeries[seriesKey];
@@ -252,6 +273,15 @@ function addSeriesToChart(name, series) {
         id: 0,
         name: name,
         data: series
+    });
+}
+
+function removeSeriesFromChart(names) {
+    names.forEach(name => {
+        var series = chart.get(name);
+        if (series) {
+            series.remove();
+        }
     });
 }
 
