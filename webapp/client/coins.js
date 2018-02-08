@@ -65,6 +65,7 @@ class Coin {
 
         $.getJSON('/api/prices?coin_id=' + this.coin_id, function (data) {
             self.timeSeries.price = data;
+            addSeriesToChart(self.symbol + " Price", data);
         });
 
         $.getJSON('/api/reddit_stats?coin_id=' + this.coin_id, function (data) {
