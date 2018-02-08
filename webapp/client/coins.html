@@ -44,22 +44,23 @@
                                     </td>
                                     <td><span v-html="props.item.detailLink()"></span></td>
                                     <td>{{ props.item.symbol }}</td>
-                                    <td>{{ props.item.price | currency}}</td>
-                                    <td>{{ props.item.market_cap | currency}}</td>
+                                    <td align="right">{{ props.item.price | currency}}</td>
+                                    <td align="right">{{ props.item.market_cap | currency}}</td>
+                                    <td align="right">{{ props.item.growth.price.d1_pct | percent}}</td>
                                     <td><span v-html="props.item.subredditUrl()"></span></td>
                                     <td><span v-html="props.item.twitterUrl()"></span></td>
-                                    <td>{{ props.item.growth.reddit.h6}}</td>
-                                    <td>{{ props.item.growth.reddit.h6_pct | percent}}</td>
-                                    <td>{{ props.item.growth.reddit.d1}}</td>
-                                    <td>{{ props.item.growth.reddit.d1_pct | percent}}</td>
-                                    <td>{{ props.item.growth.reddit.d3}}</td>
-                                    <td>{{ props.item.growth.reddit.d3_pct | percent}}</td>
-                                    <td>{{ props.item.growth.reddit.d5}}</td>
-                                    <td>{{ props.item.growth.reddit.d5_pct | percent}}</td>
-                                    <td>{{ props.item.growth.twitter.d1}}</td>
-                                    <td>{{ props.item.growth.twitter.d1_pct | percent}}</td>
-                                    <td>{{ props.item.growth.crypto_compare.d1}}</td>
-                                    <td>{{ props.item.growth.crypto_compare.d1_pct | percent}}</td>
+                                    <td align="right">{{ props.item.growth.reddit.h6}}</td>
+                                    <td align="right">{{ props.item.growth.reddit.h6_pct | percent}}</td>
+                                    <td align="right">{{ props.item.growth.reddit.d1}}</td>
+                                    <td align="right">{{ props.item.growth.reddit.d1_pct | percent}}</td>
+                                    <td align="right">{{ props.item.growth.reddit.d3}}</td>
+                                    <td align="right">{{ props.item.growth.reddit.d3_pct | percent}}</td>
+                                    <td align="right">{{ props.item.growth.reddit.d5}}</td>
+                                    <td align="right">{{ props.item.growth.reddit.d5_pct | percent}}</td>
+                                    <td align="right">{{ props.item.growth.twitter.d1}}</td>
+                                    <td align="right">{{ props.item.growth.twitter.d1_pct | percent}}</td>
+                                    <td align="right">{{ props.item.growth.crypto_compare.d1}}</td>
+                                    <td align="right">{{ props.item.growth.crypto_compare.d1_pct | percent}}</td>
                                 </template>
                             </v-data-table>
                         </v-card>
