@@ -89,9 +89,16 @@
 
                     </v-tabs-content>
 
-                    <v-tabs-conent id="commentsTab">
-                        comment list
-                    </v-tabs-conent>
+                    <v-tabs-content id="commentsTab">
+                         <template v-for="coin in selected">
+                             <h3>
+                                 {{coin.name}} ({{coin.symbol}})
+                             </h3>
+                             <ul>
+                                <li v-for="c in coin.comments">{{c.text}}, {{c.score}}, {{c.sentiment}}</li>
+                             </ul>
+                         </template>
+                    </v-tabs-content>
                 </v-tabs-items>
             </v-tabs>
         </v-content>

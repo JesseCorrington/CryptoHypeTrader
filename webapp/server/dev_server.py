@@ -174,7 +174,7 @@ def get_reddit_comments():
 def get_recent_comments():
     coin_id = int(flask.request.args.get("coin_id"))
 
-    comments = db.mongo_db.recent_comments.find({"coin_id": coin_id, "platform": "twitter_comments"}).limit(100)
+    comments = db.mongo_db.recent_comments.find({"coin_id": coin_id, "platform": "twitter_comments"}).limit(10)
 
     return json_response(comments)
 

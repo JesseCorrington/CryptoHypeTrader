@@ -119,7 +119,7 @@ class Coin {
         });
 
         $.getJSON('/api/recent_comments?coin_id=' + this.coin_id, data => {
-            this.comments = data;
+            self.comments = data;
         });
 
         this.seriesLoaded = true;
