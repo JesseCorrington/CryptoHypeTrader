@@ -22,6 +22,7 @@ function arrayDiff(a, b) {
     return a.filter(function(i) {return b.indexOf(i) < 0;});
 };
 
+
 class Coin {
     constructor(data) {
         for (var key in data) {
@@ -39,6 +40,14 @@ class Coin {
         }
 
         return "";
+    }
+
+    showLoadedSeries() {
+        for (var name in this.timeSeries) {
+
+            // TODO: only add the ones that are marked visible
+            addSeriesToChart(name, this.timeSeries[name]);
+        }
     }
 
     splitSeries(data, names) {
@@ -180,6 +189,7 @@ var app = new Vue({
         ],
       items: [],
       selected: [],
+      prevSelected: [],
       search: "",
       pagination: {
           sortBy: 'date'
@@ -210,10 +220,22 @@ var app = new Vue({
 
     watch: {
         selected: function() {
-            this.selected.forEach(coin => {
+            var deselected = arrayDiff(this.prevSelected, this.selected);
+            var selected = arrayDiff(this.selected, this.prevSelected);
+            this.prevSelected = this.selected;
+
+            selected.forEach(coin => {
                 if (!coin.onChart && !coin.seriesLoaded) {
                     coin.loadTimeSeries();
                 }
+                else if (!coin.onChart) {
+                    coin.showLoadedSeries();
+                }
+            });
+
+            deselected.forEach(coin => {
+                removeSeriesFromChart(coin.symbol, CHART_FEATURES)
+                coin.onChart = false;
             });
         },
 
@@ -221,8 +243,6 @@ var app = new Vue({
             var deselected = arrayDiff(this.prevSelectedChartFeatures, this.selectedChartFeatures);
             var selected = arrayDiff(this.selectedChartFeatures, this.prevSelectedChartFeatures);
             this.prevSelectedChartFeatures = this.selectedChartFeatures;
-
-            // TODO: need to handle adding and removing selected coins too
 
             this.selected.forEach(coin => {
                 removeSeriesFromChart(coin.symbol, deselected);
