@@ -1,5 +1,23 @@
 "use strict"
 
+const CHART_FEATURES = [
+    "Price",
+    "Reddit Subs Growth",
+    "Reddit Subs Active",
+    "Reddit Avg Sentiment",
+    "Reddit Post Count",
+    "Reddit Strong Pos",
+    "Reddit Strong Neg",
+    "Reddit Avg Score",
+    "Reddit Sum Score",
+    "Twitter Avg Sentiment",
+    "Twitter Post Count",
+    "Twitter Strong Pos",
+    "Twitter Strong Neg",
+    "Twitter Avg Score",
+    "Twitter Sum Score",
+];
+
 class Coin {
     constructor(data) {
         for (var key in data) {
@@ -42,8 +60,7 @@ class Coin {
         var self = this;
 
         $.getJSON('/api/prices?coin_id=' + this.coin_id, function (data) {
-            self.timeSeries.prices = data;
-            addSeriesToChart(self.symbol + " Price", data);
+            self.timeSeries.price = data;
         });
 
         $.getJSON('/api/reddit_stats?coin_id=' + this.coin_id, function (data) {
@@ -62,30 +79,27 @@ class Coin {
 
             for (var name in series) {
                 var s = series[name];
-                //self.timeSeries.twitter_counts = data;
-                addSeriesToChart(self.symbol + " Reddit " + name, s);
+                self.timeSeries["reddit" + name] = s;
             }
         });
 
         $.getJSON('/api/twitter_comments?coin_id=' + this.coin_id, function (data) {
-            var names = ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"];
+            var names = ["avg sentiment", "count", "strong pos", "strong neg", "avg score", "sum score"];
 
             var series = self.splitSeries(data, names);
             for (var name in series) {
                 var s = series[name];
-                //self.timeSeries.twitter_counts = data;
-                addSeriesToChart(self.symbol + " Twitter " + name, s);
+                self.timeSeries["twitter " + name] = s;
             }
         });
 
         $.getJSON('/api/reddit_comments?coin_id=' + this.coin_id, function (data) {
-            var names = ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"];
+            var names = ["avg sentiment", "count", "strong pos", "strong neg", "avg score", "sum score"];
 
             var series = self.splitSeries(data, names);
             for (var name in series) {
                 var s = series[name];
-                //self.timeSeries.twitter_counts = data;
-                addSeriesToChart(self.symbol + " Reddit " + name, s);
+                self.timeSeries["reddit " + name] = s;
             }
         });
 
@@ -160,7 +174,9 @@ var app = new Vue({
       search: "",
       pagination: {
           sortBy: 'date'
-      }
+      },
+      chartFeatures: CHART_FEATURES,
+      selectedChartFeatures: ["Price"]
   },
 
   mounted: function() {
@@ -189,6 +205,16 @@ var app = new Vue({
                     coin.loadTimeSeries();
                 }
             });
+        },
+
+        selectedChartFeatures: function() {
+            this.selectedChartFeatures.forEach(feature => {
+                var coin = this.selected[0];
+                var seriesKey = feature.toLowerCase();
+                var series = coin.timeSeries[seriesKey];
+
+                addSeriesToChart(coin.symbol + feature, series);
+            });
         }
     }
 });
@@ -214,6 +240,10 @@ function normalize(arr) {
 
 var chart = undefined;
 function addSeriesToChart(name, series) {
+    if (chart.get(name)) {
+        // Prevent adding duplicates
+        return;
+    }
 
     // TODO: this is doing normalize in place, so won't allow turning on/off via UI
     normalize(series);
@@ -238,10 +268,6 @@ function buildChart() {
                 enabled: true
             }
         },
-        legend: {
-            enabled: true,
-            layout: 'horizontal'
-        },
 
         rangeSelector: {
             selected: 4
@@ -260,4 +286,3 @@ function buildChart() {
         }
     });
 }
-

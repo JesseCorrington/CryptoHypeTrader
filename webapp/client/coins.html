@@ -68,8 +68,19 @@
                     </v-tabs-content>
                     <v-tabs-content id="detailTab">
                         <template>
-                            <div id="priceChart">
+                            <div id="priceChart"></div>
                         </template>
+
+                        <v-select
+                            label="Select Chart Features"
+                            v-bind:items="chartFeatures"
+                            v-model="selectedChartFeatures"
+                            multiple
+                            chips
+                            hint="Select Chart Features"
+                            persistent-hint
+                          ></v-select>
+
                     </v-tabs-content>
                 </v-tabs-items>
             </v-tabs>
