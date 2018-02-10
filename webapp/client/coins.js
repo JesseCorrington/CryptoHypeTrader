@@ -18,10 +18,11 @@ const CHART_FEATURES = [
     "Twitter Sum Score",
 ];
 
+var visibleSeries = {"price": true};
+
 function arrayDiff(a, b) {
     return a.filter(function(i) {return b.indexOf(i) < 0;});
 };
-
 
 class Coin {
     constructor(data) {
@@ -45,15 +46,13 @@ class Coin {
 
     showLoadedSeries() {
         for (var name in this.timeSeries) {
-
-            // TODO: only add the ones that are marked visible
-            addSeriesToChart(name, this.timeSeries[name]);
+            addSeriesToChart(this.symbol, name, this.timeSeries[name]);
         }
     }
 
     onSeriesLoaded(name, data) {
-        this.timeSeries["name"] = data;
-        addSeriesToChart(this.symbol + " " + name, data);
+        this.timeSeries[name] = data;
+        addSeriesToChart(this.symbol, name, data);
     }
 
     splitSeries(data, names) {
@@ -99,7 +98,7 @@ class Coin {
             var names = ["subs growth", "subs active"];
             var series = self.splitSeries(data, names);
 
-            series["subs growth"] = this.seriesGrowth(series);
+            series["subs growth"] = self.seriesGrowth(series);
 
             for (var name in series) {
                 self.onSeriesLoaded("reddit " + name, series[name]);
@@ -193,7 +192,7 @@ var app = new Vue({
       },
       chartFeatures: CHART_FEATURES,
       selectedChartFeatures: ["Price"],
-      prevSelectedChartFeatures: []
+      prevSelectedChartFeatures: ["Price"]
   },
 
   mounted: function() {
@@ -241,14 +240,18 @@ var app = new Vue({
             var selected = arrayDiff(this.selectedChartFeatures, this.prevSelectedChartFeatures);
             this.prevSelectedChartFeatures = this.selectedChartFeatures;
 
+            visibleSeries = {};
+            this.selectedChartFeatures.forEach(feature => {
+                visibleSeries[feature.toLowerCase()] = true;
+            });
+
             this.selected.forEach(coin => {
                 removeSeriesFromChart(coin.symbol, deselected);
 
                 selected.forEach(feature => {
                     var seriesKey = feature.toLowerCase();
                     var series = coin.timeSeries[seriesKey];
-
-                    addSeriesToChart(coin.symbol + " " + feature, series);
+                    addSeriesToChart(coin.symbol, feature, series);
                 });
             });
         }
@@ -276,7 +279,13 @@ function normalize(arr) {
 
 var chart = undefined;
 
-function addSeriesToChart(name, series) {
+function addSeriesToChart(symbol, name, series) {
+    if (!visibleSeries[name.toLowerCase()]) {
+        return;
+    }
+
+    name = symbol + " " + name;
+
     if (chart.get(name)) {
         // Prevent adding duplicates
         return;
