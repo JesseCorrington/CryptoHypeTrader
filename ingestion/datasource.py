@@ -69,7 +69,7 @@ class DataSource:
         try:
             ret = urllib.request.urlopen(url, timeout=20)
 
-            #TODO How would you feel about adding some rate limit monitoring functionality here?
+            #TODO consider adding some rate limit monitoring functionality here
             # ret.info().get('x-ratelimit-remaining')
 
             return ret.read().decode("utf-8")

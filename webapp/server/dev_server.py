@@ -180,7 +180,7 @@ def get_recent_comments():
 
     return json_response(comments)
 
+
 @app.route('/api/db_stats')
 def get_db_stats():
     return json_response(db.mongo_db.db_stats.find())
-
