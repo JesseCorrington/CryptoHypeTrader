@@ -28,7 +28,8 @@ var app = new Vue({
       selected: [],
       search: "",
       pagination: {
-          sortBy: 'start_time'
+          sortBy: "start_time",
+          descending: true
       },
       taskTypes: [],
       selectedSeries: "ImportPrices"

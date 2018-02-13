@@ -28,6 +28,9 @@ class Coin {
     constructor(data) {
         for (var key in data) {
             this[key] = data[key]
+
+            if (this[key] === null)
+                this[key] = 0
         }
 
         this.timeSeries = {};
@@ -205,14 +208,8 @@ var app = new Vue({
   mounted: function() {
       var self = this
       $.getJSON('/api/coin_summaries', function (json) {
-          json.forEach(function(coin) {
-              for (var key in coin) {
-
-                  // TODO: move this into Coin class
-                  if (coin[key] === null)
-                      coin[key] = 0
-              }
-              coins.push(new Coin(coin))
+          json.forEach(function(coinData) {
+              coins.push(new Coin(coinData))
           });
 
           self.items = coins;

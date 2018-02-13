@@ -10,8 +10,9 @@ from common import database as db
 from webapp.server import config
 
 # This is just a basic dev server for easy internal testing
-# Basic REST API access is provided to the database with Eve,
-# and static files are hosted out of the client directory
+# Basic REST API access is provided, and static files are hosted out of the client directory
+# Not safe for production use
+
 
 cwd = os.path.dirname(os.path.realpath(__file__))
 public_dir = cwd + "/../client"
@@ -105,7 +106,7 @@ def get_coins():
 
 @app.route('/api/coin_summaries')
 def get_coin_summaries():
-    summaries = list(db.mongo_db.coin_summaries.find().limit(20))
+    summaries = list(db.mongo_db.coin_summaries.find())
     return json_response(summaries)
 
 
