@@ -2,6 +2,7 @@
 
 const CHART_FEATURES = [
     "Price",
+    "Reddit Subs",
     "Reddit Subs Growth",
     "Reddit Subs Active",
     "Reddit Avg Sentiment",
@@ -22,7 +23,7 @@ var visibleSeries = {"price": true};
 
 function arrayDiff(a, b) {
     return a.filter(function(i) {return b.indexOf(i) < 0;});
-};
+}
 
 class Coin {
     constructor(data) {
@@ -87,7 +88,7 @@ class Coin {
     seriesGrowth(series) {
         // Convert to 24hr growth
 
-        var subs = series["subs growth"];
+        var subs = series["subs"];
         var growth = [[subs[0][0], 0]]
 
         for (var i = 1; i < subs.length; i++) {
@@ -105,7 +106,7 @@ class Coin {
         });
 
         $.getJSON('/api/reddit_stats?coin_id=' + this.coin_id, function (data) {
-            var names = ["subs growth", "subs active"];
+            var names = ["subs", "subs active"];
             var series = self.splitSeries(data, names);
 
             series["subs growth"] = self.seriesGrowth(series);
