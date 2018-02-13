@@ -50,6 +50,13 @@ class Coin {
         }
     }
 
+    hideLoadedSeries() {
+        for (var name in this.timeSeries) {
+            removeSeriesFromChart(this.symbol, name);
+        }
+        this.onChart = false;
+    }
+
     onSeriesLoaded(name, data) {
         this.timeSeries[name] = data;
         addSeriesToChart(this.symbol, name, data);
@@ -230,8 +237,7 @@ var app = new Vue({
             });
 
             deselected.forEach(coin => {
-                removeSeriesFromChart(coin.symbol, CHART_FEATURES)
-                coin.onChart = false;
+                coin.hideLoadedSeries();
             });
         },
 
@@ -246,7 +252,9 @@ var app = new Vue({
             });
 
             this.selected.forEach(coin => {
-                removeSeriesFromChart(coin.symbol, deselected);
+                deselected.forEach(feature => {
+                    removeSeriesFromChart(coin.symbol, feature);
+                });
 
                 selected.forEach(feature => {
                     var seriesKey = feature.toLowerCase();
@@ -284,8 +292,6 @@ function addSeriesToChart(symbol, name, series) {
         return;
     }
 
-    name = symbol + " " + name;
-
     if (chart.get(name)) {
         // Prevent adding duplicates
         return;
@@ -295,19 +301,17 @@ function addSeriesToChart(symbol, name, series) {
     normalize(series);
 
     chart.addSeries({
-        id: name,
-        name: name,
+        id: symbol.toLowerCase() + " " + name.toLowerCase(),
+        name: symbol + " " + name,
         data: series
     });
 }
 
-function removeSeriesFromChart(symbol, names) {
-    names.forEach(name => {
-        var series = chart.get(symbol + " " + name);
-        if (series) {
-            series.remove();
-        }
-    });
+function removeSeriesFromChart(symbol, name) {
+    var series = chart.get(symbol.toLowerCase() + " " + name.toLowerCase());
+    if (series) {
+        series.remove();
+    }
 }
 
 
