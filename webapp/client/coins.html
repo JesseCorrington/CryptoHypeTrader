@@ -7,7 +7,6 @@
 </head>
 
 <body>
-
 <div id="vueApp">
     <v-app>
         <v-content>
@@ -92,10 +91,7 @@
 
                     <v-tabs-content id="commentsTab">
                          <template v-for="coin in selected">
-                             <h3>
-                                 {{coin.name}} ({{coin.symbol}})
-                             </h3>
-
+                             <h3>{{coin.name}} ({{coin.symbol}})</h3>
                              <table>
                                  <tr>
                                      <th>Text</th>

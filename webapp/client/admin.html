@@ -30,7 +30,7 @@
                                           v-bind:search="search"
                                           v-bind:pagination.sync="pagination"
                                           v-bind:items="items"
-                                          :rows-per-page-items="[20,50,100]"
+                                          :rows-per-page-items="[10,25,50]"
                                           v-model="selected"
                                           class="elevation-1"
                                           item-key="_id"
@@ -56,9 +56,9 @@
                                     <td class="text-xs-right">{{ props.item.db_updates }}</td>
                                 </template>
                             </v-data-table>
-                            <v-select v-bind:items="taskTypes" v-model="selectedSeries" overflow label="Select"></v-select>
-                            <div id="taskChart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-                            <div id="dbStatsChart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                            <div id="taskChart"></div>
+                            <v-select v-bind:items="taskTypes" v-model="selectedSeries" label="Select task"></v-select>
+                            <div id="dbStatsChart"></div>
                         </v-card>
                     </v-tabs-content>
                     <v-tabs-content id="detailTab">

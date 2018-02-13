@@ -52,10 +52,7 @@ var app = new Vue({
           buildTaskChart(self.selectedSeries, tasksByType[self.selectedSeries])
       });
 
-      $.getJSON('/api/db_stats', function (json) {
-          console.log(json);
-          buildDBStatsChart(json);
-      })
+      $.getJSON('/api/db_stats', buildDBStatsChart);
   },
 
     watch: {
@@ -69,30 +66,30 @@ var app = new Vue({
 var charts = {};
 
 function toSeries(objs, key) {
-        var series = [];
-        objs.forEach(function (task) {
-            var val = task[key];
-            if (val.length !== undefined) {
-                val = val.length;
-            }
+    var series = [];
+    objs.forEach(function (task) {
+        var val = task[key];
+        if (val.length !== undefined) {
+            val = val.length;
+        }
 
-            series.push([task.start_time, val]);
-        });
+        series.push([task.start_time, val]);
+    });
 
-        return series;
+    return series;
 }
 
-function buildChart(container, name, data, series) {
-    if (!charts[name]) {
-        charts[name] = Highcharts.chart(container, {
+function buildChart(container, title, subTitle, data, series) {
+    if (!charts[title]) {
+        charts[title] = Highcharts.chart(container, {
             chart: {
                 type: 'line'
             },
             title: {
-                text: 'Errors over time'
+                text: title
             },
             subtitle: {
-                text: 'task ' + name
+                text: subTitle
             },
             xAxis: {
                 type: 'datetime',
@@ -111,22 +108,19 @@ function buildChart(container, name, data, series) {
             }
         });
     }
-
-    // remove all existing series
-    for (var i = 0; i < 6; i++) {
-        var s = charts[name].get(i);
-        if (s) {
-            s.remove();
-        }
+    else {
+        // Just need to update the title
+        charts[title].setTitle({text: title}, {text: subTitle});
     }
 
-    // TODO: turn off charts update before and force render after, for single render
+    // remove all existing series
+    while(charts[title].series.length > 0) {
+        charts[title].series[0].remove(true);
+    }
 
-    var currId = 0;
     for (var dispName in series) {
         var key = series[dispName];
-        charts[name].addSeries({
-            id: currId++,
+        charts[title].addSeries({
             name: dispName,
             data: toSeries(data, key)
         });
@@ -144,16 +138,16 @@ function buildTaskChart(name, data) {
         "DB_Updates": "db_updates"
     };
 
-    buildChart("taskChart", name, data, series);
+    buildChart("taskChart", "Task Runs", name, data, series);
 }
 
 
 function buildDBStatsChart(data) {
-        var series = {
-            "Objects": "objects",
-            "Storage Size": "storageSize",
-            "indexSize": "indexSize"
-        };
+    var series = {
+        "Objects": "objects",
+        "Storage Size": "storageSize",
+        "indexSize": "indexSize"
+    };
 
-    buildChart("dbStatsChart", "Database Stats", data, series);
+    buildChart("dbStatsChart", "Database Storage", "", data, series);
 }
