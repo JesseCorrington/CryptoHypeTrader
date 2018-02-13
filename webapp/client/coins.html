@@ -95,9 +95,20 @@
                              <h3>
                                  {{coin.name}} ({{coin.symbol}})
                              </h3>
-                             <ul>
-                                <li v-for="c in coin.comments">{{c.text}}, {{c.score}}, {{c.sentiment}}</li>
-                             </ul>
+
+                             <table>
+                                 <tr>
+                                     <th>Text</th>
+                                     <th align="right">Score</th>
+                                     <th align="right">Sentiment</th>
+                                 </tr>
+
+                                 <tr v-for="c in coin.comments">
+                                     <td align="left">{{c.text}}</td>
+                                     <td align="right">{{c.score}}</td>
+                                     <td align="right">{{c.sentiment | decimal_2}}</td>
+                                 </tr>
+                             </table>
                          </template>
                     </v-tabs-content>
                 </v-tabs-items>

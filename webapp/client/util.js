@@ -111,6 +111,9 @@ function formatElapsedTime(milliseconds) {
     return days.toFixed(2) + " days";
 }
 
+function round(value, decimals) {
+  return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+}
 
 
 // TODO: need an entry point where we install filters
@@ -144,7 +147,13 @@ Vue.filter('percent', function (value) {
 })
 
 Vue.filter('currency', function (value) {
-    if (value === undefined) return ''
+    if (value === undefined) return '';
     value = value.toString();
-    return numeral(value).format('$0,0.00')
+    return numeral(value).format('$0,0.00');
+})
+
+Vue.filter('decimal_2', function (value) {
+    if (value === undefined) return '';
+    //value = value.toString();
+    return round(value, 2);
 })

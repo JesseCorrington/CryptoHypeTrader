@@ -126,7 +126,7 @@ class Coin {
 
             var series = self.splitSeries(data, names);
             for (var name in series) {
-                self.onSeriesLoaded("twitter", series[name]);
+                self.onSeriesLoaded("twitter " + name, series[name]);
             }
         });
 
