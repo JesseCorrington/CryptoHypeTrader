@@ -180,6 +180,7 @@ var app = new Vue({
           {text: '24hr', value: 'growth.price.d1_pct', align: "right"},
           {text: 'Reddit', value: 'subredditUrl()', align: "left"},
           {text: 'Twitter', value: 'twitterUrl()', align: "left"},
+          {text: "Volume h6", value: "growth.volume.h6", align: "right"},
           {text: "Reddit h6", value: "growth.reddit.h6", align: "right"},
           {text: "Reddit h6_pct", value: "growth.reddit.h6_pct", align: "right"},
           {text: "Reddit d1", value: "growth.reddit.d1", align: "right"},
