@@ -63,6 +63,7 @@ def social_growth():
 
     stats_to_calc = [
         ("price", "prices", "price"),
+        ("volume", "prices", "volume"),
         ("reddit", "reddit_stats", "subscribers"),
         ("twitter", "twitter_comments", "count"),
         ("crypto_compare", "cryptocompare_stats", "total_points")
