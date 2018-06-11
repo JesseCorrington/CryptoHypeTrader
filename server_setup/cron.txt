@@ -6,4 +6,5 @@
 0 */4 * * * /usr/bin/python3 ~/cryptohypetrader/main.py -t twitter >> ~/cryptohypetrader/ingestion_twitter.log
 0 */4 * * * /usr/bin/python3 ~/cryptohypetrader/main.py -t cc_stats >> ~/cryptohypetrader/ingestion_cc_stats.log
 0,30 * * * * /usr/bin/python3 ~/cryptohypetrader/main.py -t analysis ~/cryptohypetrader/ingestion_analysis.log
+40 1,12 * * *  /usr/bin/python3 ~/cryptohypetrader/main.py -t dl_icons >> ~/cryptohypetrader/ingestion_dl_icons.log
 0 0 1 * * rm ~/cryptohypetrader/*.log

@@ -41,6 +41,8 @@ def db_stats():
 def import_stocktwits():
     mgr.run_tasks(tasks.ImportStockTwits('stocktwits'))
 
+def download_icons():
+    mgr.run_tasks(tasks.download_icons_task())
 
 def main():
     from sys import argv
@@ -60,7 +62,8 @@ def main():
         "analysis": analysis_tasks,
         "cc_stats": cc_stats_task,
         "db_stats": db_stats,
-        "stocktwits": import_stocktwits
+        "stocktwits": import_stocktwits,
+        "dl_icons": download_icons
     }
 
     if task_name not in task_map:

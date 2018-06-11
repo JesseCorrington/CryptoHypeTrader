@@ -28,7 +28,8 @@ class CoinList(CryptoCompareDataSource):
             ret.append({
                 "cc_id": coin["Id"],
                 "symbol": coin["Symbol"],
-                "name": coin["CoinName"]
+                "name": coin["CoinName"],
+                "icon": "https://cryptocompare.com" + coin["ImageUrl"] if "ImageUrl" in coin else ""
             })
 
         return ret

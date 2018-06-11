@@ -1,6 +1,9 @@
 import concurrent.futures
 import datetime
 import pymongo
+import urllib.request
+import shutil
+import os
 
 from common import database as db, util
 from ingestion import config, manager as mgr
@@ -58,7 +61,7 @@ class ImportCoinList(mgr.IngestionTask):
 
         return duplicate_symbols
 
-    def __merge_cc_ids(self, coins, cc_coins):
+    def __merge_cc_data(self, coins, cc_coins):
         """Merges the cryptocompare ids into the coin list
         this allows us to pull coin data from both sources
         """
@@ -80,6 +83,7 @@ class ImportCoinList(mgr.IngestionTask):
             cid = full_id(coin)
             if cid in cc_lookup:
                 coin["cc_id"] = cc_lookup[cid]["cc_id"]
+                coin["icon"] = cc_lookup[cid]["icon"]
 
     def _run(self):
         current_coins = self._get_data(cmc.CoinList())
@@ -109,7 +113,7 @@ class ImportCoinList(mgr.IngestionTask):
         # TODO: if cmc removes the coin, note that in our db, and then don't do any
         # more stats collection on the coin, but keep the data to prevent survivorship bias
 
-        self.__merge_cc_ids(current_coins, cc_coins)
+        self.__merge_cc_data(current_coins, cc_coins)
 
         processed = 0
         coin_updates = 0
@@ -137,7 +141,7 @@ class ImportCoinList(mgr.IngestionTask):
                     # The only draw back is that if bad data got corrected to be empty
                     # we would not remove it here, but we can deal with that manually for now
 
-                    updateable = {"cc_id", "subreddit", "twitter", "btctalk_ann"}
+                    updateable = {"cc_id", "subreddit", "twitter", "btctalk_ann", "icon"}
                     updates = {}
                     for field in updateable:
                         current = coin[field] if field in coin else ""
@@ -398,6 +402,30 @@ class ImportCryptoCompareStats(mgr.IngestionTask):
             self._progress(processed, len(coins))
 
 
+class DownloadCoinIcons(mgr.IngestionTask):
+    def _run(self):
+        coins = db.get_coins({"icon": {"$exists": True}})
+        processed = 0
+
+        if not os.path.exists(config.icon_dir):
+            os.makedirs(config.icon_dir)
+
+        for coin in coins:
+            icon_filename = "{}/icon{}.png".format(config.icon_dir, coin["_id"])
+            if "icon" in coin and len(coin["icon"]) > 0 and not os.path.isfile(icon_filename):
+                req = urllib.request.Request(coin["icon"])
+
+                # Need to fake being a browser, or we get a 403
+                req.add_header('user-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36')
+
+                with urllib.request.urlopen(req) as response, open(icon_filename, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+
+            processed += 1
+            self._progress(processed, len(coins))
+
+
+
 class SaveDBStats(mgr.IngestionTask):
     def _run(self):
         stats = db.mongo_db.command("dbstats")
@@ -485,6 +513,7 @@ def twitter_tasks():
 
 
 def analysis_tasks():
-    return [
-        CreateCoinSummaries()
-    ]
+    return [CreateCoinSummaries()]
+
+def download_icons_task():
+    return [DownloadCoinIcons()]
