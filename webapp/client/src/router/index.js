@@ -7,6 +7,7 @@ import Admin from '@/components/Admin'
 Vue.use(Router)
 
 export default new Router({
+  mode: 'history',
   routes: [
     {
       path: '/coin/:id',
