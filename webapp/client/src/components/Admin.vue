@@ -27,7 +27,9 @@
               </td>
 
               <td v-if="props.item.running">
-                  <v-icon>cancel</v-icon>
+                  <v-btn flat icon @click="cancelTask(props.item._id)">
+                      <v-icon>cancel</v-icon>
+                  </v-btn>
               </td>
               <td v-else/>
 
@@ -52,9 +54,9 @@ export default {
     data () {
         return {
             headers: [
-                {text: 'Running', value: 'running', align: 'left'},
-                {text: 'Progress', value: 'running', align: 'left'},
-                {text: 'Cancel', value: 'running', align: 'left'},
+                {text: 'Name', value: 'name', align: 'left'},
+                {text: 'Progress', value: 'percent_done', align: 'left'},
+                {text: 'Cancel', value: '', align: 'left', sortable: false},
                 {text: 'Start Time', value: 'start_time', align: 'left'},
                 {text: 'Elapsed Time', value: 'elapsed_time', align: 'left'},
                 {text: 'Errors', value: 'errors', align: 'left'},
@@ -66,8 +68,8 @@ export default {
             search: '',
             selected: [],
             pagination: {
-                sortBy: 'running',
-                descending: true
+                sortBy: 'percent_done',
+                descending: false
             }
         }
     },
@@ -96,6 +98,11 @@ export default {
                     this.tasks[i].statusIconTooltip = 'success'
                 }
             }
+        },
+
+        cancelTask (id) {
+            // TODO: implement
+            window.alert("Cancel not implemented")
         }
     }
 }
