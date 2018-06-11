@@ -9,15 +9,15 @@ Vue.use(Router)
 export default new Router({
   mode: 'history',
   routes: [
+      {
+          path: '/',
+          name: 'CoinSummaries',
+          component: CoinSummaries
+      },
     {
       path: '/coin/:id',
       name: 'CoinDetail',
       component: CoinDetail
-    },
-    {
-      path: '/coinsummaries',
-      name: 'CoinSummaries',
-      component: CoinSummaries
     },
     {
       path: '/admin',

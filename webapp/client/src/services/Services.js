@@ -31,5 +31,9 @@ export default {
 
   getRecentComments(coinId) {
     return Api().get('recent_comments/' + coinId)
+  },
+
+  getIngestionTasks() {
+      return Api().get('ingestion_tasks')
   }
 }

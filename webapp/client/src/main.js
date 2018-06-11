@@ -24,10 +24,10 @@ Vue.component('coin-summaries-table', CoinSummariesTable)
 
 /* eslint-disable no-new */
 new Vue({
-  el: '#app',
-  router,
-  components: { App },
-  template: '<App/>'
+    el: '#app',
+    router,
+    components: { App },
+    template: '<App/>'
 })
 
 
@@ -50,6 +50,24 @@ Vue.filter('dateTime', function (dt) {
     var sc = dt.getSeconds();
 
     return `${m}/${d}/${y} ${hr}:${mn}:${sc}`;
+});
+
+Vue.filter('timeInterval', function(ms) {
+    const SECOND = 1000;
+    const MINUTE = SECOND * 60;
+    const HOUR = MINUTE * 60;
+    var remainder = ms;
+
+    var h = Math.floor(remainder / HOUR);
+    remainder -= h * HOUR;
+
+    var m = Math.floor(remainder / MINUTE);
+    remainder -= m * MINUTE;
+
+    var s = Math.floor(remainder / SECOND);
+    remainder -= s * SECOND;
+
+    return `${h}:${m}:${s}:${remainder}`;
 });
 
 Vue.filter('capitalize', function (value) {
