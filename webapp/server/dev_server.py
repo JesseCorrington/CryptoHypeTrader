@@ -18,6 +18,10 @@ cwd = os.path.dirname(os.path.realpath(__file__))
 public_dir = cwd + "/../client"
 
 
+# TODO: take out static file hosting, will host on nginx
+# TODO: takeout CORS, and setup nginx properly to redirect
+# https://stackoverflow.com/questions/28925304/javascript-stack-web-server-and-api-server-together-or-separate
+
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, ObjectId):
