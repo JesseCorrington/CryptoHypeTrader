@@ -5,12 +5,12 @@
       <v-text-field append-icon="search" label="Search" single-line hide-details v-model="search"></v-text-field>
     </v-card-title>
 
-    <v-data-table 
+    <v-data-table
       :headers="headers"
       :search="search"
       :pagination.sync="pagination"
       :items="items"
-      :rows-per-page-items="[3,20,50,100]"
+      :rows-per-page-items="[10,20,50,100]"
       v-model="selected"
       class="elevation-1"
       item-key="_id"

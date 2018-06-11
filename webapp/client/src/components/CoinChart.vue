@@ -116,7 +116,7 @@ export default {
       }
 
       // TODO: this is doing normalize in place, so won't allow turning on/off via UI
-      //normalize(series);
+      normalize(series);
 
       this.chart.addSeries({
           id: symbol.toLowerCase() + " " + name.toLowerCase(),
