@@ -74,6 +74,11 @@ cfg = config.prod
 db.init(cfg["database"])
 
 
+# TODO: need fix this for deploy
+from flask_cors import CORS
+CORS(app)
+
+
 @app.route('/<path:path>')
 def static_proxy(path):
     if path.find(".") == -1:
@@ -98,6 +103,14 @@ def get_tasks():
     return json_response(tasks)
 
 
+@app.route('/api/coin/<int:coin_id>')
+def get_coin(coin_id):
+    coin = dict(db.mongo_db.coins.find_one({"_id": coin_id}))
+    if coin is not None:
+        return JSONEncoder().encode(coin)
+    else:
+        return json_response({"error": "no coin withs id: {}".format(coin_id)})
+
 @app.route('/api/coins')
 def get_coins():
     coins = list(db.mongo_db.coins.find())
@@ -110,74 +123,51 @@ def get_coin_summaries():
     return json_response(summaries)
 
 
-@app.route('/api/historical_prices')
-def get_historical_prices():
-    coin_id = int(flask.request.args.get("coin_id"))
-
+@app.route('/api/historical_prices/<int:coin_id>')
+def get_historical_prices(coin_id):
     prices = db.mongo_db.historical_prices.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
-
     series = time_series(prices, ["close", "volume"])
     return json_response(series)
 
 
-@app.route('/api/historical_social_stats')
-def get_historical_social_stats():
-    coin_id = int(flask.request.args.get("coin_id"))
-
+@app.route('/api/historical_social_stats/<int:coin_id>')
+def get_historical_social_stats(coin_id):
     stats = db.mongo_db.historical_social_stats.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
-
     series = time_series(stats, "reddit_subscribers")
     return json_response(series)
 
 
-@app.route('/api/prices')
-def get_prices():
-    coin_id = int(flask.request.args.get("coin_id"))
-
+@app.route('/api/prices/<int:coin_id>')
+def get_prices(coin_id):
     prices = db.mongo_db.prices.find({"coin_id": coin_id})
-
     series = time_series(prices, "price")
     return json_response(series)
 
 
-@app.route('/api/reddit_stats')
-def get_reddit_stats():
-    coin_id = int(flask.request.args.get("coin_id"))
-
+@app.route('/api/reddit_stats/<int:coin_id>')
+def get_reddit_stats(coin_id):
     stats = db.mongo_db.reddit_stats.find({"coin_id": coin_id})
-
     series = time_series(stats, ["subscribers", "active"])
     return json_response(series)
 
 
-@app.route('/api/twitter_comments')
-def get_twitter_comments():
-    coin_id = int(flask.request.args.get("coin_id"))
-
+@app.route('/api/twitter_comments/<int:coin_id>')
+def get_twitter_comments(coin_id):
     stats = db.mongo_db.twitter_comments.find({"coin_id": coin_id})
-
     series = time_series(stats, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
-
     return json_response(series)
 
 
-@app.route('/api/reddit_comments')
-def get_reddit_comments():
-    coin_id = int(flask.request.args.get("coin_id"))
-
+@app.route('/api/reddit_comments/<int:coin_id>')
+def get_reddit_comments(coin_id):
     stats = db.mongo_db.reddit_comments.find({"coin_id": coin_id})
-
     series = time_series(stats, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
-
     return json_response(series)
 
 
-@app.route('/api/recent_comments')
-def get_recent_comments():
-    coin_id = int(flask.request.args.get("coin_id"))
-
+@app.route('/api/recent_comments/<int:coin_id>')
+def get_recent_comments(coin_id):
     comments = db.mongo_db.recent_comments.find({"coin_id": coin_id, "platform": "twitter_comments"}).limit(10)
-
     return json_response(comments)
 
 
