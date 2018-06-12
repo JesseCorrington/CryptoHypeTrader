@@ -18,11 +18,19 @@
 
       <template slot="items" slot-scope="props">
         <td><v-checkbox primary hide-details v-model="props.selected"></v-checkbox></td>
-        <td><router-link v-bind:to="{ name: 'CoinDetail', params: { id: props.item.coin_id } }">{{ props.item.name }}</router-link></td>
-        <td>{{ props.item.symbol }}</td>
-        <td align="right">{{ props.item.price | currency}}</td>
+        <td alight="left">
+            <img align="left" :src="props.item.iconUrl" width="32"/>
+            <router-link :to="{ name: 'CoinDetail', params: { id: props.item.coin_id, coin: props.item } }">{{ props.item.name }} </router-link>
+            ({{ props.item.symbol }})
+        </td>
+
         <td align="right">{{ props.item.market_cap | currency}}</td>
-        <td align="right">{{ props.item.growth.price.d1_pct | percent}}</td>
+        <td align="right">{{ props.item.price | currency}}</td>
+        <td align="right">{{ props.item.volume | currency}}</td>
+
+        <td :class="props.item.growth.price.d1_pct >= 0? 'green--text' : 'red--text'" align="right">{{ props.item.growth.price.d1_pct | percent}}</td>
+        <td :class="props.item.growth.reddit.d1_pct >= 0? 'green--text' : 'red--text'" align="right">{{ props.item.growth.reddit.d1_pct | percent}}</td>
+        <td :class="props.item.growth.twitter.d1_pct >= 0? 'green--text' : 'red--text'" align="right">{{ props.item.growth.twitter.d1_pct | percent}}</td>
       </template>
     </v-data-table>
   </v-card>
@@ -37,10 +45,12 @@ export default {
     return {
       headers: [
           {text: 'Name', value: 'name', align: "left"},
-          {text: 'Symbol', value: 'symbol', align: "left"},
-          {text: 'Price', value: 'price', align: "right"},
           {text: 'Market Cap', value: 'market_cap', align: "right"},
-          {text: '24hr', value: 'growth.price.d1_pct', align: "right"},
+          {text: 'Price', value: 'price', align: "right"},
+          {text: 'Volume', value: 'volume', align: "right"},
+          {text: '24hr price', value: 'growth.price.d1_pct', align: "right"},
+          {text: '24hr reddit', value: 'growth.reddit.d1_pct', align: "right"},
+          {text: '24hr twitter', value: 'growth.twitter.d1_pct', align: "right"},
         ],
       search: "",
       pagination: {

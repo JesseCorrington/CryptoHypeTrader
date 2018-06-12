@@ -9,7 +9,7 @@
       deletable-chips
       autocomplete
     ></v-select>
-
+    <v-checkbox label="Normalize" v-model="normalize"></v-checkbox>
     <div ref="stockChart"></div>
   </div>
 </template>
@@ -21,6 +21,7 @@ import Highcharts from 'highcharts'
 
 const CHART_FEATURES = [
     "Price",
+    "Volume",
     "Reddit Subs",
     "Reddit Subs Growth",
     "Reddit Subs Active",
@@ -45,7 +46,9 @@ function arrayDiff(a, b) {
     return a.filter(function(i) {return b.indexOf(i) < 0;});
 }
 
-function normalize(arr) {
+function normalizeSeries(arr) {
+    var norm = []
+
     // y = (x - min) / (max - min)
     var min = 100000000
     var max = -1000000000
@@ -57,8 +60,10 @@ function normalize(arr) {
 
     for (var i = 0; i < arr.length; i++) {
         var x = arr[i][1]
-        arr[i][1] = (x - min) / (max - min)
+        norm[i] = [arr[i][0], (x - min) / (max - min)]
     }
+
+    return norm;
 }
 
 export default {
@@ -69,7 +74,8 @@ export default {
       prevCoins: [],
       chartFeatures: CHART_FEATURES,
       selectedChartFeatures: ["Price"],
-      prevSelectedChartFeatures: ["Price"]
+      prevSelectedChartFeatures: ["Price"],
+      normalize: false
     }
   },
 
@@ -115,16 +121,18 @@ export default {
           return;
       }
 
-      // TODO: this is doing normalize in place, so won't allow turning on/off via UI
-      normalize(series);
+      var seriesNorm = normalizeSeries(series);
 
       this.chart.addSeries({
           id: symbol.toLowerCase() + " " + name.toLowerCase(),
           name: symbol + " " + name,
-          data: series
+          data: this.normalize? seriesNorm : series,
+          dataOrig: series,
+          dataNorm: seriesNorm
       });
     },
 
+    // TODO: symbol is not a unique id, use coin_id instead
     removeSeriesFromChart(symbol, name) {
         var series = this.chart.get(symbol.toLowerCase() + " " + name.toLowerCase());
         if (series) {
@@ -188,22 +196,14 @@ export default {
               this.addSeriesToChart(coin.symbol, feature, series);
           });
       });
+    },
+      
+    normalize: function() {
+        var dataKey = this.normalize === true? "dataNorm" : "dataOrig";
+        for (var i = 0; i < this.chart.series.length; i++) {
+            this.chart.series[i].setData(this.chart.series[i].options[dataKey], true, undefined, false);
+        }
     }
   }
 }
 </script>
-
-
-<style scoped>
-.stock {
-  width: 70%;
-  margin: 0 auto
-}
-
-#nav ul {
-    float: right;
-    list-style: none;
-    padding: 0;
-    margin:0 [B]61px[/B] 0 0;
-}
-</style>

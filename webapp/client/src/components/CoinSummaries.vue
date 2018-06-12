@@ -20,7 +20,31 @@
         deletable-chips
         autocomplete
         return-object
-      ></v-select>
+      >
+          <template slot="item" slot-scope="data">
+              <v-list-tile-avatar>
+                  <img :src="data.item.iconUrl"/>
+              </v-list-tile-avatar>
+              <v-list-tile-content>
+                  <v-list-tile-title>{{data.item.name}} ({{data.item.symbol}})</v-list-tile-title>
+              </v-list-tile-content>
+          </template>
+
+          <template slot="selection" slot-scope="data">
+              <v-chip
+                  close
+                  @input="data.parent.selectItem(data.item)"
+                  :selected="data.selected"
+                  class="chip--select-multi"
+                  :key="data.item.coin_id"
+              >
+                  <v-avatar>
+                      <img :src="data.item.iconUrl">
+                  </v-avatar>
+                  {{ data.item.name }}
+              </v-chip>
+          </template>
+      </v-select>
 
     <coin-chart :coins="selected"/>
 
