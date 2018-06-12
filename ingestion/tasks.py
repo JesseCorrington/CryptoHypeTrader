@@ -362,7 +362,8 @@ class ImportCommentStats(mgr.IngestionTask):
                     strong_neg = scanner.strong_neg()
 
                     # clear out old saved comments, so we don't run out of disk space
-                    db.mongo_db.recent_comments.remove()
+                    # TODO: only dump comments that are a week old or something
+                    #db.mongo_db.recent_comments.remove()
 
                     for comment in strong_pos + strong_neg:
                         r = {
@@ -514,6 +515,3 @@ def twitter_tasks():
 
 def analysis_tasks():
     return [CreateCoinSummaries()]
-
-def download_icons_task():
-    return [DownloadCoinIcons()]

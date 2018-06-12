@@ -12,7 +12,7 @@ def getopts(argv):
 
 
 def import_coin_list():
-    mgr.run_tasks(tasks.ImportCoinList())
+    mgr.run_tasks([tasks.ImportCoinList(), tasks.DownloadCoinIcons()])
 
 
 def import_historical_data():
