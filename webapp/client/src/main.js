@@ -11,6 +11,8 @@ import Highcharts from 'highcharts'
 import stockInit from 'highcharts/modules/stock'
 import CoinChart from '@/components/CoinChart'
 import CoinSummariesTable from '@/components/CoinSummariesTable'
+import CoinSummaries from '@/components/CoinSummaries'
+import Admin from '@/components/Admin'
 
 Vue.config.productionTip = false
 
@@ -21,6 +23,8 @@ Vue.use(HighchartsVue)
 
 Vue.component('coin-chart', CoinChart)
 Vue.component('coin-summaries-table', CoinSummariesTable)
+Vue.component('coin-summaries', CoinSummaries)
+Vue.component('admin', Admin)
 
 /* eslint-disable no-new */
 new Vue({

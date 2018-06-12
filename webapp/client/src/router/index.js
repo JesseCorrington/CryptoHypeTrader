@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import CoinDetail from '@/components/CoinDetail'
 import CoinSummaries from '@/components/CoinSummaries'
 import Admin from '@/components/Admin'
+import Main from '@/components/Main'
 
 Vue.use(Router)
 
@@ -11,19 +12,14 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'CoinSummaries',
-      component: CoinSummaries
+      name: 'Main',
+      component: Main
     },
     {
       path: '/coin/:id',
       name: 'CoinDetail',
       component: CoinDetail,
       props: true
-    },
-    {
-      path: '/admin',
-      name: 'Admin',
-      component: Admin
     }
   ]
 })

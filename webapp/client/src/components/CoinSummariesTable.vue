@@ -1,10 +1,22 @@
 <template>
-  <v-card flat>
+  <div>
       <v-toolbar>
           <v-text-field append-icon="search" label="Search" single-line hide-details v-model="search"></v-text-field>
           <v-spacer></v-spacer>
+          <v-btn-toggle v-model="selectedCurrency" mandatory>
+              <v-toolbar-items>
+                  <v-btn>USD</v-btn>
+                  <v-btn>BTC</v-btn>
+              </v-toolbar-items>
+          </v-btn-toggle>
+          <v-spacer></v-spacer>
+          <v-btn-toggle v-model="showPercent">
+              <v-toolbar-items>
+                  <v-btn>%</v-btn>
+              </v-toolbar-items>
+          </v-btn-toggle>
           <v-btn-toggle v-model="selectedTimeInterval" mandatory>
-              <v-toolbar-items v-for="interval in timeIntervals">
+              <v-toolbar-items v-for="interval in timeIntervals" :key="interval.key">
                   <v-btn :key="interval.key">{{interval.disp}}</v-btn>
               </v-toolbar-items>
           </v-btn-toggle>
@@ -38,7 +50,7 @@
         <td :class="props.item.growth.twitter[di] >= 0? 'green--text' : 'red--text'" align="right">{{ props.item.growth.twitter[di] | percent}}</td>
       </template>
     </v-data-table>
-  </v-card>
+  </div>
 </template>
 
 
@@ -64,17 +76,41 @@ export default {
       },
       selected: undefined,
       timeIntervals: [
-          {disp: '2h', key: "h2_pct"},
-          {disp: '6h', key: "h6_pct"},
-          {disp: '12h', key: "h12_pct"},
-          {disp: '1d', key: "d1_pct"},
-          {disp: '3d', key: "d3_pct"},
-          {disp: '5d', key: "d5_pct"},
-          {disp: '7d', key: "d7_pct"},
+          {disp: '2h', key: "h2"},
+          {disp: '6h', key: "h6"},
+          {disp: '12h', key: "h12"},
+          {disp: '1d', key: "d1"},
+          {disp: '3d', key: "d3"},
+          {disp: '5d', key: "d5"},
+          {disp: '7d', key: "d7"},
       ],
       selectedTimeInterval: 3,
-      di: "d1_pct"
+      di: "d1_pct",
+      selectedCurrency: "USD",
+      showPercent: 0
     }
+  },
+
+  methods: {
+      updateGrowthCols() {
+          var key = this.di;
+          var disp = this.timeIntervals[this.selectedTimeInterval].disp
+
+          this.headers[4].text = `${disp} Price`
+          this.headers[4].value = `growth.price.${key}`
+
+          this.headers[5].text = `${disp} Reddit`
+          this.headers[5].value = `growth.reddit.${key}`
+
+          this.headers[6].text = `${disp} Twitter`
+          this.headers[6].value = `growth.twitter.${key}`
+      }
+  },
+
+  computed: {
+      growthStyle() {
+          return this.showPercent === 0? "_pct" : ""
+      }
   },
 
   mounted () {
@@ -82,26 +118,30 @@ export default {
   },
 
   watch: {
-    value: function() {
+    value() {
       this.selected = this.value;
     },
 
-    selected: function() {
+    selected() {
       this.$emit('input', this.selected)
     },
 
-    selectedTimeInterval: function(val) {
-        this.di = this.timeIntervals[this.selectedTimeInterval].key;
+    showPercent(val) {
+        console.log(val);
+        console.log(this.showPercent);
+    },
 
-        this.headers[4].text = `${this.di} Price`
-        this.headers[4].value = `growth.price.${this.di}`
+    selectedTimeInterval(val) {
+        this.di = this.timeIntervals[this.selectedTimeInterval].key + this.growthStyle;
+    },
 
-        this.headers[5].text = `${this.di} Reddit`
-        this.headers[5].value = `growth.reddit.${this.di}`
+    growthStyle() {
+        this.di = this.timeIntervals[this.selectedTimeInterval].key + this.growthStyle;
+    },
 
-        this.headers[6].text = `${this.di} Twitter`
-        this.headers[6].value = `growth.twitter.${this.di}`
-    }
+    di() {
+        this.updateGrowthCols();
+    },
   }
 };
 </script>

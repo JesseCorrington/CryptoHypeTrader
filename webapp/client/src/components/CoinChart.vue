@@ -1,5 +1,43 @@
 <template>
   <div>
+      <v-select
+          label="Select Coins"
+          :items="coins"
+          v-model="selectedCoins"
+          item-text="name"
+          item-value="symbol"
+          key="symbol"
+          multiple
+          chips
+          deletable-chips
+          autocomplete
+          return-object
+      >
+          <template slot="item" slot-scope="data">
+              <v-list-tile-avatar>
+                  <img :src="data.item.iconUrl"/>
+              </v-list-tile-avatar>
+              <v-list-tile-content>
+                  <v-list-tile-title>{{data.item.name}} ({{data.item.symbol}})</v-list-tile-title>
+              </v-list-tile-content>
+          </template>
+
+          <template slot="selection" slot-scope="data">
+              <v-chip
+                  close
+                  @input="data.parent.selectItem(data.item)"
+                  :selected="data.selected"
+                  class="chip--select-multi"
+                  :key="data.item.coin_id"
+              >
+                  <v-avatar>
+                      <img :src="data.item.iconUrl">
+                  </v-avatar>
+                  {{ data.item.name }}
+              </v-chip>
+          </template>
+      </v-select>
+
     <v-select
       label="Select Features"
       :items="chartFeatures"
@@ -72,6 +110,7 @@ export default {
   data() {
     return {
       prevCoins: [],
+      selectedCoins: [],
       chartFeatures: CHART_FEATURES,
       selectedChartFeatures: ["Price"],
       prevSelectedChartFeatures: ["Price"],
@@ -142,12 +181,12 @@ export default {
   },
 
   watch: {
-    coins: function() {
+    selectedCoins: function() {
       console.log("selected coins changed");
 
-      var removed = arrayDiff(this.prevCoins, this.coins);
-      var added = arrayDiff(this.coins, this.prevCoins);
-      this.prevCoins = this.coins;
+      var removed = arrayDiff(this.prevCoins, this.selectedCoins);
+      var added = arrayDiff(this.selectedCoins, this.prevCoins);
+      this.prevCoins = this.selectedCoins;
 
       var self = this;
 
@@ -185,7 +224,7 @@ export default {
           visibleSeries[feature.toLowerCase()] = true;
       });
 
-      this.coins.forEach(coin => {
+      this.selectedCoins.forEach(coin => {
           deselected.forEach(feature => {
               this.removeSeriesFromChart(coin.symbol, feature);
           });
