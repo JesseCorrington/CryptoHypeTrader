@@ -10,6 +10,8 @@ export default class Coin {
         }
 
         // TODO: should the serer set this??
+
+        // TODO: don't specify full domain??
         this.iconUrl = `http://cryptohypetrader.com/static/icons/icon${this.coin_id}.png`
         this.subredditUrl = `https://www.reddit.com/r/${this.subreddit}`
         this.twitterUrl = `https://www.twitter.com/${this.subreddit}`
@@ -60,7 +62,7 @@ export default class Coin {
         return growth
     }
 
-    async loadData(onSeriesLoaded) {
+    async loadSeriesData(onSeriesLoaded) {
         // TODO: convert to promise.all, consider rolling into one API endpoint
         const response = await Services.getCoinPrices(this.coin_id);
         onSeriesLoaded("price", response.data)
@@ -87,11 +89,13 @@ export default class Coin {
             onSeriesLoaded("twitter " + name, series[name]);
         }
 
-        const r5 = await Services.getRecentComments(this.coin_id);
-        this.comments = r5.data;
-
         this.seriesLoaded = true;
         this.onChart = true;
+    }
+
+    async loadComments() {
+        const req = await Services.getRecentComments("reddit", this.coin_id);
+        this.comments = req.data;
     }
 
     detailLink() {

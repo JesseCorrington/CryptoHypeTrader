@@ -154,7 +154,7 @@ export default {
       // load data if not cached, and display
       added.forEach(coin => {
         if (!coin.onChart && !coin.seriesLoaded) {
-          coin.loadData(function(name, data) {
+          coin.loadSeriesData(function(name, data) {
             coin.timeSeries[name] = data; // TODO: caching should happen in coin class
             self.addSeriesToChart(coin.symbol, name, data);
           });
@@ -197,7 +197,7 @@ export default {
           });
       });
     },
-      
+
     normalize: function() {
         var dataKey = this.normalize === true? "dataNorm" : "dataOrig";
         for (var i = 0; i < this.chart.series.length; i++) {

@@ -169,9 +169,9 @@ def get_reddit_comments(coin_id):
     return json_response(series)
 
 
-@app.route('/api/recent_comments/<int:coin_id>')
-def get_recent_comments(coin_id):
-    comments = db.mongo_db.recent_comments.find({"coin_id": coin_id, "platform": "twitter_comments"}).limit(10)
+@app.route('/api/recent_comments/<string:platform>/<int:coin_id>')
+def get_recent_comments(platform, coin_id):
+    comments = db.mongo_db.recent_comments.find({"coin_id": coin_id}).limit(10)
     return json_response(comments)
 
 
