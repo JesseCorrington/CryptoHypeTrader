@@ -45,9 +45,15 @@
         <td align="right">{{ props.item.price | currency}}</td>
         <td align="right">{{ props.item.volume | currency}}</td>
 
-        <td :class="props.item.growth.price[di] >= 0? 'green--text' : 'red--text'" align="right">{{ props.item.growth.price[di] | percent}}</td>
-        <td :class="props.item.growth.reddit[di] >= 0? 'green--text' : 'red--text'" align="right">{{ props.item.growth.reddit[di] | percent}}</td>
-        <td :class="props.item.growth.twitter[di] >= 0? 'green--text' : 'red--text'" align="right">{{ props.item.growth.twitter[di] | percent}}</td>
+        <td :class="props.item.growth.price[di] >= 0? 'green--text' : 'red--text'" align="right">
+            {{ showPercent === 0? $options.filters.percent(props.item.growth.price[di]) : $options.filters.decimal_2(props.item.growth.price[di])}}
+        </td>
+        <td :class="props.item.growth.reddit[di] >= 0? 'green--text' : 'red--text'" align="right">
+            {{ showPercent === 0? $options.filters.percent(props.item.growth.reddit[di]) : $options.filters.decimal_2(props.item.growth.reddit[di])}}
+        </td>
+        <td :class="props.item.growth.twitter[di] >= 0? 'green--text' : 'red--text'" align="right">
+            {{ showPercent === 0? $options.filters.percent(props.item.growth.twitter[di]) : $options.filters.decimal_2(props.item.growth.twitter[di])}}
+        </td>
       </template>
     </v-data-table>
   </div>
@@ -60,6 +66,8 @@ export default {
 
   data () {
     return {
+
+      // TODO: consider making headers and di computed properties, and then it will all work like magic
       headers: [
           {text: 'Name', value: 'name', align: "left"},
           {text: 'Market Cap', value: 'market_cap', align: "right"},
