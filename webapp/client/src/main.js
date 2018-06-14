@@ -13,6 +13,7 @@ import CoinChart from '@/components/CoinChart'
 import CoinSummariesTable from '@/components/CoinSummariesTable'
 import CoinSummaries from '@/components/CoinSummaries'
 import Admin from '@/components/Admin'
+import CurrencyField from '@/components/CurrencyField'
 
 Vue.config.productionTip = false
 
@@ -25,6 +26,7 @@ Vue.component('coin-chart', CoinChart)
 Vue.component('coin-summaries-table', CoinSummariesTable)
 Vue.component('coin-summaries', CoinSummaries)
 Vue.component('admin', Admin)
+Vue.component('currency-field', CurrencyField)
 
 /* eslint-disable no-new */
 new Vue({
