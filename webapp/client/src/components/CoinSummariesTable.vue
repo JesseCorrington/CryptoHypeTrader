@@ -144,7 +144,7 @@ export default {
           {disp: '5d', key: "d5"},
           {disp: '7d', key: "d7"},
       ],
-      selectedTimeInterval: 2,
+      selectedTimeInterval: 1,
       di: "d1_pct",
       selectedCurrency: "USD",
       showPercent: 0,

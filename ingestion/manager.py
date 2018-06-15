@@ -1,5 +1,6 @@
 import datetime
 import sys
+import os
 
 from common import database as db
 from ingestion import config
@@ -41,6 +42,9 @@ class IngestionTask:
         self.__db_inserts = 0
         self.__db_updates = 0
         self.__http_requests = 0
+
+        # Track PID for cancellation
+        self.__pid = os.getpid()
 
     def __str__(self):
         return "{} - running={}, errors={}, warnings={}".\
@@ -160,6 +164,9 @@ class IngestionTask:
             "canceled": self.__canceled,
             "last_update": now
         }
+
+        if self.__running:
+            status["pid"] = self.__pid
 
         try:
             if self.__id is None:

@@ -1,5 +1,5 @@
 import json
-import os
+import os, signal
 from datetime import datetime
 
 import flask
@@ -105,6 +105,12 @@ def get_tasks():
     tasks = db.mongo_db.ingestion_tasks.find(query).sort("start_time", pymongo.DESCENDING).limit(100)
 
     return json_response(tasks)
+
+
+@app.route('/api/ingestion_tasks/cancel/<string:id>')
+def cancel_task(id):
+    task = dict(db.mongo_db.ingestion_tasks.find({"id": id}))
+    os.kill(task["pid"], signal.SIGKILL)
 
 
 @app.route('/api/coin/<int:coin_id>')

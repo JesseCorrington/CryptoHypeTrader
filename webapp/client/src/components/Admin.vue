@@ -100,9 +100,9 @@ export default {
             }
         },
 
-        cancelTask (id) {
-            // TODO: implement
-            window.alert("Cancel not implemented")
+        async cancelTask (id) {
+            const response = await Services.cancelIngestionTask(id);
+            this.success = response.data
         }
     }
 }

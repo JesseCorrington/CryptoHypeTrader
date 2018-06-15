@@ -34,6 +34,10 @@ export default {
   },
 
   getIngestionTasks() {
-      return Api().get('ingestion_tasks')
+    return Api().get('ingestion_tasks')
+  },
+
+  cancelIngestionTask(id) {
+    return Api.get('ingestion_tasks/cancel/' + id)
   }
 }
