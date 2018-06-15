@@ -95,6 +95,9 @@
             format () {
                 if (this.numberValue === null) return
                 let v = this.numberValue
+
+
+                // TODO: this seems to be causing some errors to be logged
                 v = v.toLocaleString(this.languageCode)
                 if (v.length !== 1 && v.slice(v.indexOf(this.decimalSeparator) + 1).length === 1) v += '0'
                 this.model = v

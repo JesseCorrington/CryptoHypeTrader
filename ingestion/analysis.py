@@ -2,6 +2,12 @@ import pymongo
 from datetime import datetime, timedelta
 from common import database as db
 
+def dict_access(d, key):
+    current = d
+    for subkey in key.split("."):
+        current = current[subkey]
+
+    return current
 
 def growth(records, field, from_date, to_date):
     records = [x for x in records
@@ -10,8 +16,12 @@ def growth(records, field, from_date, to_date):
     if len(records) < 2:
         return 0, 0
 
-    end = records[0][field]
-    start = records[-1][field]
+    try:
+        end = dict_access(records[0], field)
+        start = dict_access(records[-1], field)
+    except KeyError:
+        return 0, 0
+
     if end is None or start is None:
         return 0, 0
 
@@ -28,7 +38,7 @@ def growth(records, field, from_date, to_date):
 
 def growth_stats(coin, stats, key, end_time):
     time_ranges = {
-        "h6": timedelta(hours=6),
+        "h12": timedelta(hours=12),
         "d1": timedelta(days=1),
         "d3": timedelta(days=3),
         "d5": timedelta(days=5),
@@ -66,7 +76,10 @@ def social_growth():
         ("volume", "prices", "volume"),
         ("reddit", "reddit_stats", "subscribers"),
         ("twitter", "twitter_comments", "count"),
-        ("crypto_compare", "cryptocompare_stats", "total_points")
+        ("cc_points", "cryptocompare_stats", "total_points"),
+        ("code_points", "cryptocompare_stats", "code_repo.points"),
+        ("facebook_points", "cryptocompare_stats", "facebook.points"),
+        ("twitter_followers", "cryptocompare_stats", "twitter.followers")
     ]
 
     for coin in coins:

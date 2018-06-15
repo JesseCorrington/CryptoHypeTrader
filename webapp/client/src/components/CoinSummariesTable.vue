@@ -58,7 +58,7 @@
                             <currency-field v-model="filters.market_cap.min" label="min" prefix="$"></currency-field>
                             <currency-field v-model="filters.market_cap.max" label="max"prefix="$"></currency-field>
                           </v-flex>
-                          
+
                           <v-flex xs4>
                             Volume Range
                             <currency-field v-model="filters.volume.min" label="min" prefix="$"></currency-field>
@@ -138,7 +138,6 @@ export default {
       },
       selected: undefined,
       timeIntervals: [
-          {disp: '6h', key: "h6"},
           {disp: '12h', key: "h12"},
           {disp: '1d', key: "d1"},
           {disp: '3d', key: "d3"},
