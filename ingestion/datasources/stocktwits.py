@@ -19,42 +19,36 @@ class CoinList(ds.DataSource):
         self.initial_failed_matches = []
         self.final_failed_matches = []
         super().__init__(
-            "https://stocktwits.com/cryptocurrency_token_directory",
-            params = {},
-            response_format = 'soup'
+            "https://api.stocktwits.com/api/2/symbols/crypto.json",
+            response_format = 'json'
             )
 
     def parse(self, data):
-    # Scrape the stocktwits cryptocurrency directory for a current list of supported currencies
-
+    # Scrape the stocktwits cryptocurrency directory for a current list
+    # of supported currencies
 
         def scrapeStockTwits(data):
-        # Scrape stocktwits for a list of cryptocurrency names, symbols, and stocktwits ids
-            data = data.find_all('li', class_ = 'clearfix')
+        # Scrape stocktwits for a list of cryptocurrency names, symbols,
+        # and stocktwits ids
 
             coin_meta = []
-            for item in range(len(data)):
-                ind = data[item].a.contents[0].rfind('(')
-                contents = data[item].a.contents[0]
-                coin_meta.append({
-                'coin_id': data[item].get('id'),
-                'name': contents[1:ind],
-                'symbol': contents[ind+1:len(contents)-4]
-                })
+            for stock in data['stocks']:
+                x_removed = stock['symbol'][:-2]
+                coin_meta.append({'coin_id':stock['id'],
+                                  'name':stock['title'].upper(),
+                                  'symbol':x_removed.upper()})
 
-            # Save the coin list, with stocktwits-specific coin ids
             self.stocktwits_coin_meta = coin_meta
-
 
 
         def swap_ids():
         # Swap out the stocktwits coin ids for our own internal id system
 
-
             def full_id(coins):
             # Create new field in dataframes: 'full_id'
                 for i in range(len(coins)):
-                    add = ('{}_{}'.format(coins[i]['symbol'], coins[i]['name']))
+                    add = ('{}_{}'.format(coins[i]['symbol'].upper(),
+                                          coins[i]['name'].upper()))
                     coins[i]['full_id'] = add.strip()
                 return coins
 
@@ -83,7 +77,8 @@ class CoinList(ds.DataSource):
             hype_columns.append('full_id')
 
             # Populate dataframes
-            stocktwits_coins = pd.DataFrame(full_id(self.stocktwits_coin_meta), columns = stocktwits_columns)
+            stocktwits_coins = pd.DataFrame(full_id(self.stocktwits_coin_meta),
+                                            columns = stocktwits_columns)
             hype_coins = pd.DataFrame(full_id(hype_coins), columns = hype_columns)
 
             # Make mask with matching full_ids between stocktwit metadata and internal metadata
@@ -96,20 +91,23 @@ class CoinList(ds.DataSource):
             # Find duplicates in hype_coin symbols
             hype_coin_duplicates = duplicate_symbols(hype_coins)
 
-            # If there are no duplicates of a given symbol in hype_coins, base id match on symbol only
+            # If there are no duplicates of a given symbol in hype_coins,
+            # base id match on symbol only
             for i in range(len(self.initial_failed_matches.symbol)):
                 symbol = self.initial_failed_matches.iloc[i, 2]
-                if (symbol not in hype_coin_duplicates) and (np.isin(symbol.strip(), hype_coins.symbol).any()):
+                if (symbol not in hype_coin_duplicates) \
+                and (np.isin(symbol.strip(), hype_coins.symbol).any()):
                     mask[self.initial_failed_matches.index[i]] = True
 
-            # Apply mask to stocktwits_coins and add swap the stocktwits-specific ids out for our internal id system
+            # Apply mask to stocktwits_coins and add swap the stocktwits-specific ids out
+            # for our internal id system
             self.final_failed_matches = stocktwits_coins[[not i for i in mask]]
             stocktwits_coins = stocktwits_coins[mask]
             for i in stocktwits_coins.index:
-                stocktwits_coins.loc[i, 'coin_id'] = hype_coins[hype_coins.symbol == stocktwits_coins.loc[i, 'symbol']]._id.base[0][0]
+                mask = hype_coins.symbol == stocktwits_coins.loc[i, 'symbol']
+                stocktwits_coins.loc[i, 'coin_id'] = hype_coins[mask]._id.base[0][0]
 
             return stocktwits_coins
-
 
         # Finally, run the helper functions
         scrapeStockTwits(data)

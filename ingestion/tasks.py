@@ -301,20 +301,21 @@ class ImportRedditStats(mgr.IngestionTask):
 class ImportStockTwits(mgr.IngestionTask):
 # Task to import recent StockTwits posts
 
-    def __init__(self, collection):
+    def __init__(self, collection, num_posts = 2):
         super().__init__()
-
         self.__collection = collection
+        self.num_posts = num_posts
 
     def _run(self):
         coins = st.CoinList()
         coins = self._get_data(coins)
 
-        for coin in range(len(coins.iloc[:2,:])): # Remove the '5' to obtain posts for all coins
-            posts = st.recentPosts(coins.loc[coin, 'symbol'] + '.X', coins.loc[coin, 'coin_id'], coins.loc[coin, 'name'])
+        for coin in range(len(coins.iloc[:self.num_posts,:])):
+            posts = st.recentPosts(coins.loc[coin, 'symbol'] + '.X',
+                                   coins.loc[coin, 'coin_id'],
+                                   coins.loc[coin, 'name'])
             posts = self._get_data(posts)
             self._db_insert(self.__collection, posts)
-
 
 
 class ImportCommentStats(mgr.IngestionTask):
