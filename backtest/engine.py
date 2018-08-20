@@ -32,9 +32,7 @@ class Position:
         self.amount = buy_cash / real_coin_price
         self.full_buy_price = self.amount * real_coin_price
 
-        # TODO: need to separate fees out for running total
-        # then add to stats
-        self.fees_paid = 0
+        self.fees_paid = self.amount * self.coin_buy_price * TRADE_FEE
 
     def close(self, coin_price, date):
         if self.closed:
