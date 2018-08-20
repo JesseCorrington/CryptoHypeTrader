@@ -3,18 +3,15 @@ import Services from '@/services/Services'
 export default class Coin {
     constructor(data) {
         for (var key in data) {
-            this[key] = data[key]
+            this[key] = data[key];
 
             if (this[key] === null)
-                this[key] = 0
+                this[key] = 0;
         }
 
-        // TODO: should the serer set this??
-
-        // TODO: don't specify full domain??
-        this.iconUrl = `http://cryptohypetrader.com/static/icons/icon${this.coin_id}.png`
-        this.subredditUrl = `https://www.reddit.com/r/${this.subreddit}`
-        this.twitterUrl = `https://www.twitter.com/${this.subreddit}`
+        this.iconUrl = `http://cryptohypetrader.com/static/icons/icon${this.coin_id}.png`;
+        this.subredditUrl = `https://www.reddit.com/r/${this.subreddit}`;
+        this.twitterUrl = `https://www.twitter.com/${this.subreddit}`;
 
         this.timeSeries = {};
         this.comments = [];

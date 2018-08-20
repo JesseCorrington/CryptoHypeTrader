@@ -15,18 +15,18 @@ import CoinSummaries from '@/components/CoinSummaries'
 import Admin from '@/components/Admin'
 import CurrencyField from '@/components/CurrencyField'
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 
-Vue.use(Vuetify)
+Vue.use(Vuetify);
 
-stockInit(Highcharts)
-Vue.use(HighchartsVue)
+stockInit(Highcharts);
+Vue.use(HighchartsVue);
 
-Vue.component('coin-chart', CoinChart)
-Vue.component('coin-summaries-table', CoinSummariesTable)
-Vue.component('coin-summaries', CoinSummaries)
-Vue.component('admin', Admin)
-Vue.component('currency-field', CurrencyField)
+Vue.component('coin-chart', CoinChart);
+Vue.component('coin-summaries-table', CoinSummariesTable);
+Vue.component('coin-summaries', CoinSummaries);
+Vue.component('admin', Admin);
+Vue.component('currency-field', CurrencyField);
 
 /* eslint-disable no-new */
 new Vue({
@@ -34,15 +34,15 @@ new Vue({
     router,
     components: { App },
     template: '<App/>'
-})
+});
 
 
 function round(value, decimals) {
-  return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+    return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
 }
 
 Vue.filter('dateTime', function (dt) {
-    if (!dt) return ''
+    if (!dt) return '';
 
     if (typeof(dt) !== Date) {
         dt = new Date(dt);

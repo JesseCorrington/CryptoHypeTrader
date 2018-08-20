@@ -1,11 +1,6 @@
 <template>
-    <div>
-    <v-navigation-drawer
-        clipped
-        fixed
-        v-model="drawer"
-        app
-    >
+<div>
+    <v-navigation-drawer clipped fixed v-model="drawer" app>
         <v-list dense>
             <v-list-tile @click="showCoins">
                 <v-list-tile-action>
@@ -69,21 +64,21 @@
         <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
         <v-toolbar-title>Crypto Hype Trader</v-toolbar-title>
     </v-toolbar>
-        <v-content class="ntp">
-            <div v-if="view==='coins'">
-                <coin-summaries :coins="coins"/>
-            </div>
-            <div v-else-if="view==='charts'">
-                <coin-chart :coins="coins"/>
-            </div>
-            <div v-else-if="view==='admin'">
-                <admin/>
-            </div>
-        </v-content>
+    <v-content class="ntp">
+        <div v-if="view==='coins'">
+            <coin-summaries :coins="coins"/>
+        </div>
+        <div v-else-if="view==='charts'">
+            <coin-chart :coins="coins"/>
+        </div>
+        <div v-else-if="view==='admin'">
+            <admin/>
+        </div>
+    </v-content>
     <v-footer app fixed>
         <span>&copy; 2018  | about | contact</span>
     </v-footer>
-    </div>
+</div>
 </template>
 
 
@@ -103,29 +98,27 @@ export default {
     },
 
     mounted () {
-        this.getCoinSummaries()
+        this.getCoinSummaries();
     },
 
     methods: {
         showCoins() {
-            this.view = "coins"
+            this.view = "coins";
         },
 
         showCharts() {
-            this.view = "charts"
+            this.view = "charts";
         },
 
         showAdmin() {
-            this.view = "admin"
+            this.view = "admin";
         },
 
         async getCoinSummaries() {
             const response = await Services.getCoinSummaries();
-
-            // TODO: maybe move this into the service?
-            var cs = []
+            var cs = [];
             response.data.forEach(function(coinData) {
-                cs.push(new Coin(coinData))
+                cs.push(new Coin(coinData));
             });
 
             this.coins = cs;
