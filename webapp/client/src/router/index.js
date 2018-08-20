@@ -13,13 +13,8 @@ export default new Router({
     {
       path: '/',
       name: 'Main',
-      component: Main
-    },
-    {
-      path: '/coin/:id',
-      name: 'CoinDetail',
-      component: CoinDetail,
-      props: true
+      component: Main,
+      meta: {title: 'Crypto Hype Trader'}
     }
   ]
 })

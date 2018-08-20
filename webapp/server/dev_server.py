@@ -97,14 +97,20 @@ def to_bool(s):
 
 @app.route('/api/ingestion_tasks')
 def get_tasks():
-    running = flask.request.args.get("running")
-    query = {}
-    if running:
-        query["running"] = to_bool(running)
+    # get the n most recent of each task type, group by task type, sort by date
 
-    tasks = db.mongo_db.ingestion_tasks.find(query).sort("start_time", pymongo.DESCENDING).limit(100)
+    docs = db.mongo_db.ingestion_tasks.aggregate([
+        {"$sort": {"start_time": pymongo.DESCENDING}},
+        {"$group": {"_id": "$name"}}
+    ])
 
-    return json_response(tasks)
+    resp = {}
+    for doc in list(docs):
+        name = doc["_id"]
+        tasks = db.mongo_db.ingestion_tasks.find({"name": name}).sort("date", pymongo.DESCENDING).limit(3)
+        resp[name] = list(tasks)
+
+    return JSONEncoder().encode(resp)
 
 
 @app.route('/api/ingestion_tasks/cancel/<string:id>')
