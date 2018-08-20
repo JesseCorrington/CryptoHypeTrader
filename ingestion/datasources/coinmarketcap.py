@@ -8,6 +8,8 @@ from ingestion import datasource as ds
 
 
 class CoinList(ds.DataSource):
+    """Used to get a list of all the coins on coinmarketcap"""
+
     def __init__(self):
         # limit defaults to 100, but coinmarketcap doesn't have a max for the limit,
         # so just set it super high to make sure we get all the coins
@@ -39,6 +41,8 @@ class CoinList(ds.DataSource):
 
 
 class Ticker(CoinList):
+    """Used to get current price/marketcap/volume data for all coins"""
+
     def parse(self, all_coins):
         ret = []
         for coin in all_coins:
@@ -65,6 +69,8 @@ class Ticker(CoinList):
 
 
 class CoinLinks(ds.DataSource):
+    """Used to get social media links for a coin (subreddit, twitter, btctalk)"""
+
     def __init__(self, coin):
         url = "https://coinmarketcap.com/currencies/{}".format(coin["cmc_id"])
         super().__init__(url, response_format="text")
@@ -98,6 +104,11 @@ class CoinLinks(ds.DataSource):
 
 
 class HistoricalPrices(ds.DataSource):
+    """Used to get historical price data for a coin
+    This requires scraping the site, because there is no API for this data
+    This is only used for the initial data import, and after that we can just periodically get the ticker
+    """
+
     def __init__(self, coin, start=datetime.datetime(2011, 1, 1), end=datetime.datetime.utcnow()):
         date_format = "%Y%m%d"
         params = {

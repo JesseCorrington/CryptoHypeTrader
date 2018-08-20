@@ -3,13 +3,14 @@ from textblob import TextBlob
 
 
 class Comment:
+    """Represents a social media comment"""
+
     def __init__(self, text, score):
         self.text = text
         self.score = score
 
         clean_text = self.__clean_text(self.text)
         self.sentiment = TextBlob(clean_text).polarity
-
 
     def __str__(self):
         return self.text
@@ -23,6 +24,10 @@ class Comment:
 
 
 class CommentScanner:
+    """Abstract base class for scanning comments on social media sites
+    implement a concrete base class to scan comments on reddit, twitter, etc.
+    """
+
     def __init__(self):
         self.__comments = []
         self.__strong_threshold = .5

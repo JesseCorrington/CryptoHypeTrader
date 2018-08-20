@@ -2,8 +2,12 @@ from urllib.parse import urlparse
 from ingestion import datasource as ds
 from common.util import safe_assign
 
+# Provides access to the cryptocompare.com API to get coin, price, and social data
+
 
 class CryptoCompareDataSource(ds.DataSource):
+    """Abstract data source that handles common error checking and parsing for cryptocompare responses"""
+
     def validate(self, data):
         if "Response" not in data:
             return "invalid response format"
@@ -19,6 +23,8 @@ class CryptoCompareDataSource(ds.DataSource):
 
 
 class CoinList(CryptoCompareDataSource):
+    """Used to get the full list of coins on cryptocompare.com"""
+
     def __init__(self):
         super().__init__("https://min-api.cryptocompare.com/data/all/coinlist")
 
@@ -36,6 +42,8 @@ class CoinList(CryptoCompareDataSource):
 
 
 class CoinLinks(CryptoCompareDataSource):
+    """Used to get the social links for a single coin (reddit, twitter)"""
+
     def __init__(self, cc_id):
         super().__init__("https://www.cryptocompare.com/api/data/socialstats/", {"id": cc_id})
 
@@ -54,6 +62,8 @@ class CoinLinks(CryptoCompareDataSource):
 
 
 class SocialStats(CryptoCompareDataSource):
+    """Used to get the social stats for a single coin (twitter, reddit, facebook, github)"""
+
     def __init__(self, cc_id):
         super().__init__("https://www.cryptocompare.com/api/data/socialstats/", {"id": cc_id})
 

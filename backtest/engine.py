@@ -8,13 +8,11 @@ from plotly.graph_objs import Scatter
 
 from common import database as db, util
 
-# TODO: database/util should be moved to a common/util package
 
 TRADE_FEE = .0025
 TRADE_SLIPPAGE = .02
 
 
-# TODO: do all calcs in BTC too, or ETH
 class Position:
     def __init__(self, coin_id, coin_price, date, buy_cash):
         self.coin_id = coin_id
@@ -72,19 +70,13 @@ class Signal(Enum):
     NONE = 4
 
 
-# TODO: change this so it feeds it data day at a time, to prevent look ahead bias
-# and add helpers like _buy(date, coin_id) _sell..., so the sub class doesn't have to manage data
 class Strategy:
+    # TODO: change this so it feeds it data day at a time, to prevent look ahead bias
     def generate_signals(self, coin_id, dataframe):
         raise NotImplementedError("Must implement generate_signals")
 
     def allocation(self, current_cash):
         raise NotImplementedError("Must implement allocation")
-
-
-def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days)):
-        yield start_date + timedelta(n)
 
 
 class BackTest:
@@ -130,18 +122,13 @@ class BackTest:
         total_value = 0
         for coin_id, pos in self.positions.items():
 
-            # TODO: we shouldn't need to try catch here if we've properly cleaned the data
-            # fix upstream setup errors and remove
             try:
                 current_price = self.data_frames[coin_id].loc[date]["close"]
-            except:
-                print("ERROR: missing days price")
-
-                # TODO: this is an issue somewhere upstream, just use previous days price for now
-                try:
-                    current_price = self.data_frames[coin_id].loc[date - timedelta(days=1)]["close"]
-                except:
-                    current_price = 0
+            except KeyError:
+                # TODO: this is an issue somewhere upstream when importing data
+                # just use previous days price for now
+                current_price = self.data_frames[coin_id].loc[date - timedelta(days=1)]["close"]
+                print("Error: missing data for date", date, "using previous day")
 
             total_value += pos.current_value(current_price)
 
@@ -169,19 +156,14 @@ class BackTest:
             # TODO: we need better handling around missing data, and date ranges the coins existed
             try:
                 days_signal = signals.loc[self.current_day]["signals"]
-            except:
-                continue
-
-            # TODO:
-            try:
                 day = df.loc[self.current_day]
-            except:
+            except KeyError:
+                print("Error: missing data for day", self.current_day)
                 continue
 
             close_price = day["close"]
 
             if days_signal == Signal.BUY:
-                # TODO: this means we can get in a situation where we have a sell without a position below
                 if current_cash > 0:
                     buy_cash = self.strategy.allocation(current_cash)
                     buy_cash = min(buy_cash, current_cash)
@@ -192,12 +174,7 @@ class BackTest:
                     current_cash -= pos.full_buy_price
                 else:
                     print("ERROR: Can't buy, no remaining cash")
-
             elif days_signal == Signal.SELL:
-                # TODO: remove this
-                if coin_id not in self.positions:
-                    continue
-
                 assert(coin_id in self.positions)
 
                 pos = self.positions[coin_id]
@@ -207,9 +184,7 @@ class BackTest:
 
                 current_cash += pos.full_sell_price
 
-        # TODO: if we just sold, then this equity update seems a bit wonky
-
-        #assert(current_cash > 0)
+        assert(current_cash > 0)
 
         self.update_equity(self.current_day, current_cash)
         self.current_day += timedelta(days=1)
@@ -232,10 +207,6 @@ class BackTest:
 
             writer.writerow([])
             writer.writerow(headers)
-
-            for pos in self.positions:
-                # TODO: write list of positions that are still open with current market value
-                pass
 
             for pos in self.closed_positions:
                 coin = self.coins[pos.coin_id]
@@ -289,13 +260,6 @@ class BackTest:
             "worst_trade": df.profit.min(),
         }
 
-        # ratio between hold duration and gain
-        # ratio between signal strength (ie: sub growth) and gain
-        # ratio between market cap and avg gain
-        # max drawdown
-        # max value
-        # min value
-
         return stats
 
 
@@ -307,8 +271,6 @@ def data_for_coin(data, coin):
 
 def load_data():
     coins = db.get_coins({"subreddit": {"$exists": True}})
-
-    # TODO: would be cleaner if the frames were stored in each coin maybe
     data_frames = {}
 
     all_prices = db.mongo_db.historical_prices.find()
@@ -338,8 +300,6 @@ def load_data():
         # TODO: need to restrict time range to when there was actually social data
         # otherwise we can't trade and it's not a fair comp to buy/hold
 
-        print("Creating data for", coin["symbol"])
-
         prev_date = None
         for price in prices:
             if prev_date and price["date"] - prev_date > timedelta(days=1):
@@ -367,12 +327,8 @@ def load_data():
         del df['date']
 
         if len(df) == 0:
-            # TODO: handle this cleaner, this also breaks progress count
             print("ERROR: No data for coin", coin["symbol"])
             continue
-
-        # TODO: add a threshold for amount of missing data,
-        # and reject coins that are missing too much, as the result are invalid
 
         datetime_index = [df.index.min(), df.index.max()]
         s2 = pd.Series(None, datetime_index)
@@ -386,20 +342,12 @@ def load_data():
         df["reddit_subs"].interpolate()
 
         if df.isnull().values.any():
-            print("ERROR: nulls in data")
-            #raise Exception("missing data")
+            raise Exception("Missing data for coin", coin["name"])
 
         data_frames[coin["_id"]] = df
 
         progress += 1
         print("progress: {} / {}".format(progress, len(coins)))
-
-        # TODO: for now test on a small sub set (for quicker iteration)
-        # TODO: this is very bad look ahead bias, because we're trading
-        # the top coins as of today, but when we start the test a year ago they may not even exist
-        # so this is a HUGE filtering out of failed coins
-        if progress >= 200:
-            break
 
     return coins, data_frames
 

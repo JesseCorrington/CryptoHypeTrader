@@ -2,14 +2,22 @@ import pymongo
 from datetime import datetime, timedelta
 from common import database as db
 
+# Calculates statistics on the data over various time ranges
+
+
 def dict_access(d, key):
+    """Access a key in a dict using . notation (key.subkey1.subkey2...subkeyn)"""
+
     current = d
     for subkey in key.split("."):
         current = current[subkey]
 
     return current
 
+
 def growth(records, field, from_date, to_date):
+    """Calculates the growth (absolute and percent) on a field over a time range"""
+
     records = [x for x in records
                if from_date <= x["date"] <= to_date]
 
@@ -27,7 +35,7 @@ def growth(records, field, from_date, to_date):
 
     growth_amount = end - start
 
-    # hack to prevent division by zero
+    # prevent division by zero
     if start == 0:
         start = 1
 
@@ -37,6 +45,8 @@ def growth(records, field, from_date, to_date):
 
 
 def growth_stats(coin, stats, key, end_time):
+    """Calculates growth on a field over the following time ranges"""
+
     time_ranges = {
         "h12": timedelta(hours=12),
         "d1": timedelta(days=1),
@@ -61,6 +71,8 @@ def growth_stats(coin, stats, key, end_time):
 
 
 def social_growth():
+    """Calculates growth of social stats over various time ranges"""
+
     now = datetime.utcnow()
     oldest = now - timedelta(days=8)
 

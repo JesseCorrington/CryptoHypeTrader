@@ -18,7 +18,9 @@ class ValidationError(Exception):
 
 
 class DataSource:
-    """Abstract base class for data sources to derive from"""
+    """Abstract base class for data sources to derive from
+    This does some of the common work of error handling and parsing the data into various formats
+    """
 
     def __init__(self, url, params={}, response_format="json"):
         self.url = url
@@ -69,7 +71,7 @@ class DataSource:
         try:
             ret = urllib.request.urlopen(url, timeout=20)
 
-            #TODO consider adding some rate limit monitoring functionality here
+            # TODO: consider adding some rate limit monitoring functionality here
             # ret.info().get('x-ratelimit-remaining')
 
             return ret.read().decode("utf-8")

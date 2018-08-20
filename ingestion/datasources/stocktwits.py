@@ -1,10 +1,6 @@
 # Basics
 import pandas as pd
 import numpy as np
-import urllib.request as request
-import requests as req
-import json
-from bs4 import BeautifulSoup as bs
 
 # Custom
 from ingestion import datasource as ds

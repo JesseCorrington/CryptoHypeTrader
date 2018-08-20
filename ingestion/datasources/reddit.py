@@ -7,7 +7,7 @@ from ingestion import datasource as ds
 from ingestion import comment
 
 
-# Provides access to reddit subscriber count numbers and average sentiment
+# Provides access to reddit subscriber count numbers and average sentiment via reddit.com API
 
 api = None
 
@@ -25,11 +25,14 @@ def init_api():
 
 
 class CommentScanner(comment.CommentScanner):
+    """Reddit comment scanner
+    Used to scan the latest reddit comments for a subreddit so sentiment/stats can be computed
+    """
+
     def __init__(self, coin, hours):
         super().__init__()
         self.subreddit_name = coin["subreddit"]
         self.hours = hours
-        # TODO: do we want to use hours to filter out old data?
 
     def find_comments(self):
         global api
@@ -75,6 +78,8 @@ class CommentScanner(comment.CommentScanner):
 
 
 def get_current_stats(subreddit_name):
+    """Gets the current subscriber and active users counts for a subreddit"""
+
     subreddit = api.subreddit(subreddit_name)
     stats = {
         "subscribers": subreddit.subscribers,
@@ -85,6 +90,8 @@ def get_current_stats(subreddit_name):
 
 
 def is_valid(subreddit_name):
+    """True if the subreddit exists, false otherwise"""
+
     try:
         get_current_stats(subreddit_name)
     except (prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden, prawcore.exceptions.Redirect):
@@ -94,6 +101,11 @@ def is_valid(subreddit_name):
 
 
 class HistoricalStats(ds.DataSource):
+    """Get historical subscriber counts from cryptocompare.com
+    This data source can be slow and unreliable, but it's only required for our initial data import
+    After that we can just periodically get the numbers from the reddit API
+    """
+
     def __init__(self, coin, start=datetime.datetime(2011, 1, 1)):
         url = "http://redditmetrics.com/r/" + coin["subreddit"]
         super().__init__(url, response_format="text")

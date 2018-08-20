@@ -5,6 +5,9 @@ from ingestion import config
 from ingestion import comment
 
 
+# Provides access to sentiment data for twitter comments via the twitter.com API
+
+
 api = None
 
 

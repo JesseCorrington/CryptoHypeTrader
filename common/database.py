@@ -81,6 +81,7 @@ def next_sequence_id(name):
 def create_date_coin_index(collection):
     mongo_db[collection].create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.ASCENDING)])
 
+
 def create_indexes():
     mongo_db.coins.create_index([("cmc_id", pymongo.ASCENDING)], unique=True)
     mongo_db.ingestion_tasks.create_index([("start_time", pymongo.DESCENDING)])

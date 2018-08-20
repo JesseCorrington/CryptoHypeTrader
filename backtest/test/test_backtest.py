@@ -12,7 +12,6 @@ db_config = {
 
 
 class TestBackTest(TestCase):
-    # TODO: double check all these calcs, and do a negative one too
     def test_position(self):
         today = datetime.utcnow()
 

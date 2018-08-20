@@ -10,6 +10,7 @@ from ingestion import config, manager as mgr
 from ingestion.datasources import reddit, twitter, cryptocompare as cc, coinmarketcap as cmc, stocktwits as st
 from ingestion import analysis
 
+
 def init():
     db.init(config.database)
     db.create_indexes()
@@ -105,13 +106,6 @@ class ImportCoinList(mgr.IngestionTask):
         print("Total current coins (coinmarketcap.com):", len(current_ids))
         print("Locally stored coins:", len(stored_ids))
         print("New coins to process:", len(new_ids))
-
-        # TODO: what happens if a coin market cap id changes
-        # is it possible, how would we even know that, we'd just fail to look it up in our db
-        # and then make a new record for it this might be what the whole [OLD] thing is about
-
-        # TODO: if cmc removes the coin, note that in our db, and then don't do any
-        # more stats collection on the coin, but keep the data to prevent survivorship bias
 
         self.__merge_cc_data(current_coins, cc_coins)
 
@@ -274,8 +268,6 @@ class ImportRedditStats(mgr.IngestionTask):
     def _run(self):
         coins = db.get_coins({"subreddit": {"$exists": True}})
 
-        # TODO: make sure request rate limiting is working correctly
-
         processed = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             future_to_coin = {executor.submit(self._get_data, self.__get_stats, coin["subreddit"]): coin for coin in coins}
@@ -299,9 +291,9 @@ class ImportRedditStats(mgr.IngestionTask):
 
 
 class ImportStockTwits(mgr.IngestionTask):
-# Task to import recent StockTwits posts
+    """Task to import recent StockTwits posts"""
 
-    def __init__(self, collection, num_posts = 2):
+    def __init__(self, collection, num_posts=2):
         super().__init__()
         self.__collection = collection
         self.num_posts = num_posts
@@ -319,6 +311,8 @@ class ImportStockTwits(mgr.IngestionTask):
 
 
 class ImportCommentStats(mgr.IngestionTask):
+    """Task to import social media comment stats"""
+
     def __init__(self, collection, comment_scanner, coin_filter, max_workers=5):
         super().__init__()
         self.__comment_scanner = comment_scanner
@@ -384,9 +378,9 @@ class ImportCommentStats(mgr.IngestionTask):
                 self._progress(processed, len(coins))
 
 
-# TODO: implement and setup to run every few hours
-# see how often the data adjusts and adjust run timing
 class ImportCryptoCompareStats(mgr.IngestionTask):
+    """Task to import stats from cryptocompare"""
+
     def _run(self):
         coins = db.get_coins({"cc_id": {"$exists": True}})
         processed = 0
@@ -405,6 +399,8 @@ class ImportCryptoCompareStats(mgr.IngestionTask):
 
 
 class DownloadCoinIcons(mgr.IngestionTask):
+    """Task to download icon image files for all coins"""
+
     def _run(self):
         coins = db.get_coins({"icon": {"$exists": True}})
         processed = 0
@@ -427,8 +423,9 @@ class DownloadCoinIcons(mgr.IngestionTask):
             self._progress(processed, len(coins))
 
 
-
 class SaveDBStats(mgr.IngestionTask):
+    """Task to save database statistics so we can track over time"""
+
     def _run(self):
         stats = db.mongo_db.command("dbstats")
         stats["date"] = datetime.datetime.utcnow()
@@ -437,6 +434,11 @@ class SaveDBStats(mgr.IngestionTask):
 
 # TODO: add price predictions from ML model
 class CreateCoinSummaries(mgr.IngestionTask):
+    """Task to analyse statistics and create summary reports for each coin
+    This is run periodically, as it's a slow process and we want to do it in
+    the background and cache the results for later use
+    """
+
     def _run(self):
         coins = db.get_coins()
 
@@ -507,7 +509,7 @@ def twitter_tasks():
     # TODO: this has to be run separately because it takes much longer than the other tasks
     # due to the low twitter API rate limit, which on average only allows us to process
     # around 90 coins every 15 minutes, which means this takes 3+ hours
-    # look into distributing this across several server nodes with different API keys
+    # look into distributing this across several server nodes with different twitter API keys
 
     return [
         ImportCommentStats("twitter_comments", twitter.CommentScanner, {"twitter": {"$exists": True}}, 1),

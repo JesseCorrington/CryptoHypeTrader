@@ -8,6 +8,7 @@ from ingestion import datasource as ds
 
 
 class FatalError(Exception):
+    """"An unrecoverable error that requires ingestion to halt"""
     pass
 
 
@@ -103,7 +104,6 @@ class IngestionTask:
             db.insert(collection, items)
             count = len(items) if isinstance(items, list) else 1
             self.__db_inserts += count
-        # TODO: catch correct exception type
         except Exception as err:
             self._error("Database insert failed: " + str(err))
 
@@ -119,7 +119,6 @@ class IngestionTask:
         except Exception as err:
             self._error("Database update failed: " + str(err))
 
-    # TODO: this is kind hacky taking both DataSources and functions
     def _get_data(self, datasource, arg=None):
         """Derived classes call to get data from a DataSource instance
 
@@ -127,9 +126,6 @@ class IngestionTask:
         :return: The data, or none if there was an error
         """
         self.__http_requests += 1
-        # TODO: this can be wrong, in the case where we have a fn data source that makes many requests
-        # ie: reddit requests via praw
-        # ideally we'll ditch praw and make this only take datasources and not fns
 
         data = None
         try:
@@ -251,9 +247,6 @@ def run_tasks(tasks):
         try:
             task.run()
         except (KeyboardInterrupt, SystemExit):
-            # TODO: this cleanup is good, but won't work if we crash or are terminated forcefully
-            # prob can just kill any running tasks on startup, assuming we only use one process
-            # but that won't scale to having multiple nodes doing processing
             task.cancel()
             sys.exit()
 
