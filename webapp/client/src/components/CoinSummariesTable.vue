@@ -130,6 +130,10 @@ export default {
           {text: '24hr price', value: 'growth.price.d1_pct', align: "right"},
           {text: '24hr reddit', value: 'growth.reddit.d1_pct', align: "right"},
           {text: '24hr twitter', value: 'growth.twitter.d1_pct', align: "right"},
+          {text: '24hr code', value: 'growth.code_points.d1_pct', align: "right"},
+          {text: '24hr FB followers', value: 'growth.facebook_points.d1_pct', align: "right"},
+          {text: '24hr twitter subs', value: 'growth.twitter_followers.d1_pct', align: "right"},
+          //{text: '24hr reddit active', value: 'growth.reddit_active.d1_pct', align: "right"},
         ],
       search: "",
       pagination: {
@@ -175,6 +179,12 @@ export default {
 
           this.headers[6].text = `${disp} Twitter`
           this.headers[6].value = `growth.twitter.${key}`
+
+          this.headers[7].text = `${disp} Code Points`
+          this.headers[7].value = `growth.code_points.${key}`
+
+          this.headers[8].text = `${disp} FB Followers`
+          this.headers[8].value = `growth.facebook_points.${key}`
       },
 
       filterCoins(items, searchStr, filter) {
