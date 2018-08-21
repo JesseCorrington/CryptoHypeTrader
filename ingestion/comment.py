@@ -33,37 +33,55 @@ class CommentScanner:
         self.__strong_threshold = .5
 
     def _add_comment(self, text, score):
+        """Derived classes should call this when they find a new comment to add"""
+
         self.__comments.append(Comment(text, score))
 
     def find_comments(self):
-        raise NotImplementedError("CommentDataSource subclass must implement get_comments")
+        raise NotImplementedError("CommentScanner subclass must implement get_comments")
 
     def count(self):
+        """The number of comments scanned"""
+
         return len(self.__comments)
 
     def sum_score(self):
+        """The sum of the scores of all the comments scanned"""
+
         return sum(c.score for c in self.__comments)
 
     def avg_score(self):
+        """The average score of all the comments scanned"""
+
         if len(self.__comments) == 0:
             return 0
 
         return self.sum_score() / len(self.__comments)
 
     def avg_sentiment(self):
+        """The average sentiment of all the comments scanned"""
+
         if len(self.__comments) == 0:
             return 0
 
         return sum(c.sentiment for c in self.__comments) / len(self.__comments)
 
     def count_strong_pos(self):
+        """The count of comments with a strong positive sentiment"""
+
         return sum(1 if c.sentiment > self.__strong_threshold else 0 for c in self.__comments)
 
     def count_strong_neg(self):
+        """The count of comments with a strong negative sentiment"""
+
         return sum(1 if c.sentiment < -self.__strong_threshold else 0 for c in self.__comments)
 
     def strong_pos(self):
+        """The list of comments with a strong positive sentiment"""
+
         return [c for c in self.__comments if c.sentiment > self.__strong_threshold]
 
     def strong_neg(self):
+        """The list of comments with a strong negative sentiment"""
+
         return [c for c in self.__comments if c.sentiment < -self.__strong_threshold]
