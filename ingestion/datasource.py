@@ -35,7 +35,7 @@ class DataSource:
         elif self.format == "json":
             data = json.loads(text)
         elif self.format == "xml":
-            data = minidom.parse(text)
+            data = minidom.parseString(text)
         elif self.format == "soup":
             data = BeautifulSoup(text, "lxml")
         else:
