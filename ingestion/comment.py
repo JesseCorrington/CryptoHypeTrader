@@ -6,16 +6,16 @@ class Comment:
     """Represents a social media comment"""
 
     def __init__(self, text, score):
-        self.text = text
-        self.score = score
-
-        clean_text = self.__clean_text(self.text)
-        self.sentiment = TextBlob(clean_text).polarity
+        self.text = text if isinstance(text, str) else ""
+        self.score = score if isinstance(score, int) else 0
+        self.clean_text = self.__clean_text(self.text)
+        self.sentiment = TextBlob(self.clean_text).polarity
 
     def __str__(self):
         return self.text
 
     def count_refs(self, token):
+        """Count the number of times a search string appears inside a comment"""
         return self.text.count(token)
 
     @staticmethod
