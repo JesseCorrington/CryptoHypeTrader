@@ -6,17 +6,25 @@ from common import database as db
 
 
 def dict_access(d, key):
-    """Access a key in a dict using . notation (key.subkey1.subkey2...subkeyn)"""
+    """Access a key in a dict using . notation (key.subkey1.subkey2...subkeyn)
+    returns None if the key path does not exist in the object"""
 
     current = d
     for subkey in key.split("."):
-        current = current[subkey]
+        try:
+            current = current[subkey]
+        except KeyError:
+            return None
 
     return current
 
 
 def growth(records, field, from_date, to_date):
-    """Calculates the growth (absolute and percent) on a field over a time range"""
+    """Calculates the growth (absolute and percent) on a field over a time range
+    requires that the records are sorted in descending order"""
+
+    if to_date < from_date:
+        raise ValueError("Invaid date range: from_date must be > to_date")
 
     records = [x for x in records
                if from_date <= x["date"] <= to_date]
