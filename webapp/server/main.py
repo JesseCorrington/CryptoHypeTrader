@@ -122,10 +122,17 @@ def get_tasks():
     return JSONEncoder().encode(resp)
 
 
+# TODO: test this with the UI
 @app.route('/api/ingestion_tasks/cancel/<string:id>')
 def cancel_task(id):
     task = dict(db.mongo_db.ingestion_tasks.find({"id": id}))
-    os.kill(task["pid"], signal.SIGKILL)
+    success = False
+
+    if task is not None:
+        os.kill(task["pid"], signal.SIGKILL)
+        success = True
+
+    return json_response({"success": success})
 
 
 @app.route('/api/coin/<int:coin_id>')
@@ -134,7 +141,7 @@ def get_coin(coin_id):
     if coin is not None:
         return JSONEncoder().encode(coin)
     else:
-        return json_response({"error": "no coin withs id: {}".format(coin_id)})
+        return json_response({"error": "No coin with id: {}".format(coin_id)})
 
 
 @app.route('/api/coins')
@@ -152,49 +159,70 @@ def get_coin_summaries():
 @app.route('/api/historical_prices/<int:coin_id>')
 def get_historical_prices(coin_id):
     prices = db.mongo_db.historical_prices.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
-    series = time_series(prices, ["close", "volume"])
-    return json_response(series)
+    if prices is not None:
+        series = time_series(prices, ["close", "volume"])
+        return json_response(series)
+    else:
+        return json_response({"error": "No historical price data for coin id {}".format(coin_id)})
 
 
 @app.route('/api/historical_social_stats/<int:coin_id>')
 def get_historical_social_stats(coin_id):
     stats = db.mongo_db.historical_social_stats.find({"coin_id": coin_id}).sort("date", pymongo.ASCENDING)
-    series = time_series(stats, "reddit_subscribers")
-    return json_response(series)
+    if stats is not None:
+        series = time_series(stats, "reddit_subscribers")
+        return json_response(series)
+    else:
+        return json_response({"error": "No historical social stats for coin id {}".format(coin_id)})
 
 
 @app.route('/api/prices/<int:coin_id>')
 def get_prices(coin_id):
     prices = db.mongo_db.prices.find({"coin_id": coin_id})
-    series = time_series(prices, "price")
-    return json_response(series)
+    if prices is not None:
+        series = time_series(prices, "price")
+        return json_response(series)
+    else:
+        return json_response({"error": "No price data for coin id {}".format(coin_id)})
 
 
 @app.route('/api/reddit_stats/<int:coin_id>')
 def get_reddit_stats(coin_id):
     stats = db.mongo_db.reddit_stats.find({"coin_id": coin_id})
-    series = time_series(stats, ["subscribers", "active"])
-    return json_response(series)
+    if stats is not None:
+        series = time_series(stats, ["subscribers", "active"])
+        return json_response(series)
+    else:
+        return json_response({"error": "No reddit stats for coin id {}".format(coin_id)})
 
 
 @app.route('/api/twitter_comments/<int:coin_id>')
 def get_twitter_comments(coin_id):
-    stats = db.mongo_db.twitter_comments.find({"coin_id": coin_id})
-    series = time_series(stats, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
-    return json_response(series)
+    comments = db.mongo_db.twitter_comments.find({"coin_id": coin_id})
+    if comments is not None:
+        series = time_series(comments, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
+        return json_response(series)
+    else:
+        return json_response({"error": "No twitter comments for coin id".format(coin_id)})
 
 
 @app.route('/api/reddit_comments/<int:coin_id>')
 def get_reddit_comments(coin_id):
-    stats = db.mongo_db.reddit_comments.find({"coin_id": coin_id})
-    series = time_series(stats, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
-    return json_response(series)
+    comments = db.mongo_db.reddit_comments.find({"coin_id": coin_id})
+    if comments is not None:
+        series = time_series(comments, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
+        return json_response(series)
+    else:
+        return json_response({"error": "No reddit comments for coin id".format(coin_id)})
 
 
 @app.route('/api/recent_comments/<string:platform>/<int:coin_id>')
 def get_recent_comments(platform, coin_id):
     comments = db.mongo_db.recent_comments.find({"coin_id": coin_id}).limit(10)
-    return json_response(comments)
+    if comments is not None:
+        return json_response(comments)
+    else:
+        return json_response({"error": "No recent comments on {} for coin id {}".format(platform, coin_id)})
 
 
 @app.route('/api/db_stats')
