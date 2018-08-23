@@ -12,7 +12,6 @@ they can be backtested to check for profitability.
 
 ## Developer Setup
 
-
 ### Dependencies
 * Install [Python](https://www.python.org/downloads/) 3.6 or newer
 * Install [mongoDB community edition](https://www.mongodb.com/download-center?jmp=nav#community)
@@ -25,16 +24,44 @@ cd CryptoHypeTrader
 
 ```
 
+
+### API keys
+You'll need to create several API keys before you can get ingestion running.
+
+#### Reddit API
+Go to https://www.reddit.com/prefs/apps and select "create another app..." to create the keys. 
+
+#### Twitter API
+Go to https://apps.twitter.com/, apply for a developer account, and create a new app.
+
+#### StockTwits API
+Go to https://api.stocktwits.com/developers/apps and register a new application.
+
 ### Configuration
-If you don't already have a reddit api key, you'll need to go to https://www.reddit.com/prefs/apps
-and select "create another app..." to create the keys. Then create a file <repo>/ingestion/config.py with the following info:
+Create a file <repo>/ingestion/config.py with the following info:
 
 ```python
+dev = True
+
+icon_dir = "icons"
+
 reddit = {
-    "client_id": "your_id",
-    "client_secret": "your_secret",
+    "client_id": "reddit-id",
+    "client_secret": "reddit-secret",
     "user_agent": "python-praw"
 }
+
+twitter = {
+    "api_key": "twitter-key",
+    "api_secret": "twitter-secret",
+    "access_token": "twitter-token",
+    "access_token_secret": "twitter-token-secret"
+}
+
+stocktwits = {
+    "token": "stocktwits-token"
+}
+
 
 database = {
     "host": "localhost",
@@ -46,7 +73,7 @@ database = {
 
 ## Usage
 ### Startup the local database
-run `./scripts/rundb.sh`
+run `./scripts/rundb.sh
 
 
 ### Run data ingestion
@@ -58,12 +85,13 @@ run `python ./ingestion/tasks.py`
 
 
 ### Data sources
-* [reddit API](https://www.reddit.com/dev/api/)
-* [redditmetrics](https://www.redditmetrics.com) (web scraping)
-* [coinmarketcap](https://www.coinmarketcap.com) (API and web scraping)
+* [Reddit](https://www.reddit.com/dev/api/)
+* [Twitter](https://developer.twitter.com/en/docs.html)
+* [StockTwits](https://api.stocktwits.com/developers/docs)
+* [Redditmetrics](https://www.redditmetrics.com) (web scraping)
+* [Coinmarketcap](https://www.coinmarketcap.com) (API and web scraping)
 
-#### Future data sources
-* [twitter](https://www.twitter.com)
+#### Potential future data sources
 * [bitcointalk.org](https://www.bitcointalk.org)
 * [4chan/biz](https://www.4chan.org/biz)
 
