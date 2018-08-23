@@ -122,6 +122,15 @@ def get_tasks():
     return JSONEncoder().encode(resp)
 
 
+@app.route('/api/ingestion_tasks/<string:name>')
+def get_tasks_by_name(name):
+    tasks = db.mongo_db.ingestion_tasks.find({"name": name})
+    if tasks is not None:
+        return json_response(tasks)
+    else:
+        return json_response({"error": "No tasks with name {}".format(name)})
+
+
 # TODO: test this with the UI
 @app.route('/api/ingestion_tasks/cancel/<string:id>')
 def cancel_task(id):

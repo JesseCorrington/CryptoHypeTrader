@@ -33,8 +33,12 @@ export default {
         return Api().get('recent_comments/' + platform + '/' + coinId);
     },
 
-    getIngestionTasks() {
-        return Api().get('ingestion_tasks');
+    getIngestionTasks(name) {
+        if (name === undefined)
+            return Api().get('ingestion_tasks');
+        else {
+            return Api().get('ingestion_tasks/' + name);
+        }
     },
 
     cancelIngestionTask(id) {

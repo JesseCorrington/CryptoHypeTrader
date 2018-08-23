@@ -1,41 +1,42 @@
 <template>
 <div>
     Details for task {{taskname}}
+
+    <v-card>
+        <task-table :tasks="tasks"></task-table>
+    </v-card>
+
     <div ref="stockChart"></div>
 </div>
 </template>
 
 <script>
+    import Services from '@/services/Services'
+    import Task from "@/models/Task"
+
     export default {
         name: "TaskDetail",
-
         props: ["taskname"],
+
+        data () {
+            return {
+                tasks: [],
+            }
+        },
+
+        mounted () {
+            this.getTasks();
+        },
 
         methods: {
             async getTasks () {
-                // const response = await Services.getIngestionTasks()
-                // this.tasks = response.data
-                //
-                // // Add computed properties to help build the UI
-                // for (var i = 0; i < this.tasks.length; i++) {
-                //     var endTime = this.tasks[i].running ? new Date().getTime() : this.tasks[i].end_time;
-                //     this.tasks[i].elapsed_time = endTime - this.tasks[i].start_time;
-                //     this.tasks[i].percent_done *= 100;
-                //
-                //     if (this.tasks[i].failed || this.tasks[i].canceled) {
-                //         this.tasks[i].statusIcon = 'error'
-                //         this.tasks[i].statusIconColor = 'red'
-                //         this.tasks[i].statusIconTooltip = this.tasks[i].failed ? 'failed' : 'canceled'
-                //     } else {
-                //         this.tasks[i].statusIcon = 'done'
-                //         this.tasks[i].statusIconTooltip = 'success'
-                //     }
-                // }
-                //
-                // var coinlistTasks = this.tasks.filter(function(task){
-                //     return task.name == "ImportCoinList";
-                // });
-                // this.buildChart("ImportCoinList", coinlistTasks);
+                const response = await Services.getIngestionTasks(this.taskname);
+                this.tasks = response.data
+
+                // Add computed properties to help build the UI
+                for (var i = 0; i < this.tasks.length; i++) {
+                    this.tasks[i] = new Task(this.tasks[i]);
+                }
             },
 
             buildChart(name, tasks) {
