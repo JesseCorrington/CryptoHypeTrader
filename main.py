@@ -38,10 +38,24 @@ def cc_stats_task():
 def db_stats():
     mgr.run_tasks(tasks.SaveDBStats())
 
+
 def import_stocktwits():
     mgr.run_tasks(tasks.ImportStockTwits('stocktwits'))
 
+
 def main():
+    """ Run an ingestion task. Must specify -t <task-name>
+    -t options
+        coin_list - Update the list of cryptocurrencies with metadata and icons
+        historical - Import historical data (price, volume, subreddit subscriber counts)
+        current - Import current data (price, volume, subreddit subscriber count, subreddit subscribers active, recent reddit comments
+        twitter - Import recent twitter comments with sentiment analysis
+        analysis - Create summaries for each coin showing how price, volume, and social stats have grown over time
+        cc_stats - Import the current stats for each coin from cryptocompare
+        db_stats - Save current database size statistics for tracking growth and projecting storage needs
+        stocktwits - Import the current comments with sentiment from StockTwits
+    """
+
     from sys import argv
     opts = getopts(argv)
 

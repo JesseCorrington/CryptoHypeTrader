@@ -16,6 +16,10 @@ app = flask.Flask(__name__)
 
 
 def run(config_name):
+    """Runs the API server with the specified configuration
+    :param config_name: must be either "dev" or "prod"
+    """
+
     cfg = None
     if config_name == "dev":
         cfg = config.dev
@@ -49,6 +53,10 @@ class JSONEncoder(json.JSONEncoder):
 
 
 def json_response(items, key_filter=None, filter_out=False):
+    """Encode the items object into a JSON response
+    key_filter can be used to filter items so the response contains only relevant data
+    """
+
     if not isinstance(items, list):
         items = list(items)
 
@@ -72,6 +80,14 @@ def json_response(items, key_filter=None, filter_out=False):
 
 
 def time_series(items, keys):
+    """Convert an array of objects into a compact time series representation
+    Converts objects of the form
+    [{"date": d1, k1: v1-1, k2: v2-1}, {"date": d2, k1: v1-2, k2-2: v2}, {"date": dn, k1: v1-n, k2: v2-n}]
+
+    To arrays of the form
+    [[d1, v1-1, v2-1], [d2, v1-2, v2-2], ... [dn, v1-n, v2-n]
+    """
+
     if not isinstance(items, list):
         items = list(items)
 
@@ -92,7 +108,6 @@ def time_series(items, keys):
 @app.route('/api/ingestion_tasks')
 def get_tasks():
     # get the n most recent of each task type, group by task type, sort by date
-
     docs = db.mongo_db.ingestion_tasks.aggregate([
         {"$sort": {"start_time": pymongo.DESCENDING}},
         {"$group": {"_id": "$name"}}
