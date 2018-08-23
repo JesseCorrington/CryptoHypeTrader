@@ -1,11 +1,10 @@
 import json
-import os, signal
+import os
+import signal
 from datetime import datetime
-
 import flask
 import pymongo
 from bson import ObjectId
-
 from common import database as db
 from webapp.server import config
 
@@ -13,14 +12,31 @@ from webapp.server import config
 # Basic REST API access is provided, and static files are hosted out of the client directory
 # Not safe for production use
 
-
-cwd = os.path.dirname(os.path.realpath(__file__))
-public_dir = cwd + "/../client"
+app = flask.Flask(__name__)
 
 
-# TODO: take out static file hosting, will host on nginx
-# TODO: takeout CORS, and setup nginx properly to redirect
-# https://stackoverflow.com/questions/28925304/javascript-stack-web-server-and-api-server-together-or-separate
+def run(config_name):
+    cfg = None
+    if config_name == "dev":
+        cfg = config.dev
+    elif config_name == "prod":
+        cfg = config.prod
+    else:
+        print("Error: invalid configuration -", config_name)
+        print("Valid configs: dev, prod")
+        return
+
+    print("Running server with config -", config_name)
+
+    db.init(cfg["database"])
+
+    # TODO: takeout CORS, and setup nginx properly to redirect
+    # https://stackoverflow.com/questions/28925304/javascript-stack-web-server-and-api-server-together-or-separate
+    from flask_cors import CORS
+    CORS(app)
+
+    app.run()
+
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
@@ -71,28 +87,6 @@ def time_series(items, keys):
         series.append(entry)
 
     return series
-
-
-app = flask.Flask(__name__)
-cfg = config.prod
-db.init(cfg["database"])
-
-
-# TODO: need fix this for deploy
-from flask_cors import CORS
-CORS(app)
-
-
-@app.route('/<path:path>')
-def static_proxy(path):
-    if path.find(".") == -1:
-        path = path + ".html"
-
-    return flask.send_from_directory(public_dir, path)
-
-
-def to_bool(s):
-    return s.lower() == "true"
 
 
 @app.route('/api/ingestion_tasks')
