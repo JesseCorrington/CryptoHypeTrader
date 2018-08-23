@@ -136,6 +136,7 @@ def get_coin(coin_id):
     else:
         return json_response({"error": "no coin withs id: {}".format(coin_id)})
 
+
 @app.route('/api/coins')
 def get_coins():
     coins = list(db.mongo_db.coins.find())
