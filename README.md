@@ -62,7 +62,6 @@ stocktwits = {
     "token": "stocktwits-token"
 }
 
-
 database = {
     "host": "localhost",
     "port": 27017,
@@ -72,16 +71,73 @@ database = {
 
 
 ## Usage
-### Startup the local database
-run `./scripts/rundb.sh
 
+### Running ingestion
 
-### Run data ingestion
-run `python ./ingestion/tasks.py`
+start the local mongo db,  run `./scripts/rundb.sh`
+
+`python3 main.py -t <task-name>`
+
+Tasks
+```
+coin_list - Update the list of cryptocurrencies with metadata and icons
+historical - Import historical data (price, volume, subreddit subscriber counts)
+current - Import current data (price, volume, subreddit subscriber count, subreddit subscribers active, recent reddit comments
+
+twitter - Import recent twitter comments with sentiment analysis
+analysis - Create summaries for each coin showing how price, volume, and social stats have grown over time
+cc_stats - Import the current stats for each coin from cryptocompare,
+db_stats - Save current database size statistics for tracking growth and projecting storage needs
+stocktwits - Import the current comments with sentiment from StockTwits
+```
+
+The progress of ingestion tasks can be monitored through a web UI, see the web client docs below for details.
+
+### Running the web client
+Running the web client requires running a local mongodb instance, an API server, and launching the Vue app in development mode.
+
+#### API Server setup
+Create the configuration file `<repo>/webapp/server/config.py` with the following info:
+
+```
+prod = {
+    "database": {
+        "host": "production-host",
+        "port": production-port,
+        "name": "hype-db",
+    }
+}
+
+dev = {
+    "database": {
+            "host": "localhost",
+            "port": 27017,
+            "name": "hype-db",
+        }
+}
+```
+
+Run the server `python3 <repo>/webapp/server/dev_server.py`
+
+Launch the Vue app
+TODO
+
 
 ### Monitor ingestion tasks
 * run `python ./webapp/server/dev_server`
 * Point your browser to [localhost:5000/admin.txt](http://localhost:5000/admin.html)
+
+
+### Unit Testing
+run `<repo>/scripts/run_tests.sh` to run all of the unit tests
+
+
+### Server Setup
+TODO
+
+### Deployment
+TODO
+
 
 
 ### Data sources
@@ -91,7 +147,7 @@ run `python ./ingestion/tasks.py`
 * [Redditmetrics](https://www.redditmetrics.com) (web scraping)
 * [Coinmarketcap](https://www.coinmarketcap.com) (API and web scraping)
 
-#### Potential future data sources
+### Potential future data sources
 * [bitcointalk.org](https://www.bitcointalk.org)
 * [4chan/biz](https://www.4chan.org/biz)
 
