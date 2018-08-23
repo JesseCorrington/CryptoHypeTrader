@@ -1,13 +1,15 @@
 <template>
 <div>
-    <h1>Ingestion Tasks</h1>
-
     <div v-if="!detailsVisible">
+        <h1>Ingestion Tasks</h1>
+
         <v-card>
             <task-table :tasks="tasks" @task-select="showDetails"></task-table>
         </v-card>
     </div>
     <div v-else>
+        <h1>All runs of {{detailsTaskName}}</h1>
+
         <task-detail :taskname="detailsTaskName"></task-detail>
     </div>
 </div>

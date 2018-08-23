@@ -115,7 +115,7 @@ export default {
         },
 
         async getCoinSummaries() {
-            const response = await Services.getCoinSummaries();
+            const response = await Services.getCoinSummaries(1, 10);
             var cs = [];
             response.data.forEach(function(coinData) {
                 cs.push(new Coin(coinData));

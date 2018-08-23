@@ -9,8 +9,13 @@ export default {
   	    return Api().get('coin/' + params.id);
     },
 
-    getCoinSummaries() {
-  	    return Api().get('coin_summaries');
+    getCoinSummaries(start, limit) {
+  	    return Api().get('coin_summaries', {
+  	        "params": {
+  	            "start": start,
+                "limit": limit
+            }
+        });
     },
 
     getCoinPrices(coinId) {

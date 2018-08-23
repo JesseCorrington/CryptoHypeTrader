@@ -1,7 +1,5 @@
 <template>
 <div>
-    Details for task {{taskname}}
-
     <v-card>
         <task-table :tasks="tasks"></task-table>
     </v-card>

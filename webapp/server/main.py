@@ -105,6 +105,14 @@ def time_series(items, keys):
     return series
 
 
+def query_param(name, type, default):
+    val = flask.request.args.get(name)
+    if val is None:
+        return default
+    else:
+        return type(val)
+
+
 @app.route('/api/ingestion_tasks')
 def get_tasks():
     # get the n most recent of each task type, group by task type, sort by date
@@ -161,7 +169,10 @@ def get_coins():
 
 @app.route('/api/coin_summaries')
 def get_coin_summaries():
-    summaries = list(db.mongo_db.coin_summaries.find())
+    start = query_param('start', int, 1)
+    limit = query_param('limit', int, 11)
+
+    summaries = list(db.mongo_db.coin_summaries.find({"coin_id": {"$gte": start, "$lt": start + limit}}))
     return json_response(summaries)
 
 
