@@ -113,11 +113,11 @@ def get_tasks():
         {"$group": {"_id": "$name"}}
     ])
 
-    resp = {}
+    resp = []
     for doc in list(docs):
         name = doc["_id"]
-        tasks = db.mongo_db.ingestion_tasks.find({"name": name}).sort("date", pymongo.DESCENDING).limit(3)
-        resp[name] = list(tasks)
+        tasks = db.mongo_db.ingestion_tasks.find({"name": name}).sort("date", pymongo.DESCENDING).limit(1)
+        resp.append(list(tasks)[0])
 
     return JSONEncoder().encode(resp)
 

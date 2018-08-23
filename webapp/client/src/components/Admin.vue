@@ -1,59 +1,25 @@
 <template>
 <div>
     <h1>Ingestion Tasks</h1>
-    <v-card>
-        <v-data-table
-            :headers="headers"
-            :search="search"
-            :pagination.sync="pagination"
-            :items="tasks"
-            :rows-per-page-items="[10,20,50,100]"
-            v-model="selected"
-            class="elevation-1"
-            item-key="_id"
-            select-all>
 
-            <template slot="items" slot-scope="props">
-                <td><v-checkbox primary hide-details v-model="props.selected"></v-checkbox></td>
-                <td align="left">{{props.item.name}}</td>
-
-                <td v-if="props.item.running">
-                    <v-progress-linear v-model="props.item.percent_done"/>
-                <td v-else>
-                    <v-tooltip top>
-                        <v-icon slot="activator" :color="props.item.statusIconColor">{{props.item.statusIcon}}</v-icon>
-                        <span>{{props.item.statusIconTooltip}}</span>
-                    </v-tooltip>
-                </td>
-
-                <td v-if="props.item.running">
-                    <v-btn flat icon @click="cancelTask(props.item._id)">
-                        <v-icon>cancel</v-icon>
-                    </v-btn>
-                </td>
-                <td v-else/>
-
-                <td align="left">{{props.item.start_time | dateTime}}</td>
-                <td align="left">{{props.item.elapsed_time | timeInterval}}</td>
-                <td align="left">{{props.item.errors.length}}</td>
-                <td align="left">{{props.item.errors_http.length}}</td>
-                <td align="left">{{props.item.db_inserts}}</td>
-                <td align="left">{{props.item.db_updates}}</td>
-            </template>
-        </v-data-table>
-    </v-card>
-
-    <div ref="stockChart"></div>
+    <div v-if="!detailsVisible">
+        <v-card>
+            <task-table :tasks="tasks" @task-select="showDetails"></task-table>
+        </v-card>
+    </div>
+    <div v-else>
+        <task-detail :taskname="detailsTaskName"></task-detail>
+    </div>
 </div>
 </template>
 
 <script>
     import Services from '@/services/Services'
-    import Highcharts from 'highcharts'
+    import TaskDetail from "./TaskDetail";
 
     export default {
         name: 'Admin',
-
+        components: {TaskDetail},
         data () {
             return {
                 headers: [
@@ -68,12 +34,8 @@
                     {text: 'DB Updates', value: 'db_updates', align: 'left'}
                 ],
                 tasks: [],
-                search: '',
-                selected: [],
-                pagination: {
-                    sortBy: 'percent_done',
-                    descending: false
-                }
+                detailsVisible: false,
+                detailsTaskName: undefined,
             }
         },
 
@@ -102,7 +64,6 @@
                     }
                 }
 
-
                 var coinlistTasks = this.tasks.filter(function(task){
                     return task.name == "ImportCoinList";
                 });
@@ -114,60 +75,14 @@
                 this.success = response.data
             },
 
-            buildChart(name, tasks) {
-                function toSeries(key) {
-                    var points = [];
-                    tasks.forEach(function (task) {
-                        var val = task[key];
-                        if (val.constructor == Array) {
-                            val = val.length
-                        }
-                        points.push([task.start_time, val]);
-                    });
+            showDetails(name) {
+                this.detailsVisible = true;
+                this.detailsTaskName = name;
+            },
 
-                    return points;
-                }
-
-                var errors = toSeries("errors");
-                var httpErrors = toSeries("errors_http");
-                var warnings = toSeries("warnings");
-                var dbInserts = toSeries("db_inserts");
-                var dbUpdates = toSeries("db_updates");
-
-                this.chart = Highcharts.stockChart(this.$refs.stockChart, {
-                    title: {
-                        text: 'Errors over time'
-                    },
-                    subtitle: {
-                        text: 'task ' + name
-                    },
-                    xAxis: {
-                        type: 'datetime',
-                        dateTimeLabelFormats: {
-                            month: '%e. %b',
-                            year: '%b'
-                        },
-                        title: {
-                            text: 'Date'
-                        }
-                    },
-                    series: [{
-                        name: "Errors",
-                        data: errors
-                    }, {
-                        name: "HTTP Errors",
-                        data: httpErrors
-                    }, {
-                        name: "Warnings",
-                        data: warnings
-                    }, {
-                        name: "DB Inserts",
-                        data: dbInserts
-                    }, {
-                        name: "DB Updates",
-                        data: dbUpdates
-                    }]
-                });
+            hideDetails(name) {
+                this.detailsVisible = false;
+                this.detailsTaskName = undefined
             }
         }
     }
