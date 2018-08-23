@@ -120,15 +120,14 @@ dev = {
 Run the server `python3 <repo>/web_server.py <dev | prod>`
 
 #### Launch the client web app (Vue app)
-in a separate terminal window
+In a separate terminal window do:
 `cd <repo>/webapp/client`
-`npm install`
-`npm start`
-http://localhost:8080 in a browser
 
-### Monitor ingestion tasks
-* run `python ./webapp/server/dev_server`
-* Point your browser to [localhost:5000/admin.txt](http://localhost:5000/admin.html)
+`npm install`
+
+`npm start`
+
+open http://localhost:8080 in a browser
 
 
 ### Unit Testing
