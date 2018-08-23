@@ -114,18 +114,25 @@ export default {
             this.view = "admin";
         },
 
-        async getCoinSummaries() {
-            const response = await Services.getCoinSummaries(1, 10);
-            var cs = [];
-            response.data.forEach(function(coinData) {
-                cs.push(new Coin(coinData));
-            });
+        addCoinSummaries(coinSummaries) {
+            for (var i = 0; i < coinSummaries.length; i++) {
+                this.coins.push(new Coin(coinSummaries[i]));
+            }
+        },
 
-            this.coins = cs;
+        async getCoinSummaries() {
+            // TODO: this could be optimized by just loading the coin names list initially
+            // which would allow populating search lists, and then on demand we can load
+            // the full coin summaries. For now this is simple and good enough
+
+            const initial = await Services.getCoinSummaries(1, 10);
+            this.addCoinSummaries(initial.data);
+
+            const remainder = await Services.getCoinSummaries(11, 2000);
+            this.addCoinSummaries(remainder.data);
         },
     }
 }
-
 </script>
 
 
