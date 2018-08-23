@@ -15,7 +15,7 @@ they can be backtested to check for profitability.
 ### Dependencies
 * Install [Python](https://www.python.org/downloads/) 3.6 or newer
 * Install [mongoDB community edition](https://www.mongodb.com/download-center?jmp=nav#community)
-
+* Install [NodeJS](https://nodejs.org/en/download/)
 * Clone this repo and install Python requirements
 ```bash
 git clone git@bitbucket.org:jcorrington/cryptohypetrader.git
@@ -72,7 +72,7 @@ database = {
 
 ## Usage
 
-### Running ingestion
+### Running Ingestion
 
 start the local mongo db,  run `./scripts/rundb.sh`
 
@@ -83,10 +83,9 @@ Tasks
 coin_list - Update the list of cryptocurrencies with metadata and icons
 historical - Import historical data (price, volume, subreddit subscriber counts)
 current - Import current data (price, volume, subreddit subscriber count, subreddit subscribers active, recent reddit comments
-
 twitter - Import recent twitter comments with sentiment analysis
 analysis - Create summaries for each coin showing how price, volume, and social stats have grown over time
-cc_stats - Import the current stats for each coin from cryptocompare,
+cc_stats - Import the current stats for each coin from cryptocompare
 db_stats - Save current database size statistics for tracking growth and projecting storage needs
 stocktwits - Import the current comments with sentiment from StockTwits
 ```
@@ -117,11 +116,15 @@ dev = {
 }
 ```
 
-Run the server `python3 <repo>/webapp/server/dev_server.py`
+#### Run the API server
+Run the server `python3 <repo>/web_server.py <dev | prod>`
 
-Launch the Vue app
-TODO
-
+#### Launch the client web app (Vue app)
+in a separate terminal window
+`cd <repo>/webapp/client`
+`npm install`
+`npm start`
+http://localhost:8080 in a browser
 
 ### Monitor ingestion tasks
 * run `python ./webapp/server/dev_server`
