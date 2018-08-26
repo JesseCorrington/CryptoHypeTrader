@@ -1,8 +1,4 @@
-from webapp.server import main
-from sys import argv
+from webapp.server.main import app
 
-config = "dev"
-if len(argv) >= 2:
-    config = argv[1]
-
-main.run(config)
+if __name__ == "__main__":
+    app.run()

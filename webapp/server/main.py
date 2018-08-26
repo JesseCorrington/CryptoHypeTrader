@@ -7,12 +7,19 @@ import pymongo
 from bson import ObjectId
 from common import database as db
 from webapp.server import config
+from flask_cors import CORS
 
 # This is just a basic dev server for easy internal testing
 # Basic REST API access is provided, and static files are hosted out of the client directory
 # Not safe for production use
 
 app = flask.Flask(__name__)
+
+# TODO: takeout CORS, and setup nginx properly to redirect
+# https://stackoverflow.com/questions/28925304/javascript-stack-web-server-and-api-server-together-or-separate
+CORS(app)
+
+db.init(config.prod["database"])
 
 
 def run(config_name):
@@ -33,11 +40,6 @@ def run(config_name):
     print("Running server with config -", config_name)
 
     db.init(cfg["database"])
-
-    # TODO: takeout CORS, and setup nginx properly to redirect
-    # https://stackoverflow.com/questions/28925304/javascript-stack-web-server-and-api-server-together-or-separate
-    from flask_cors import CORS
-    CORS(app)
 
     app.run()
 
