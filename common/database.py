@@ -89,6 +89,8 @@ def create_indexes():
     mongo_db.historical_prices.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
     mongo_db.historical_social_stats.create_index([("coin_id", pymongo.ASCENDING), ("date", pymongo.DESCENDING)], unique=True)
 
+    mongo_db.coin_icons.create_index([("coin_id", pymongo.ASCENDING)], unique=True)
+
     create_date_coin_index("prices")
     create_date_coin_index("reddit_comments")
     create_date_coin_index("reddit_stats")

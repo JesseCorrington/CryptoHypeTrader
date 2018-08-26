@@ -163,6 +163,15 @@ def get_coin(coin_id):
         return json_response({"error": "No coin with id: {}".format(coin_id)})
 
 
+@app.route('/api/coin_icon/<int:coin_id>')
+def get_coin_icon(coin_id):
+    icon = db.mongo_db.coin_icons.find_one({"coin_id": coin_id})
+    if icon is not None:
+        return flask.Response(icon["data"], mimetype='image/png')
+    else:
+        return flask.abort(404)
+
+
 @app.route('/api/coins')
 def get_coins():
     coins = list(db.mongo_db.coins.find())

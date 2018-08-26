@@ -409,15 +409,23 @@ class DownloadCoinIcons(mgr.IngestionTask):
             os.makedirs(config.icon_dir)
 
         for coin in coins:
-            icon_filename = "{}/icon{}.png".format(config.icon_dir, coin["_id"])
-            if "icon" in coin and len(coin["icon"]) > 0 and not os.path.isfile(icon_filename):
+            missing = db.mongo_db.coin_icons.find_one({"coin_id": coin["_id"]}) is None
+
+            if "icon" in coin and len(coin["icon"]) > 0 and missing:
                 req = urllib.request.Request(coin["icon"])
 
                 # Need to fake being a browser, or we get a 403
                 req.add_header('user-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36')
 
-                with urllib.request.urlopen(req) as response, open(icon_filename, 'wb') as out_file:
-                    shutil.copyfileobj(response, out_file)
+                with urllib.request.urlopen(req) as response:
+                    data = response.read()
+
+                    item = {
+                        "coin_id": coin["_id"],
+                        "data": data
+                    }
+
+                    self._db_insert("coin_icons", item)
 
             processed += 1
             self._progress(processed, len(coins))
