@@ -7,7 +7,7 @@ User=root
 Group=root
 WorkingDirectory=/root/cryptohypetrader
 Environment="PATH=/root/cryptohypetrader/cryptohypetraderenv/bin"
-ExecStart=/root/cryptohypetrader/cryptohypetraderenv/bin/gunicorn --log-file /root/gunicornlog --workers 3 --bind 0.0.0.0:5000 -m 777 wsgi:app
+ExecStart=/root/cryptohypetrader/cryptohypetraderenv/bin/gunicorn --log-file /root/gunicornlog --workers 3 --bind 127.0.0.1:5000 -m 777 wsgi:app
 
 [Install]
 WantedBy=multi-user.target

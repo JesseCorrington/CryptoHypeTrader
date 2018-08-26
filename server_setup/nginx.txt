@@ -27,6 +27,6 @@ server {
     # pass the request to the python flask server running on gunicorn
     location /api {
         include proxy_params;
-        proxy_pass unix:/root/cryptohypetrader/cryptohypetrader.sock;
+        proxy_pass http://127.0.0.1:5000/api;
     }
 }
