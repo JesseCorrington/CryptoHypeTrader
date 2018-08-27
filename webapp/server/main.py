@@ -126,7 +126,7 @@ def get_tasks():
     resp = []
     for doc in list(docs):
         name = doc["_id"]
-        tasks = db.mongo_db.ingestion_tasks.find({"name": name}).sort("date", pymongo.DESCENDING).limit(1)
+        tasks = db.mongo_db.ingestion_tasks.find({"name": name}).sort("start_time", pymongo.DESCENDING).limit(1)
         resp.append(list(tasks)[0])
 
     return JSONEncoder().encode(resp)
@@ -134,7 +134,7 @@ def get_tasks():
 
 @app.route('/api/ingestion_tasks/<string:name>')
 def get_tasks_by_name(name):
-    tasks = db.mongo_db.ingestion_tasks.find({"name": name})
+    tasks = db.mongo_db.ingestion_tasks.find({"name": name}).sort("start_time", pymongo.DESCENDING)
     if tasks is not None:
         return json_response(tasks)
     else:

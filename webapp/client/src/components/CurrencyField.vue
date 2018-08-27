@@ -117,11 +117,16 @@ export default {
             if (this.numberValue === null) return
 
             var v = this.numberValue;
-            v = v.toLocaleString(this.languageCode);
-            if (v.length !== 1 && v.slice(v.indexOf(this.decimalSeparator) + 1).length === 1) {
-                v += '0';
+            if (v === undefined) {
+                this.model = "";
             }
-            this.model = v;
+            else {
+                v = v.toLocaleString(this.languageCode);
+                if (v.length !== 1 && v.slice(v.indexOf(this.decimalSeparator) + 1).length === 1) {
+                    v += '0';
+                }
+                this.model = v;
+            }
         }
     },
 

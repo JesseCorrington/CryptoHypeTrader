@@ -90,9 +90,9 @@
                 <p align="left">{{ props.item.name }}</p>
             </td>
 
-            <td align="right">{{ props.item.market_cap | currency}}</td>
-            <td align="right">{{ props.item.price | currency}}</td>
-            <td align="right">{{ props.item.volume | currency}}</td>
+            <td align="right">{{ formatCurrency(props.item.market_cap)}}</td>
+            <td align="right">{{ formatCurrency(props.item.price)}}</td>
+            <td align="right">{{ formatCurrency(props.item.volume)}}</td>
 
             <td :class="props.item.growth.price[di] >= 0? 'green--text' : 'red--text'" align="right">
                 {{ showPercent === 0? $options.filters.percent(props.item.growth.price[di]) : $options.filters.decimal_2(props.item.growth.price[di])}}
@@ -119,6 +119,8 @@
 
 
 <script>
+import numeral from 'numeral'
+
 export default {
     props: ['items', 'value'],
 
@@ -211,6 +213,17 @@ export default {
             });
 
             return filtered;
+        },
+
+        formatCurrency(usdValue) {
+            if (this.selectedCurrency === 0) {
+                if (usdValue === undefined || usdValue === null) return "";
+                return numeral(usdValue).format('$0,0.00');
+            }
+            else {
+                var btc = usdValue / this.items[0].price;
+                return "₿ " + btc.toFixed(6);
+            }
         }
     },
 
