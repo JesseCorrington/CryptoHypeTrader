@@ -1,53 +1,53 @@
 <template>
 <div>
-  <v-select
-      label="Select Coins"
-      :items="coins"
-      v-model="selectedCoins"
-      item-text="name"
-      item-value="symbol"
-      key="symbol"
-      multiple
-      chips
-      deletable-chips
-      autocomplete
-      return-object>
+    <v-select
+        label="Select Coins"
+        :items="coins"
+        v-model="selectedCoins"
+        item-text="name"
+        item-value="symbol"
+        key="symbol"
+        multiple
+        chips
+        deletable-chips
+        autocomplete
+        return-object>
 
-      <template slot="item" slot-scope="data">
-          <v-list-tile-avatar>
-              <img :src="data.item.iconUrl"/>
-          </v-list-tile-avatar>
-          <v-list-tile-content>
-              <v-list-tile-title>{{data.item.name}} ({{data.item.symbol}})</v-list-tile-title>
-          </v-list-tile-content>
-      </template>
+        <template slot="item" slot-scope="data">
+            <v-list-tile-avatar>
+                <img :src="data.item.iconUrl"/>
+            </v-list-tile-avatar>
+            <v-list-tile-content>
+                <v-list-tile-title>{{data.item.name}} ({{data.item.symbol}})</v-list-tile-title>
+            </v-list-tile-content>
+        </template>
 
-      <template slot="selection" slot-scope="data">
-          <v-chip
-              close
-              @input="data.parent.selectItem(data.item)"
-              :selected="data.selected"
-              class="chip--select-multi"
-              :key="data.item.coin_id">
-              <v-avatar>
-                  <img :src="data.item.iconUrl">
-              </v-avatar>
-              {{ data.item.name }}
-          </v-chip>
-      </template>
-  </v-select>
+        <template slot="selection" slot-scope="data">
+            <v-chip
+                close
+                @input="data.parent.selectItem(data.item)"
+                :selected="data.selected"
+                class="chip--select-multi"
+                :key="data.item.coin_id">
+                <v-avatar>
+                    <img :src="data.item.iconUrl">
+                </v-avatar>
+                {{ data.item.name }}
+            </v-chip>
+        </template>
+    </v-select>
 
-<v-select
-    label="Select Features"
-    :items="chartFeatures"
-    v-model="selectedChartFeatures"
-    multiple
-    chips
-    deletable-chips
-    autocomplete
-></v-select>
-<v-checkbox label="Normalize" v-model="normalize"></v-checkbox>
-<div ref="stockChart"></div>
+    <v-select
+        label="Select Features"
+        :items="chartFeatures"
+        v-model="selectedChartFeatures"
+        multiple
+        chips
+        deletable-chips
+        autocomplete
+    ></v-select>
+    <v-checkbox label="Normalize" v-model="normalize"></v-checkbox>
+    <div ref="stockChart"></div>
 </div>
 </template>
 

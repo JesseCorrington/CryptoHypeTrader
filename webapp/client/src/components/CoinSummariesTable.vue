@@ -81,14 +81,11 @@
         :pagination.sync="pagination"
         :items="items"
         :rows-per-page-items="[10,20,50,100]"
-        v-model="selected"
         class="elevation-1"
         item-key="_id"
-        select-all
         :custom-filter="filterCoins">
 
         <template slot="items" slot-scope="props">
-            <td><v-checkbox primary hide-details v-model="props.selected"></v-checkbox></td>
             <td alight="left">
                 <img align="left" :src="props.item.iconUrl" width="32"/>
                 <router-link :to="{ name: 'CoinDetail', params: { id: props.item.coin_id, coin: props.item } }">{{ props.item.name }} </router-link>
@@ -148,7 +145,6 @@ export default {
                 sortBy: 'market_cap',
                 descending: true
             },
-            selected: undefined,
             timeIntervals: [
                 {disp: '12h', key: "h12"},
                 {disp: '1d', key: "d1"},
@@ -226,19 +222,7 @@ export default {
         }
     },
 
-    mounted () {
-        this.selected = this.value;
-    },
-
     watch: {
-        value() {
-            this.selected = this.value;
-        },
-
-        selected() {
-            this.$emit('input', this.selected)
-        },
-
         showPercent(val) {
             console.log(val);
             console.log(this.showPercent);

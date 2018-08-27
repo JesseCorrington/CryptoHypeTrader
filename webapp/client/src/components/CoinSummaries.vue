@@ -1,7 +1,7 @@
 <template>
 <div>
     <div v-if="coins.length > 0">
-        <coin-summaries-table :items="coins" v-model="selected"/>
+        <coin-summaries-table :items="coins"/>
     </div>
     <div v-else>
         Loading coin summaries...
@@ -12,18 +12,6 @@
 
 <script>
 export default {
-    data () {
-        return {
-            selected: []
-        }
-    },
-
     props: ['coins'],
-
-    methods: {
-        onSelection(newSelected) {
-            this.selected = newSelected;
-        }
-    }
 }
 </script>
