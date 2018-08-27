@@ -405,9 +405,6 @@ class DownloadCoinIcons(mgr.IngestionTask):
         coins = db.get_coins({"icon": {"$exists": True}})
         processed = 0
 
-        if not os.path.exists(config.icon_dir):
-            os.makedirs(config.icon_dir)
-
         for coin in coins:
             missing = db.mongo_db.coin_icons.find_one({"coin_id": coin["_id"]}) is None
 
