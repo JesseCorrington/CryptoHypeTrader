@@ -9,7 +9,7 @@ export default class Coin {
                 this[key] = 0;
         }
 
-        this.iconUrl = `http://cryptohypetrader.com/static/icons/icon${this.coin_id}.png`;
+        this.iconUrl = `http://cryptohypetrader.com/api/coin_icon/` + this.coin_id;
         this.subredditUrl = `https://www.reddit.com/r/${this.subreddit}`;
         this.twitterUrl = `https://www.twitter.com/${this.subreddit}`;
 
