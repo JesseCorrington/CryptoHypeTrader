@@ -95,22 +95,22 @@
             <td align="right">{{ formatCurrency(props.item.volume)}}</td>
 
             <td :class="props.item.growth.price[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{ showPercent === 0? $options.filters.percent(props.item.growth.price[di]) : $options.filters.decimal_2(props.item.growth.price[di])}}
+                {{formatGrowth(props.item.growth.price[di])}}
             </td>
             <td :class="props.item.growth.reddit[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{ showPercent === 0? $options.filters.percent(props.item.growth.reddit[di]) : $options.filters.decimal_2(props.item.growth.reddit[di])}}
+                {{formatGrowth(props.item.growth.reddit[di])}}
             </td>
             <td :class="props.item.growth.twitter[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{ showPercent === 0? $options.filters.percent(props.item.growth.twitter[di]) : $options.filters.decimal_2(props.item.growth.twitter[di])}}
+                {{formatGrowth(props.item.growth.twitter[di])}}
             </td>
             <td :class="props.item.growth.code_points[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{ showPercent === 0? $options.filters.percent(props.item.growth.code_points[di]) : $options.filters.decimal_2(props.item.growth.code_points[di])}}
+                {{formatGrowth(props.item.growth.code_points[di])}}
             </td>
             <td :class="props.item.growth.facebook_points[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{ showPercent === 0? $options.filters.percent(props.item.growth.facebook_points[di]) : $options.filters.decimal_2(props.item.growth.facebook_points[di])}}
+                {{formatGrowth(props.item.growth.facebook_points[di])}}
             </td>
             <td :class="props.item.growth.twitter_followers[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{ showPercent === 0? $options.filters.percent(props.item.growth.twitter_followers[di]) : $options.filters.decimal_2(props.item.growth.twitter_followers[di])}}
+                {{formatGrowth(props.item.growth.twitter_followers[di])}}
             </td>
         </template>
     </v-data-table>
@@ -224,6 +224,18 @@ export default {
                 var btc = usdValue / this.items[0].price;
                 return "₿ " + btc.toFixed(6);
             }
+        },
+
+        formatGrowth(val) {
+            if (val === undefined) {
+                val = 0;
+            }
+
+            if (this.showPercent === 0) {
+                return numeral(val).format('0.00%')
+            }
+
+            return val.toFixed(2);
         }
     },
 
@@ -234,11 +246,6 @@ export default {
     },
 
     watch: {
-        showPercent(val) {
-            console.log(val);
-            console.log(this.showPercent);
-        },
-
         selectedTimeInterval(val) {
             this.di = this.timeIntervals[this.selectedTimeInterval].key + this.growthStyle;
         },
