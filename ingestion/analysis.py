@@ -96,7 +96,6 @@ def social_growth():
         ("volume", "prices", "volume"),
         ("reddit", "reddit_stats", "subscribers"),
         ("twitter", "twitter_comments", "count"),
-        ("cc_points", "cryptocompare_stats", "total_points"),
         ("code_points", "cryptocompare_stats", "code_repo.points"),
         ("facebook_points", "cryptocompare_stats", "facebook.points"),
         ("twitter_followers", "cryptocompare_stats", "twitter.followers")

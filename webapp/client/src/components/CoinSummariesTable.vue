@@ -108,6 +108,15 @@
             <td :class="props.item.growth.twitter[di] >= 0? 'green--text' : 'red--text'" align="right">
                 {{ showPercent === 0? $options.filters.percent(props.item.growth.twitter[di]) : $options.filters.decimal_2(props.item.growth.twitter[di])}}
             </td>
+            <td :class="props.item.growth.code_points[di] >= 0? 'green--text' : 'red--text'" align="right">
+                {{ showPercent === 0? $options.filters.percent(props.item.growth.code_points[di]) : $options.filters.decimal_2(props.item.growth.code_points[di])}}
+            </td>
+            <td :class="props.item.growth.facebook_points[di] >= 0? 'green--text' : 'red--text'" align="right">
+                {{ showPercent === 0? $options.filters.percent(props.item.growth.facebook_points[di]) : $options.filters.decimal_2(props.item.growth.facebook_points[di])}}
+            </td>
+            <td :class="props.item.growth.twitter_followers[di] >= 0? 'green--text' : 'red--text'" align="right">
+                {{ showPercent === 0? $options.filters.percent(props.item.growth.twitter_followers[di]) : $options.filters.decimal_2(props.item.growth.twitter_followers[di])}}
+            </td>
         </template>
     </v-data-table>
 </div>
@@ -132,8 +141,7 @@ export default {
                 {text: '24hr twitter', value: 'growth.twitter.d1_pct', align: "right"},
                 {text: '24hr code', value: 'growth.code_points.d1_pct', align: "right"},
                 {text: '24hr FB followers', value: 'growth.facebook_points.d1_pct', align: "right"},
-                {text: '24hr twitter subs', value: 'growth.twitter_followers.d1_pct', align: "right"},
-                //{text: '24hr reddit active', value: 'growth.reddit_active.d1_pct', align: "right"},
+                {text: '24hr twitter subs', value: 'growth.twitter_followers.d1_pct', align: "right"}
             ],
             search: "",
             pagination: {
