@@ -23,7 +23,7 @@
     </v-content>
 
     <v-footer app fixed>
-        <span>&copy; 2018  | about | contact</span>
+        <span>&copy; 2018 | <a target=”_blank” href="https://github.com/JesseCorrington/CryptoHypeTrader">GitHub Source</a></span>
     </v-footer>
 </div>
 </template>

@@ -86,10 +86,8 @@
         :custom-filter="filterCoins">
 
         <template slot="items" slot-scope="props">
-            <td alight="left">
-                <img align="left" :src="props.item.iconUrl" width="32"/>
-                <router-link :to="{ name: 'CoinDetail', params: { id: props.item.coin_id, coin: props.item } }">{{ props.item.name }} </router-link>
-                ({{ props.item.symbol }})
+            <td margin-left="50" alight="right" :background="props.item.iconUrl" style="background-size: 32px; background-position: left center; padding-left: 50px;">
+                <p align="left">{{ props.item.name }}</p>
             </td>
 
             <td align="right">{{ props.item.market_cap | currency}}</td>
