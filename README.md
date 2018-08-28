@@ -146,6 +146,8 @@ The second droplet (cryptohypetrader.com) is the front end server and hosts a we
 Further scaling could be accomplished by splitting the back end server into two servers, one for the database, and
 another for the ingestion tasks to run. Adding a load balancer and a dynamic number of front end servers would allow horizontal scaling to a very high degree.
 
+![Alt text](/architecture_diagram.png?raw=true "High Level Architecture Diagram")
+
 
 ### Data sources
 * [Reddit](https://www.reddit.com/dev/api/)
