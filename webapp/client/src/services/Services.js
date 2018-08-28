@@ -46,6 +46,10 @@ export default {
         }
     },
 
+    getDBStats() {
+        return Api().get('db_stats');
+    },
+
     cancelIngestionTask(id) {
         return Api.get('ingestion_tasks/cancel/' + id);
     }

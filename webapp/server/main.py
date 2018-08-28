@@ -272,4 +272,31 @@ def get_recent_comments(platform, coin_id):
 
 @app.route('/api/db_stats')
 def get_db_stats():
-    return json_response(db.mongo_db.db_stats.find())
+    db_stats = db.mongo_db.db_stats.find()
+
+    last_price_update = db.mongo_db.prices.find().sort("date", pymongo.DESCENDING).limit(1)
+    last_price_update = list(last_price_update)[0]["date"]
+
+    # Count the total number of data points we have
+    data_collections = [
+        "prices",
+        "cryptocompare_stats",
+        "historical_prices",
+        "historical_social_stats",
+        "recent_comments",
+        "reddit_comments",
+        "reddit_stats",
+        "twitter_comments"
+    ]
+
+    total_data_points = 0
+    for collection in data_collections:
+        total_data_points += db.mongo_db[collection].count()
+
+    ret = {
+        "db": list(db_stats),
+        "last_price_update": last_price_update,
+        "total_data_points": total_data_points,
+    }
+
+    return JSONEncoder().encode(ret)

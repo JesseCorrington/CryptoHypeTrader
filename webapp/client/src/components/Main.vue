@@ -23,7 +23,11 @@
     </v-content>
 
     <v-footer app fixed>
-        <span>&copy; 2018 | <a target=”_blank” href="https://github.com/JesseCorrington/CryptoHypeTrader">GitHub Source</a></span>
+        <span>
+            &copy; 2018 &ensp; | &ensp;
+            <strong>Updated:</strong> {{lastPriceUpdate  |  dateTime}} &ensp; | &ensp; <strong>Total Data Points:</strong> {{totalDataPoins | number}}
+            &ensp; | &ensp; <a target=”_blank” href="https://github.com/JesseCorrington/CryptoHypeTrader">GitHub Source</a>
+        </span>
     </v-footer>
 </div>
 </template>
@@ -37,7 +41,9 @@ export default {
     data: () => ({
         drawer: true,
         view: "coins",
-        coins: []
+        coins: [],
+        lastPriceUpdate: new Date(),
+        totalDataPoins: 0
     }),
 
     props: {
@@ -77,7 +83,11 @@ export default {
 
             const remainder = await Services.getCoinSummaries(11, 2000);
             this.addCoinSummaries(remainder.data);
-        },
+
+            const dbStats = await Services.getDBStats();
+            this.lastPriceUpdate = new Date(dbStats.data.last_price_update);
+            this.totalDataPoins = dbStats.data.total_data_points;
+        }
     }
 }
 </script>

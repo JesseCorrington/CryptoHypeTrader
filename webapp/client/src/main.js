@@ -96,6 +96,12 @@ Vue.filter('currency', function (value) {
     return numeral(value).format('$0,0.00');
 });
 
+Vue.filter('number', function (value) {
+    if (value === undefined || value === null) return '';
+    value = value.toString();
+    return numeral(value).format('0,0');
+});
+
 Vue.filter('decimal_2', function (value) {
     if (value === undefined || value === null) return '';
     return round(value, 2);
