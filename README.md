@@ -7,7 +7,8 @@ The goal is to collect social network statistics from a variety of sources (ie: 
 daily and store it in a database. This data can then be used in the development of algorithmic trading strategies
 by either using traditional technical analysis and trading signals or machine learning techniques. Once trading strategies are developed
 they can be backtested to check for profitability.
- 
+
+Visit http://cryptohypetrader.com for the latest production deployment
 
 
 ## Developer Setup
@@ -18,7 +19,7 @@ they can be backtested to check for profitability.
 * Install [NodeJS](https://nodejs.org/en/download/)
 * Clone this repo and install Python requirements
 ```bash
-git clone git@bitbucket.org:jcorrington/cryptohypetrader.git
+git clone git@github.com:JesseCorrington/CryptoHypeTrader.git
 cd CryptoHypeTrader
 ./scripts/install_requirements.sh
 
@@ -28,13 +29,13 @@ cd CryptoHypeTrader
 ### API keys
 You'll need to create several API keys before you can get ingestion running.
 
-#### Reddit API
+##### Reddit API
 Go to https://www.reddit.com/prefs/apps and select "create another app..." to create the keys. 
 
-#### Twitter API
+##### Twitter API
 Go to https://apps.twitter.com/, apply for a developer account, and create a new app.
 
-#### StockTwits API
+##### StockTwits API
 Go to https://api.stocktwits.com/developers/apps and register a new application.
 
 ### Configuration
@@ -74,11 +75,11 @@ database = {
 
 ### Running Ingestion
 
-start the local mongo db,  run `./scripts/rundb.sh`
+First start the local mongo db with `./scripts/rundb.sh`
 
-`python3 main.py -t <task-name>`
+Then run an ingestion task by doing `python3 main.py -t <task-name>`
 
-Tasks
+##### Tasks
 ```
 coin_list - Update the list of cryptocurrencies with metadata and icons
 historical - Import historical data (price, volume, subreddit subscriber counts)
@@ -90,12 +91,12 @@ db_stats - Save current database size statistics for tracking growth and project
 stocktwits - Import the current comments with sentiment from StockTwits
 ```
 
-The progress of ingestion tasks can be monitored through a web UI, see the web client docs below for details.
+The progress of ingestion tasks can be monitored through the web client on the admin page, see the web client docs below for details.
 
 ### Running the web client
 Running the web client requires running a local mongodb instance, an API server, and launching the Vue app in development mode.
 
-#### API Server setup
+##### API Server setup
 Create the configuration file `<repo>/webapp/server/config.py` with the following info:
 
 ```
@@ -116,18 +117,19 @@ dev = {
 }
 ```
 
-#### Run the API server
-Run the server `python3 <repo>/api_server.py <dev | prod>`
+##### Run the API server
+run `python3 <repo>/api_server.py <dev | prod>`
 
-#### Launch the client web app (Vue app)
+##### Launch the client web app (Vue app)
 In a separate terminal window do:
+
 `cd <repo>/webapp/client`
 
 `npm install`
 
 `npm start`
 
-open http://localhost:8080 in a browser
+Open http://localhost:8080 in a browser
 
 
 ### Unit Testing
@@ -135,11 +137,14 @@ run `<repo>/scripts/run_tests.sh` to run all of the unit tests
 
 
 ### Server Setup
-TODO
+The production deployment is hosted on Digital Ocean using two droplets.
 
-### Deployment
-TODO
+The backend droplet (db.crypohypetrader.com) hosts mongodb and runs ingestion tasks. Cron is used for the scheduling of ingestion tasks to run on regular time intervals, see `<repo>/server_setup/cront.txt` for the schedule. Deployment is done by running `./scripts/deploy_ingestion`. The cron setup must be manually copied over if it changes.
 
+The second droplet (cryptohypetrader.com) is the front end server and hosts a web api server and an nginx front end web server. nginx is the entry point for all HTTP requests, and serves static content for HTML, JS, and CSS, and proxies `/api` requests on to the api server. Caching is enabled in nginx to reduce the number of calls that get through to the api server and subsequently have to call out to the database server. From the client side the application is read only on the database, and data isn't chaning very fast, so this can allow a high level of scaling. The api server is a python flask app run with Gunicorn and uses `num_cores + 1` for the number of processes. Deployment is done by running `./scripts/deploy_api_server` and `./scripts/deploy_client`. Deploying the api server requires restarting the gunicorn service.
+
+Further scaling could be accomplished by splitting the back end server into two servers, one for the database, and
+another for the ingestion tasks to run. Adding a load balancer and a dynamic number of front end servers would allow horizontal scaling to a very high degree.
 
 
 ### Data sources
@@ -148,10 +153,7 @@ TODO
 * [StockTwits](https://api.stocktwits.com/developers/docs)
 * [Redditmetrics](https://www.redditmetrics.com) (web scraping)
 * [Coinmarketcap](https://www.coinmarketcap.com) (API and web scraping)
-
-### Potential future data sources
 * [bitcointalk.org](https://www.bitcointalk.org)
-* [4chan/biz](https://www.4chan.org/biz)
 
 
 ## References
