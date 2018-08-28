@@ -44,6 +44,20 @@ def run(config_name):
     app.run()
 
 
+class DBCheckMiddleware(object):
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        if not db.connected():
+            flask.abort(500)
+        else:
+            return self.app(environ, start_response)
+
+
+app.wsgi_app = DBCheckMiddleware(app.wsgi_app)
+
+
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, ObjectId):
