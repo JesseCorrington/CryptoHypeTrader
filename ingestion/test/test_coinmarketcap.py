@@ -15,12 +15,14 @@ class TestCoinMarketCap(TestCase):
         self.assertEqual(links["subreddit"], "ethereum")
         self.assertEqual(links["twitter"], "ethereum")
         self.assertEqual(links["btctalk_ann"], "428589.0")
+        self.assertEqual(links["icon"], "https://s2.coinmarketcap.com/static/img/coins/32x32/1027.png")
 
         test_coin = {"cmc_id": "ripple"}
         links = cmc.CoinLinks(test_coin).get()
         self.assertEqual(links["subreddit"], "ripple")
         self.assertEqual(links["twitter"], "Ripple")
         self.assertTrue("btctalk_ann" not in links)
+        self.assertEqual(links["icon"], "https://s2.coinmarketcap.com/static/img/coins/32x32/52.png")
 
     def test_get_historical_prices(self):
         test_coin = {"cmc_id": "bitcoin"}

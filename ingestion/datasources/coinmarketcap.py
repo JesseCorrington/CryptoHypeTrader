@@ -100,6 +100,10 @@ class CoinLinks(ds.DataSource):
         if ann:
             links["btctalk_ann"] = ann
 
+        icon = find_link('src="(https:\\/\\/s2.coinmarketcap.com\\/static\\/img\\/coins\\/[0-9]*x[0-9]*\\/[0-9]*.png)"')
+        if icon:
+            links["icon"] = icon
+
         return links
 
 
