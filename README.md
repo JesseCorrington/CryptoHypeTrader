@@ -165,3 +165,10 @@ another for the ingestion tasks to run. Adding a load balancer and a dynamic num
 * [Twitter mood predicts the stock market](https://arxiv.org/pdf/1010.3003.pdf)
 * [Automated Bitcoin Trading via Machine Learning Algorithms](http://ai2-s2-pdfs.s3.amazonaws.com/e065/3631b4a476abf5276a264f6bbff40b132061.pdf)
 * [Bayesian regression and Bitcoin](https://arxiv.org/pdf/1410.1231v1.pdf)
+
+## Screenshots
+
+![Alt text](/screenshots/coin_list.png?raw=true "Landing page coin list")
+![Alt text](/screenshots/charts1.png?raw=true "Example charts")
+![Alt text](/screenshots/charts2.png?raw=true "Example charts")
+![Alt text](/screenshots/admin.png?raw=true "Admin page for monitoring ingestion tasks on the server")
