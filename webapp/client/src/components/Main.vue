@@ -6,7 +6,7 @@
         <v-toolbar-items class="hidden-sm-and-down">
             <v-btn flat @click="showCoins"><v-icon>view_list</v-icon>Coins</v-btn>
             <v-btn flat @click="showCharts"><v-icon>show_chart</v-icon>Charts</v-btn>
-            <v-btn flat @click="showAdmin"><v-icon>assessment</v-icon>Admin</v-btn>
+            <v-btn v-if="devMode==true" flat @click="showAdmin"><v-icon>assessment</v-icon>Admin</v-btn>
         </v-toolbar-items>
     </v-toolbar>
 
@@ -25,7 +25,7 @@
     <v-footer app fixed>
         <span>
             &copy; 2018 &ensp; | &ensp;
-            <strong>Updated:</strong> {{lastPriceUpdate  |  dateTime}} &ensp; | &ensp; <strong>Total Data Points:</strong> {{totalDataPoins | number}}
+            <strong>Updated:</strong> {{lastPriceUpdate  |  dateTime}} &ensp; | &ensp; <strong>Total Data Points:</strong> {{totalDataPoints | number}}
             &ensp; | &ensp; <a target=”_blank” href="https://github.com/JesseCorrington/CryptoHypeTrader">GitHub Source</a>
         </span>
     </v-footer>
@@ -42,8 +42,9 @@ export default {
         drawer: true,
         view: "coins",
         coins: [],
-        lastPriceUpdate: new Date(),
-        totalDataPoins: 0
+        lastPriceUpdate: undefined,
+        totalDataPoints: undefined,
+        devMode: false
     }),
 
     props: {
@@ -51,6 +52,8 @@ export default {
     },
 
     mounted () {
+        this.devMode = this.$route.query.dev === "true";
+
         this.getCoinSummaries();
     },
 
@@ -86,7 +89,7 @@ export default {
 
             const dbStats = await Services.getDBStats();
             this.lastPriceUpdate = new Date(dbStats.data.last_price_update);
-            this.totalDataPoins = dbStats.data.total_data_points;
+            this.totalDataPoints = dbStats.data.total_data_points;
         }
     }
 }

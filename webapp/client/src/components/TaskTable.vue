@@ -3,6 +3,7 @@
     :headers="headers"
     :items="tasks"
     :rows-per-page-items="[20,50]"
+    :pagination.sync="pagination"
     class="elevation-1"
     item-key="_id">
 
@@ -53,7 +54,11 @@
                     {text: 'HTTP Errors', value: 'errors_http', align: 'left'},
                     {text: 'DB Inserts', value: 'db_inserts', align: 'left'},
                     {text: 'DB Updates', value: 'db_updates', align: 'left'}
-                ]
+                ],
+                pagination: {
+                    sortBy: 'start_time',
+                    descending: true
+                }
             }
         },
 
