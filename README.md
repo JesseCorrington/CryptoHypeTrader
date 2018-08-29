@@ -169,6 +169,9 @@ another for the ingestion tasks to run. Adding a load balancer and a dynamic num
 ## Screenshots
 
 ![Alt text](/screenshots/coin_list.png?raw=true "Landing page coin list")
+<br><br>
 ![Alt text](/screenshots/charts1.png?raw=true "Example charts")
+<br><br>
 ![Alt text](/screenshots/charts2.png?raw=true "Example charts")
+<br><br>
 ![Alt text](/screenshots/admin.png?raw=true "Admin page for monitoring ingestion tasks on the server")
