@@ -80,37 +80,22 @@
         :search="search"
         :pagination.sync="pagination"
         :items="items"
-        :rows-per-page-items="[10,20,50,100]"
+        :rows-per-page-items="[20,50,100]"
         class="elevation-1"
         item-key="_id"
         :custom-filter="filterCoins">
 
         <template slot="items" slot-scope="props">
-            <td margin-left="50" alight="right" :background="props.item.iconUrl" style="background-size: 32px; background-position: left center; padding-left: 50px;">
-                <p align="left">{{ props.item.name }}</p>
+            <td :background="props.item.iconUrl" class="coincell">
+                <div class="coincell">{{ props.item.name }}</div>
             </td>
 
             <td align="right">{{ formatCurrency(props.item.market_cap)}}</td>
             <td align="right">{{ formatCurrency(props.item.price)}}</td>
             <td align="right">{{ formatCurrency(props.item.volume)}}</td>
 
-            <td :class="props.item.growth.price[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{formatGrowth(props.item.growth.price[di])}}
-            </td>
-            <td :class="props.item.growth.reddit[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{formatGrowth(props.item.growth.reddit[di])}}
-            </td>
-            <td :class="props.item.growth.twitter[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{formatGrowth(props.item.growth.twitter[di])}}
-            </td>
-            <td :class="props.item.growth.code_points[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{formatGrowth(props.item.growth.code_points[di])}}
-            </td>
-            <td :class="props.item.growth.facebook_points[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{formatGrowth(props.item.growth.facebook_points[di])}}
-            </td>
-            <td :class="props.item.growth.twitter_followers[di] >= 0? 'green--text' : 'red--text'" align="right">
-                {{formatGrowth(props.item.growth.twitter_followers[di])}}
+            <td v-for="col in growthCols" :class="props.item.growth[col][di] >= 0? 'green--text' : 'red--text'" align="right">
+                {{formatGrowth(props.item.growth[col][di])}}
             </td>
         </template>
     </v-data-table>
@@ -126,20 +111,20 @@ export default {
 
     data () {
         return {
-
-            // TODO: consider making headers and di computed properties, and then it will all work like magic
             headers: [
                 {text: 'Name', value: 'name', align: "left"},
                 {text: 'Market Cap', value: 'market_cap', align: "right"},
                 {text: 'Price', value: 'price', align: "right"},
                 {text: 'Volume', value: 'volume', align: "right"},
-                {text: '24hr price', value: 'growth.price.d1_pct', align: "right"},
-                {text: '24hr reddit', value: 'growth.reddit.d1_pct', align: "right"},
-                {text: '24hr twitter', value: 'growth.twitter.d1_pct', align: "right"},
-                {text: '24hr code', value: 'growth.code_points.d1_pct', align: "right"},
-                {text: '24hr FB followers', value: 'growth.facebook_points.d1_pct', align: "right"},
-                {text: '24hr twitter subs', value: 'growth.twitter_followers.d1_pct', align: "right"}
+                {text: '1d Price', value: 'growth.price.d1_pct', align: "right"},
+                {text: '1d Reddit', value: 'growth.reddit.d1_pct', align: "right"},
+                {text: '1d Twitter', value: 'growth.twitter.d1_pct', align: "right"},
+                {text: '1d GitHub', value: 'growth.code_points.d1_pct', align: "right"},
+                {text: '1d Facebook', value: 'growth.facebook_points.d1_pct', align: "right"},
+
             ],
+            growthCols: ["price", "reddit", "twitter", "code_points", "facebook_points"],
+
             search: "",
             pagination: {
                 sortBy: 'market_cap',
@@ -260,3 +245,15 @@ export default {
     }
 };
 </script>
+
+<style>
+
+.coincell {
+    background-size: 32px;
+    background-position: left center;
+    margin-left: 20%;
+    vertical-align: middle;
+    text-align: left;
+    font-weight: bold;
+}
+</style>
