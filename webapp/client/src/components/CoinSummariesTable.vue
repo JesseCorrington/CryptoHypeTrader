@@ -24,7 +24,7 @@
             </v-toolbar-items>
         </v-btn-toggle>
 
-        <v-btn flat icon @click.stop="settingsDialog = true">
+        <v-btn flat icon @click.stop="settingsDialog = true" color="grey">
             <v-icon>settings</v-icon>
         </v-btn>
     </v-toolbar>
