@@ -1,6 +1,6 @@
 <template>
 <div>
-    <v-toolbar app fixed clipped-left>
+    <v-toolbar app fixed clipped-left dark color="primary">
         <v-toolbar-title align="center">Crypto Hype Trader</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-items class="hidden-sm-and-down">
@@ -22,7 +22,7 @@
         </div>
     </v-content>
 
-    <v-footer app fixed>
+    <v-footer app fixed dark color="secondary">
         <span>
             &copy; 2018 &ensp; | &ensp;
             <strong>Updated:</strong> {{lastPriceUpdate  |  dateTime}} &ensp; | &ensp; <strong>Total Data Points:</strong> {{totalDataPoints | number}}
@@ -44,7 +44,8 @@ export default {
         coins: [],
         lastPriceUpdate: undefined,
         totalDataPoints: undefined,
-        devMode: false
+        devMode: false,
+        highestCoinId: 0
     }),
 
     props: {
@@ -72,6 +73,11 @@ export default {
 
         addCoinSummaries(coinSummaries) {
             for (var i = 0; i < coinSummaries.length; i++) {
+                var coinId = coinSummaries[i].coin_id;
+                if (coinId > this.highestCoinId) {
+                    this.highestCoinId = coinId;
+                }
+
                 this.coins.push(new Coin(coinSummaries[i]));
             }
         },
@@ -81,11 +87,16 @@ export default {
             // which would allow populating search lists, and then on demand we can load
             // the full coin summaries. For now this is simple and good enough
 
-            const initial = await Services.getCoinSummaries(1, 10);
+            const initial = await Services.getCoinSummaries(1, 20);
             this.addCoinSummaries(initial.data);
 
-            const remainder = await Services.getCoinSummaries(11, 2000);
+            const remainder = await Services.getCoinSummaries(21, 2000);
             this.addCoinSummaries(remainder.data);
+
+            // Mark the 10 coins that were added last
+            for (var i = 0; i < this.coins.length; i++) {
+                this.coins[i].recentlyAdded = this.coins[i].coin_id > this.highestCoinId - 10;
+            }
 
             const dbStats = await Services.getDBStats();
             this.lastPriceUpdate = new Date(dbStats.data.last_price_update);

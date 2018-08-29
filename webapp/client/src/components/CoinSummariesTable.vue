@@ -85,6 +85,10 @@
         item-key="_id"
         :custom-filter="filterCoins">
 
+        <template slot="headerCell" slot-scope="props">
+            <strong>{{ props.header.text }}</strong>
+        </template>
+
         <template slot="items" slot-scope="props">
             <td :background="props.item.iconUrl" class="coincell">
                 <div class="coincell">{{ props.item.name }}</div>
@@ -191,8 +195,10 @@ export default {
                 if (this.filters.subreddit && !item.subreddit) return;
                 if (this.filters.twitter && !item.twitter) return;
 
-                // TODO: implement recent coin add filtering
-                if (item.name.toLowerCase().indexOf(searchStr) === -1) return;
+                if (item.name.toLowerCase().indexOf(searchStr) === -1 &&
+                    item.symbol.toLowerCase().indexOf(searchStr) === -1) return;
+
+                if (this.filters.recent && !item.recentlyAdded) return;
 
                 filtered.push(item);
             });
@@ -250,7 +256,7 @@ export default {
 
 .coincell {
     background-size: 32px;
-    background-position: left center;
+    background-position: 10px center;
     margin-left: 20%;
     vertical-align: middle;
     text-align: left;

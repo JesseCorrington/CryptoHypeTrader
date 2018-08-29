@@ -17,6 +17,7 @@ export default class Coin {
         this.comments = [];
         this.seriesLoaded = false;
         this.onChart = false;
+        this.recentlyAdded = false;
     }
 
     _makeUrl(base, key, namePrefix) {

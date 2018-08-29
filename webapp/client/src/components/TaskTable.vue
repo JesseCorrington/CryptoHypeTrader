@@ -7,6 +7,10 @@
     class="elevation-1"
     item-key="_id">
 
+    <template slot="headerCell" slot-scope="props">
+        <strong>{{ props.header.text }}</strong>
+    </template>
+
     <template slot="items" slot-scope="props">
         <td align="left"><a @click="showDetails(props.item.name)" class="link">{{props.item.name}}</a></td>
 
