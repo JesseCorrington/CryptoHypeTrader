@@ -356,9 +356,10 @@ class ImportCommentStats(mgr.IngestionTask):
                     strong_pos = scanner.strong_pos()
                     strong_neg = scanner.strong_neg()
 
-                    # clear out old saved comments, so we don't run out of disk space
-                    # TODO: only dump comments that are a week old or something
-                    #db.mongo_db.recent_comments.remove()
+                    # Remove old comments to reduce storage requirements
+                    now = datetime.utcnow()
+                    max_age = now - datetime.timedelta(days=200)
+                    db.mongo_db.recent_comments.remove({"date": {"$lt": max_age}})
 
                     for comment in strong_pos + strong_neg:
                         r = {
@@ -437,7 +438,6 @@ class SaveDBStats(mgr.IngestionTask):
         self._db_insert("db_stats", stats)
 
 
-# TODO: add price predictions from ML model
 class CreateCoinSummaries(mgr.IngestionTask):
     """Task to analyse statistics and create summary reports for each coin
     This is run periodically, as it's a slow process and we want to do it in
@@ -455,9 +455,6 @@ class CreateCoinSummaries(mgr.IngestionTask):
         prices = db.cursor_to_dict(prices)
         growth = analysis.social_growth()
         growth = util.list_to_dict(growth, "coin_id")
-
-        # TODO: need to use replace below, instead of removing all
-        db.mongo_db.coin_summaries.remove()
 
         processed = 0
         for coin in coins:
@@ -487,7 +484,7 @@ class CreateCoinSummaries(mgr.IngestionTask):
                 del growth[cid]["coin_id"]
                 record["growth"] = growth[cid]
 
-            self._db_insert("coin_summaries", record)
+            db.mongo_db.coin_summaries.replace_one({"coin_id": cid}, record, upsert=True)
 
             processed += 1
             if processed % 50 == 0:

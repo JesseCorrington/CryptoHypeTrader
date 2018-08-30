@@ -61,7 +61,6 @@ export default class Coin {
     }
 
     async loadSeriesData(onSeriesLoaded) {
-        // TODO: convert to promise.all, consider rolling into one API endpoint
         const response = await Services.getCoinPrices(this.coin_id);
         onSeriesLoaded("price", response.data)
 

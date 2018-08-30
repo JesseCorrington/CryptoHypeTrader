@@ -6,7 +6,7 @@
         v-model="selectedCoins"
         item-text="name"
         item-value="symbol"
-        key="symbol"
+        key="coin_id"
         multiple
         chips
         deletable-chips
@@ -145,7 +145,7 @@ export default {
     },
 
     methods: {
-        addSeriesToChart(symbol, name, series) {
+        addSeriesToChart(coinId, symbol, name, series) {
             if (!visibleSeries[name.toLowerCase()]) {
                 return;
             }
@@ -158,7 +158,7 @@ export default {
             var seriesNorm = normalizeSeries(series);
 
             this.chart.addSeries({
-                id: symbol.toLowerCase() + " " + name.toLowerCase(),
+                id: coinId + " " + name.toLowerCase(),
                 name: symbol + " " + name,
                 data: this.normalize? seriesNorm : series,
                 dataOrig: series,
@@ -166,9 +166,8 @@ export default {
             });
         },
 
-        // TODO: symbol is not a unique id, use coin_id instead
-        removeSeriesFromChart(symbol, name) {
-            var series = this.chart.get(symbol.toLowerCase() + " " + name.toLowerCase());
+        removeSeriesFromChart(coinId, name) {
+            var series = this.chart.get(coinId + " " + name.toLowerCase());
             if (series) {
                 series.remove();
             }
@@ -188,12 +187,12 @@ export default {
                 if (!coin.onChart && !coin.seriesLoaded) {
                     coin.loadSeriesData(function(name, data) {
                         coin.timeSeries[name] = data;
-                        self.addSeriesToChart(coin.symbol, name, data);
+                        self.addSeriesToChart(coin.coin_id, coin.symbol, name, data);
                     });
                 }
                 else if (!coin.onChart) {
                     for (var name in coin.timeSeries) {
-                        this.addSeriesToChart(coin.symbol, name, coin.timeSeries[name]);
+                        this.addSeriesToChart(coin.coin_id, coin.symbol, name, coin.timeSeries[name]);
                     }
                 }
             });
@@ -201,7 +200,7 @@ export default {
             // hide deselected coin time series
             removed.forEach(coin => {
                 for (var name in coin.timeSeries) {
-                    this.removeSeriesFromChart(coin.symbol, name);
+                    this.removeSeriesFromChart(coin.coin_id, name);
                 }
                 coin.onChart = false;
             });
@@ -219,13 +218,13 @@ export default {
 
             this.selectedCoins.forEach(coin => {
                 deselected.forEach(feature => {
-                    this.removeSeriesFromChart(coin.symbol, feature);
+                    this.removeSeriesFromChart(coin.coin_id, feature);
                 });
 
                 selected.forEach(feature => {
                     var seriesKey = feature.toLowerCase();
                     var series = coin.timeSeries[seriesKey];
-                    this.addSeriesToChart(coin.symbol, feature, series);
+                    this.addSeriesToChart(coin.coin_id, coin.symbol, feature, series);
                 });
             });
         },
