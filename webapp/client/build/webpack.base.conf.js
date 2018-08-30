@@ -40,9 +40,6 @@ module.exports = {
   },
   module: {
     rules: [
-
-      // TODO: turn eslint back on
-      //...(config.dev.useEslint ? [createLintingRule()] : []),
       {
         test: /\.vue$/,
         loader: 'vue-loader',

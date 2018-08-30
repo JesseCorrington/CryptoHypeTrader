@@ -15,6 +15,7 @@ import CoinSummaries from '@/components/CoinSummaries'
 import Admin from '@/components/Admin'
 import CurrencyField from '@/components/CurrencyField'
 import TaskTable from '@/components/TaskTable'
+import CommentsTable from '@/components/CommentsTable'
 
 Vue.config.productionTip = false;
 
@@ -29,6 +30,7 @@ Vue.component('coin-summaries', CoinSummaries);
 Vue.component('admin', Admin);
 Vue.component('currency-field', CurrencyField);
 Vue.component('task-table', TaskTable);
+Vue.component('comments-table', CommentsTable)
 
 /* eslint-disable no-new */
 new Vue({

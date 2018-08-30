@@ -34,8 +34,8 @@ export default {
         return Api().get('twitter_comments/' + coinId);
     },
 
-    getRecentComments(platform, coinId) {
-        return Api().get('recent_comments/' + platform + '/' + coinId);
+    getRecentComments() {
+        return Api().get('recent_comments');
     },
 
     getIngestionTasks(name) {

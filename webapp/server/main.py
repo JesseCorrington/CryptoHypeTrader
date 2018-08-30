@@ -250,13 +250,13 @@ def get_reddit_comments(coin_id):
         return json_response({"error": "No reddit comments for coin id".format(coin_id)})
 
 
-@app.route('/api/recent_comments/<string:platform>/<int:coin_id>')
-def get_recent_comments(platform, coin_id):
-    comments = db.mongo_db.recent_comments.find({"coin_id": coin_id}).limit(10)
+@app.route('/api/recent_comments')
+def get_recent_comments():
+    comments = db.mongo_db.recent_comments.find().sort("date", pymongo.DESCENDING).limit(200)
     if comments is not None:
         return json_response(comments)
     else:
-        return json_response({"error": "No recent comments on {} for coin id {}".format(platform, coin_id)})
+        return json_response({"error": "No recent comments on"})
 
 
 @app.route('/api/db_stats')

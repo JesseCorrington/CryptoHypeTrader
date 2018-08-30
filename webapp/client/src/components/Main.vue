@@ -6,6 +6,7 @@
         <v-toolbar-items class="hidden-sm-and-down">
             <v-btn flat @click="showCoins"><v-icon>view_list</v-icon>Coins</v-btn>
             <v-btn flat @click="showCharts"><v-icon>show_chart</v-icon>Charts</v-btn>
+            <v-btn flat @click="showComments"><v-icon>comment</v-icon>Comments</v-btn>
             <v-btn v-if="devMode==true" flat @click="showAdmin"><v-icon>assessment</v-icon>Admin</v-btn>
         </v-toolbar-items>
     </v-toolbar>
@@ -19,6 +20,9 @@
         </div>
         <div v-else-if="view==='admin'">
             <admin/>
+        </div>
+        <div v-else-if="view==='comments'">
+            <comments-table/>
         </div>
     </v-content>
 
@@ -69,6 +73,10 @@ export default {
 
         showAdmin() {
             this.view = "admin";
+        },
+
+        showComments() {
+            this.view = "comments";
         },
 
         addCoinSummaries(coinSummaries) {
