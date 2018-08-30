@@ -27,6 +27,10 @@ server {
 
     # pass the request to the python flask server running on gunicorn
     location /api {
+        if ($http_origin ~* "^http?://(cryptohypetrader.com|www.cryptohypetrader.com)$") {
+                add_header Access-Control-Allow-Origin "$http_origin";
+        }
+
         add_header Cache-Control "no-cache, must-revalidate, max-age=0";
 
         proxy_cache apicache;

@@ -7,18 +7,8 @@ import pymongo
 from bson import ObjectId
 from common import database as db
 from webapp.server import config
-from flask_cors import CORS
-
-# This is just a basic dev server for easy internal testing
-# Basic REST API access is provided, and static files are hosted out of the client directory
-# Not safe for production use
 
 app = flask.Flask(__name__)
-
-# TODO: takeout CORS, and setup nginx properly to redirect
-# https://stackoverflow.com/questions/28925304/javascript-stack-web-server-and-api-server-together-or-separate
-CORS(app)
-
 db.init(config.prod["database"])
 
 
@@ -155,7 +145,6 @@ def get_tasks_by_name(name):
         return json_response({"error": "No tasks with name {}".format(name)})
 
 
-# TODO: test this with the UI
 @app.route('/api/ingestion_tasks/cancel/<string:id>')
 def cancel_task(id):
     task = dict(db.mongo_db.ingestion_tasks.find({"id": id}))
