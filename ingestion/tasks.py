@@ -2,8 +2,6 @@ import concurrent.futures
 import datetime
 import pymongo
 import urllib.request
-import shutil
-import os
 
 from common import database as db, util
 from ingestion import config, manager as mgr
@@ -357,7 +355,7 @@ class ImportCommentStats(mgr.IngestionTask):
                     strong_neg = scanner.strong_neg()
 
                     # Remove old comments to reduce storage requirements
-                    now = datetime.utcnow()
+                    now = datetime.datetime.utcnow()
                     max_age = now - datetime.timedelta(days=200)
                     db.mongo_db.recent_comments.remove({"date": {"$lt": max_age}})
 
