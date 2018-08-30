@@ -91,9 +91,11 @@ def create_indexes():
 
     mongo_db.coin_icons.create_index([("coin_id", pymongo.ASCENDING)], unique=True)
 
+    mongo_db.recent_comments.create_index([("coin_id", pymongo.ASCENDING)])
+    mongo_db.recent_comments.create_index([("date", pymongo.DESCENDING)])
+
     create_date_coin_index("prices")
     create_date_coin_index("reddit_comments")
     create_date_coin_index("reddit_stats")
     create_date_coin_index("twitter_comments")
     create_date_coin_index("cryptocompare_stats")
-    create_date_coin_index("recent_comments")

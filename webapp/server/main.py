@@ -252,7 +252,7 @@ def get_reddit_comments(coin_id):
 
 @app.route('/api/recent_comments')
 def get_recent_comments():
-    comments = db.mongo_db.recent_comments.find().sort("date", pymongo.DESCENDING).limit(200)
+    comments = db.mongo_db.recent_comments.find().sort("date", pymongo.DESCENDING).limit(1000)
     if comments is not None:
         return json_response(comments)
     else:
