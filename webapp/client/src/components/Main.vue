@@ -98,9 +98,6 @@ export default {
             const initial = await Services.getCoinSummaries(1, 20);
             this.addCoinSummaries(initial.data);
 
-            const remainder = await Services.getCoinSummaries(21, 2000);
-            this.addCoinSummaries(remainder.data);
-
             // Mark the 10 coins that were added last
             for (var i = 0; i < this.coins.length; i++) {
                 this.coins[i].recentlyAdded = this.coins[i].coin_id > this.highestCoinId - 10;
@@ -109,6 +106,10 @@ export default {
             const dbStats = await Services.getDBStats();
             this.lastPriceUpdate = new Date(dbStats.data.last_price_update);
             this.totalDataPoints = dbStats.data.total_data_points;
+
+            // Landing page is up, now fetch the rest of the coins
+            const remainder = await Services.getCoinSummaries(21, 2000);
+            this.addCoinSummaries(remainder.data);
         }
     }
 }

@@ -261,8 +261,6 @@ def get_recent_comments():
 
 @app.route('/api/db_stats')
 def get_db_stats():
-    db_stats = db.mongo_db.db_stats.find()
-
     last_price_update = db.mongo_db.prices.find().sort("date", pymongo.DESCENDING).limit(1)
     last_price_update = list(last_price_update)[0]["date"]
 
@@ -283,7 +281,6 @@ def get_db_stats():
         total_data_points += db.mongo_db[collection].count()
 
     ret = {
-        "db": list(db_stats),
         "last_price_update": last_price_update,
         "total_data_points": total_data_points,
     }
