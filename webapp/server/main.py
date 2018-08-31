@@ -252,9 +252,18 @@ def get_reddit_comments(coin_id):
 
 @app.route('/api/recent_comments')
 def get_recent_comments():
-    comments = db.mongo_db.recent_comments.find().sort("date", pymongo.DESCENDING).limit(1000)
+    limit = query_param("limit", int, 100)
+
+    comments = db.mongo_db.recent_comments.find().sort("date", pymongo.DESCENDING).limit(limit)
     if comments is not None:
-        return json_response(comments)
+
+        # TODO: need to fix the db to prevent adding duplicate comments and remove this block
+        comments = list(comments)
+        unique = {}
+        for c in comments:
+            unique[c["text"]] = c
+
+        return json_response(unique.values())
     else:
         return JSONEncoder().encode({"error": "No recent comments"})
 

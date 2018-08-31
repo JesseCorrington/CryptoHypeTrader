@@ -90,11 +90,6 @@ export default class Coin {
         this.onChart = true;
     }
 
-    async loadComments() {
-        const req = await Services.getRecentComments("reddit", this.coin_id);
-        this.comments = req.data;
-    }
-
     detailLink() {
         return '<a href ="coin.html?id=' + this.coin_id + '">' + this.name + '</a>';
     }

@@ -34,8 +34,12 @@ export default {
         return Api().get('twitter_comments/' + coinId);
     },
 
-    getRecentComments() {
-        return Api().get('recent_comments');
+    getRecentComments(limit) {
+        return Api().get('recent_comments', {
+  	        "params": {
+                "limit": limit
+            }
+        });
     },
 
     getIngestionTasks(name) {

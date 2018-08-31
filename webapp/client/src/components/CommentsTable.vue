@@ -58,7 +58,7 @@
 
         methods: {
             async loadData() {
-                const response = await Services.getRecentComments();
+                const response = await Services.getRecentComments(2000);
                 this.comments = response.data;
 
                 this.comments.forEach((comment)=> {
