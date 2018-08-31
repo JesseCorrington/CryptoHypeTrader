@@ -142,7 +142,7 @@ def get_tasks_by_name(name):
     if tasks is not None:
         return json_response(tasks)
     else:
-        return json_response({"error": "No tasks with name {}".format(name)})
+        return JSONEncoder().encode({"error": "No tasks with name {}".format(name)})
 
 
 @app.route('/api/ingestion_tasks/cancel/<string:id>')
@@ -154,7 +154,7 @@ def cancel_task(id):
         os.kill(task["pid"], signal.SIGKILL)
         success = True
 
-    return json_response({"success": success})
+    return JSONEncoder().encode({"success": success})
 
 
 @app.route('/api/coin/<int:coin_id>')
@@ -163,7 +163,7 @@ def get_coin(coin_id):
     if coin is not None:
         return JSONEncoder().encode(coin)
     else:
-        return json_response({"error": "No coin with id: {}".format(coin_id)})
+        return flask.abort(404)
 
 
 @app.route('/api/coin_icon/<int:coin_id>')
@@ -197,7 +197,7 @@ def get_historical_prices(coin_id):
         series = time_series(prices, ["close", "volume"])
         return json_response(series)
     else:
-        return json_response({"error": "No historical price data for coin id {}".format(coin_id)})
+        return JSONEncoder().encode({"error": "No historical price data for coin id {}".format(coin_id)})
 
 
 @app.route('/api/historical_social_stats/<int:coin_id>')
@@ -207,7 +207,7 @@ def get_historical_social_stats(coin_id):
         series = time_series(stats, "reddit_subscribers")
         return json_response(series)
     else:
-        return json_response({"error": "No historical social stats for coin id {}".format(coin_id)})
+        return JSONEncoder().encode({"error": "No historical social stats for coin id {}".format(coin_id)})
 
 
 @app.route('/api/prices/<int:coin_id>')
@@ -217,7 +217,7 @@ def get_prices(coin_id):
         series = time_series(prices, "price")
         return json_response(series)
     else:
-        return json_response({"error": "No price data for coin id {}".format(coin_id)})
+        return JSONEncoder().encode({"error": "No price data for coin id {}".format(coin_id)})
 
 
 @app.route('/api/reddit_stats/<int:coin_id>')
@@ -227,7 +227,7 @@ def get_reddit_stats(coin_id):
         series = time_series(stats, ["subscribers", "active"])
         return json_response(series)
     else:
-        return json_response({"error": "No reddit stats for coin id {}".format(coin_id)})
+        return JSONEncoder().encode({"error": "No reddit stats for coin id {}".format(coin_id)})
 
 
 @app.route('/api/twitter_comments/<int:coin_id>')
@@ -237,7 +237,7 @@ def get_twitter_comments(coin_id):
         series = time_series(comments, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
         return json_response(series)
     else:
-        return json_response({"error": "No twitter comments for coin id".format(coin_id)})
+        return JSONEncoder().encode({"error": "No twitter comments for coin id".format(coin_id)})
 
 
 @app.route('/api/reddit_comments/<int:coin_id>')
@@ -247,7 +247,7 @@ def get_reddit_comments(coin_id):
         series = time_series(comments, ["avg_sentiment", "count", "strong_pos", "strong_neg", "avg_score", "sum_score"])
         return json_response(series)
     else:
-        return json_response({"error": "No reddit comments for coin id".format(coin_id)})
+        return JSONEncoder().encode({"error": "No reddit comments for coin id".format(coin_id)})
 
 
 @app.route('/api/recent_comments')
@@ -256,7 +256,7 @@ def get_recent_comments():
     if comments is not None:
         return json_response(comments)
     else:
-        return json_response({"error": "No recent comments on"})
+        return JSONEncoder().encode({"error": "No recent comments"})
 
 
 @app.route('/api/db_stats')

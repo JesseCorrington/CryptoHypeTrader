@@ -22,7 +22,7 @@
             <admin/>
         </div>
         <div v-else-if="view==='comments'">
-            <comments-table/>
+            <comments-table :coins="coins"/>
         </div>
     </v-content>
 
