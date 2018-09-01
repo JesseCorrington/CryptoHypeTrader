@@ -118,7 +118,7 @@ dev = {
 ```
 
 ##### Run the API server
-run `python3 <repo>/api_server.py <dev | prod>`
+run `python3 <repo>/api_server.py dev`
 
 ##### Launch the client web app (Vue app)
 In a separate terminal window do:
