@@ -19,8 +19,8 @@
         <td align="left">{{props.item.text}}</td>
         <td align="left">{{props.item.score}}</td>
         <td align="left">{{props.item.sentiment | decimal_2}}</td>
-        <td :background="props.item.coin.iconUrl" class="coincell" align="left">{{props.item.coin.symbol}}
-
+        <td :background="props.item.coin.iconUrl" class="coincell" align="left">
+            {{props.item.coin.symbol}}
         </td>
     </template>
     </v-data-table>
@@ -75,14 +75,12 @@
     }
 </script>
 
-<style>
+<style scoped>
 
 .coincell {
     background-size: 32px;
     background-position: right center;
-    margin-left: 00%;
     vertical-align: middle;
     text-align: left;
-    font-weight: bold;
 }
 </style>

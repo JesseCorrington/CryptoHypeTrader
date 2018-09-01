@@ -252,7 +252,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 
 .coincell {
     background-size: 32px;
